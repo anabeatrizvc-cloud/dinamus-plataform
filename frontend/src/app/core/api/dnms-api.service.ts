@@ -4,6 +4,7 @@ import { Injectable, inject } from '@angular/core';
 import {
   AgendaItem,
   AuthSession,
+  EventPayload,
   EventSummary,
   FirstVisitPayload,
   GrowthGroup,
@@ -25,6 +26,22 @@ export class DnmsApiService {
 
   listEvents() {
     return this.http.get<EventSummary[]>(`${this.baseUrl}/events`);
+  }
+
+  listAdminEvents() {
+    return this.http.get<EventSummary[]>(`${this.baseUrl}/admin/events`);
+  }
+
+  createEvent(payload: EventPayload) {
+    return this.http.post<EventSummary>(`${this.baseUrl}/admin/events`, payload);
+  }
+
+  updateEvent(id: string, payload: EventPayload) {
+    return this.http.put<EventSummary>(`${this.baseUrl}/admin/events/${id}`, payload);
+  }
+
+  deleteEvent(id: string) {
+    return this.http.delete<void>(`${this.baseUrl}/admin/events/${id}`);
   }
 
   listGrowthGroups() {

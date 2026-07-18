@@ -13,10 +13,17 @@ export interface AuthSession {
 
 export interface EventSummary {
   id: string;
-  title: string;
-  date: string;
-  location: string;
-  status: 'scheduled' | 'open' | 'closed';
+  name: string;
+  startsAt: string;
+  endsAt: string;
+  registrationUrl: string;
+}
+
+export interface EventPayload {
+  name: string;
+  startsAt: string;
+  endsAt: string;
+  registrationUrl: string;
 }
 
 export interface AgendaItem {

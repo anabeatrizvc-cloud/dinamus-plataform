@@ -49,9 +49,9 @@
           <input formControlName="registrationUrl" autocomplete="url" />
         </label>
 
-        <button class="dnms-button" type="submit">
+        <button class="dnms-button" type="submit" [disabled]="isSaving()">
           <svg lucidePlus aria-hidden="true"></svg>
-          {{ editingId() ? 'Salvar alterações' : 'Criar evento' }}
+          {{ isSaving() ? 'Salvando' : editingId() ? 'Salvar alterações' : 'Criar evento' }}
         </button>
       </form>
 
@@ -78,6 +78,13 @@
               <button type="button" aria-label="Excluir evento" (click)="deleteEvent(event.id)">
                 <svg lucideTrash2 aria-hidden="true"></svg>
               </button>
+            </div>
+          </article>
+        } @empty {
+          <article class="surface event-admin-card">
+            <div class="event-copy">
+              <h2>Nenhum evento cadastrado</h2>
+              <a>Crie o primeiro evento para exibir na página pública.</a>
             </div>
           </article>
         }

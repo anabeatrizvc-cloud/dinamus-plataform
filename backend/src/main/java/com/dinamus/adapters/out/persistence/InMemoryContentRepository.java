@@ -21,6 +21,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class InMemoryContentRepository implements ContentRepository {
     private final List<PrayerRequest> prayerRequests = new CopyOnWriteArrayList<>();
     private final List<FirstVisit> firstVisits = new CopyOnWriteArrayList<>();
+    private final List<EventSummary> events = new CopyOnWriteArrayList<>(defaultEvents());
     private final List<UserAccount> users;
 
     public InMemoryContentRepository(PasswordHasher hasher) {
@@ -45,10 +46,19 @@ public class InMemoryContentRepository implements ContentRepository {
 
     @Override
     public List<EventSummary> listEvents() {
-        return List.of(
-            new EventSummary("connect-night", "Connect Night", "Sexta, 20:00", "Auditorio principal", "open"),
-            new EventSummary("leader-training", "Treinamento de lideres", "Sabado, 15:00", "Sala multiuso", "scheduled")
-        );
+        return new ArrayList<>(events);
+    }
+
+    @Override
+    public EventSummary saveEvent(EventSummary event) {
+        deleteEvent(event.id());
+        events.add(event);
+        return event;
+    }
+
+    @Override
+    public void deleteEvent(String id) {
+        events.removeIf(event -> event.id().equals(id));
     }
 
     @Override
@@ -77,5 +87,12 @@ public class InMemoryContentRepository implements ContentRepository {
         return new ArrayList<>(users).stream()
             .filter(user -> user.email().equalsIgnoreCase(email))
             .findFirst();
+    }
+
+    private static List<EventSummary> defaultEvents() {
+        return List.of(
+            new EventSummary("connect-night", "Connect Night", "2026-09-14", "", "https://dinamus.recife/eventos/connect"),
+            new EventSummary("leader-training", "Treinamento de voluntários", "2026-09-21", "2026-09-22", "https://dinamus.recife/eventos/voluntarios")
+        );
     }
 }

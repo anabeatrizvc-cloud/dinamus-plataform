@@ -3,6 +3,7 @@ package com.dinamus;
 import com.dinamus.adapters.in.web.AdminController;
 import com.dinamus.adapters.in.web.dto.AuthDtos;
 import com.dinamus.domain.model.AgendaItem;
+import com.dinamus.domain.model.EventSummary;
 import io.micronaut.core.type.Argument;
 import io.micronaut.http.HttpRequest;
 import io.micronaut.http.HttpStatus;
@@ -42,6 +43,46 @@ class PlatformApiTest {
         assertTrue(response.accessToken().length() > 40);
         assertEquals("admin@dinamus.local", response.user().email());
         assertTrue(response.user().roles().contains("ADMIN"));
+    }
+
+    @Test
+    void adminCanManageEventsAndPublishThem() {
+        AuthDtos.LoginResponse login = login();
+        Map<String, String> payload = Map.of(
+            "name", "Conferencia DNMS",
+            "startsAt", "2026-10-12",
+            "endsAt", "",
+            "registrationUrl", "https://dinamus.recife/eventos/conferencia"
+        );
+
+        EventSummary created = client.toBlocking().retrieve(
+            HttpRequest.POST("/api/v1/admin/events", payload).bearerAuth(login.accessToken()),
+            EventSummary.class
+        );
+
+        assertEquals("Conferencia DNMS", created.name());
+        assertEquals("2026-10-12", created.startsAt());
+
+        EventSummary updated = client.toBlocking().retrieve(
+            HttpRequest.PUT("/api/v1/admin/events/" + created.id(), Map.of(
+                "name", "Conferencia DNMS Recife",
+                "startsAt", "2026-10-12",
+                "endsAt", "2026-10-13",
+                "registrationUrl", "https://dinamus.recife/eventos/conferencia"
+            )).bearerAuth(login.accessToken()),
+            EventSummary.class
+        );
+
+        assertEquals("Conferencia DNMS Recife", updated.name());
+        assertEquals("2026-10-13", updated.endsAt());
+
+        List<EventSummary> publicEvents = client.toBlocking().retrieve(HttpRequest.GET("/api/v1/events"), Argument.listOf(EventSummary.class));
+        assertTrue(publicEvents.stream().anyMatch(event -> event.id().equals(created.id())));
+
+        client.toBlocking().exchange(HttpRequest.DELETE("/api/v1/admin/events/" + created.id()).bearerAuth(login.accessToken()));
+
+        List<EventSummary> afterDelete = client.toBlocking().retrieve(HttpRequest.GET("/api/v1/admin/events").bearerAuth(login.accessToken()), Argument.listOf(EventSummary.class));
+        assertFalse(afterDelete.stream().anyMatch(event -> event.id().equals(created.id())));
     }
 
     @Test

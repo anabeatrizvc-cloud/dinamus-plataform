@@ -10,19 +10,27 @@
   </header>
 
   <section class="event-grid" aria-label="Eventos abertos">
-    @for (event of events; track event.id) {
+    @for (event of events(); track event.id) {
       <article class="surface event-card">
         <div>
           <span>Evento</span>
           <h2>{{ event.name }}</h2>
         </div>
         <p>
-          {{ event.startsAt }}
+          {{ formatDate(event.startsAt) }}
           @if (event.endsAt) {
-            <span>ate {{ event.endsAt }}</span>
+            <span>até {{ formatDate(event.endsAt) }}</span>
           }
         </p>
         <a class="dnms-button" [href]="event.registrationUrl" target="_blank" rel="noopener">Inscrição</a>
+      </article>
+    } @empty {
+      <article class="surface event-card">
+        <div>
+          <span>Evento</span>
+          <h2>Em breve</h2>
+        </div>
+        <p>Novas inscrições serão abertas em breve.</p>
       </article>
     }
   </section>

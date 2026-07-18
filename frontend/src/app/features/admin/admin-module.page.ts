@@ -1,7 +1,10 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { LucideCalendarDays, LucidePencil, LucidePlus, LucideTicket, LucideTrash2 } from '@lucide/angular';
+
+import { DnmsApiService } from '../../core/api/dnms-api.service';
+import { EventPayload, EventSummary } from '../../core/models/platform.models';
 
 const labels: Record<string, string> = {
   membros: 'Membros',
@@ -19,26 +22,14 @@ const labels: Record<string, string> = {
   styleUrl: './admin.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AdminModulePage {
+export class AdminModulePage implements OnInit {
+  private readonly api = inject(DnmsApiService);
   private readonly route = inject(ActivatedRoute);
   private readonly fb = inject(FormBuilder);
-  private readonly eventsState = signal<ManagedEvent[]>([
-    {
-      id: 'connect',
-      name: 'Connect Night',
-      startsAt: '2026-09-14',
-      endsAt: '',
-      registrationUrl: 'https://dinamus.recife/eventos/connect',
-    },
-    {
-      id: 'volunteers',
-      name: 'Treinamento de voluntários',
-      startsAt: '2026-09-21',
-      endsAt: '2026-09-22',
-      registrationUrl: 'https://dinamus.recife/eventos/voluntarios',
-    },
-  ]);
+  private readonly eventsState = signal<EventSummary[]>([]);
+
   readonly editingId = signal<string | null>(null);
+  readonly isSaving = signal(false);
   readonly title = computed(() => labels[this.route.snapshot.paramMap.get('module') ?? ''] ?? 'Módulo');
   readonly moduleKey = computed(() => this.route.snapshot.paramMap.get('module') ?? '');
   readonly isEventsModule = computed(() => this.moduleKey() === 'eventos');
@@ -51,30 +42,42 @@ export class AdminModulePage {
     registrationUrl: ['', [Validators.required]],
   });
 
+  ngOnInit() {
+    if (this.isEventsModule()) {
+      this.loadEvents();
+    }
+  }
+
   saveEvent() {
     this.eventForm.markAllAsTouched();
     if (this.eventForm.invalid) {
       return;
     }
 
-    const value = this.eventForm.getRawValue();
+    const value: EventPayload = this.eventForm.getRawValue();
     const editingId = this.editingId();
+    this.isSaving.set(true);
+
     if (editingId) {
-      this.eventsState.update((events) => events.map((event) => (event.id === editingId ? { ...event, ...value } : event)));
-      this.editingId.set(null);
-    } else {
-      this.eventsState.update((events) => [
-        ...events,
-        {
-          id: crypto.randomUUID(),
-          ...value,
+      this.api.updateEvent(editingId, value).subscribe({
+        next: (saved) => {
+          this.eventsState.update((events) => events.map((event) => (event.id === editingId ? saved : event)));
+          this.finishEditing();
         },
-      ]);
+        error: () => this.isSaving.set(false),
+      });
+    } else {
+      this.api.createEvent(value).subscribe({
+        next: (saved) => {
+          this.eventsState.update((events) => [...events, saved]);
+          this.finishEditing();
+        },
+        error: () => this.isSaving.set(false),
+      });
     }
-    this.eventForm.reset();
   }
 
-  editEvent(event: ManagedEvent) {
+  editEvent(event: EventSummary) {
     this.editingId.set(event.id);
     this.eventForm.setValue({
       name: event.name,
@@ -85,18 +88,26 @@ export class AdminModulePage {
   }
 
   deleteEvent(id: string) {
-    this.eventsState.update((events) => events.filter((event) => event.id !== id));
-    if (this.editingId() === id) {
-      this.editingId.set(null);
-      this.eventForm.reset();
-    }
+    this.api.deleteEvent(id).subscribe({
+      next: () => {
+        this.eventsState.update((events) => events.filter((event) => event.id !== id));
+        if (this.editingId() === id) {
+          this.finishEditing();
+        }
+      },
+    });
+  }
+
+  private loadEvents() {
+    this.api.listAdminEvents().subscribe({
+      next: (events) => this.eventsState.set(events),
+      error: () => this.eventsState.set([]),
+    });
+  }
+
+  private finishEditing() {
+    this.editingId.set(null);
+    this.eventForm.reset();
+    this.isSaving.set(false);
   }
 }
-
-type ManagedEvent = {
-  id: string;
-  name: string;
-  startsAt: string;
-  endsAt: string;
-  registrationUrl: string;
-};

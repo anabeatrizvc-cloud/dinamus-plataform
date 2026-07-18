@@ -1,6 +1,7 @@
 package com.dinamus;
 
 import com.dinamus.application.ports.ContentRepository;
+import com.dinamus.domain.model.EventSummary;
 import com.dinamus.domain.model.PrayerRequest;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import io.micronaut.test.support.TestPropertyProvider;
@@ -16,6 +17,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @MicronautTest
 @EnabledIfSystemProperty(named = "dnms.testcontainers", matches = "true")
@@ -51,6 +53,15 @@ class CouchDbPersistenceTest implements TestPropertyProvider {
 
         assertEquals("test-prayer", saved.id());
         assertEquals("received", saved.status());
+    }
+
+    @Test
+    void persistsEventsThroughCouchDbAdapter() {
+        EventSummary event = new EventSummary("test-event", "Evento CouchDB", "2026-11-20", "", "https://dinamus.recife/eventos/couchdb");
+
+        repository.saveEvent(event);
+
+        assertTrue(repository.listEvents().stream().anyMatch(saved -> saved.id().equals("test-event")));
     }
 
     @AfterAll

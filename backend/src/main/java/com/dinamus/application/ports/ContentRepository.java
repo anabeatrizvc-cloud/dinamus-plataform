@@ -15,6 +15,10 @@ public interface ContentRepository {
 
     List<EventSummary> listEvents();
 
+    EventSummary saveEvent(EventSummary event);
+
+    void deleteEvent(String id);
+
     List<GrowthGroup> listGrowthGroups();
 
     PrayerRequest savePrayerRequest(PrayerRequest request);

@@ -1,0 +1,46 @@
+.public-form {
+  display: grid;
+  min-height: 100dvh;
+  align-content: start;
+  gap: 28px;
+}
+
+.panel {
+  display: grid;
+  gap: 28px;
+  max-width: 760px;
+  padding: clamp(24px, 5vw, 44px);
+}
+
+header {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+header svg {
+  width: 54px;
+  height: 54px;
+  color: var(--dnms-accent);
+}
+
+p,
+h1 {
+  margin: 0;
+}
+
+header p {
+  color: var(--dnms-muted);
+  text-transform: uppercase;
+}
+
+h1 {
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  line-height: 1;
+}
+
+.success {
+  border-left: 4px solid var(--dnms-success);
+  color: var(--dnms-text);
+  padding-left: 18px;
+}

@@ -1,0 +1,17 @@
+{
+  "name": "DNMS Platform",
+  "short_name": "DNMS",
+  "theme_color": "#050505",
+  "background_color": "#020202",
+  "display": "standalone",
+  "scope": "/",
+  "start_url": "/",
+  "icons": [
+    {
+      "src": "assets/brand/logo-oficial.png",
+      "sizes": "3375x6000",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

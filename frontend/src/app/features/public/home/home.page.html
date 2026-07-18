@@ -1,0 +1,33 @@
+<main class="home-page">
+  <section class="hero" aria-labelledby="home-title">
+    <img class="wordmark" src="assets/home/wordmark-orange.png" alt="dnms." width="498" height="165" />
+    <p class="city">DINAMUS RECIFE</p>
+    <div class="accent-line" aria-hidden="true"></div>
+    <h1 id="home-title">Uma família de cristãos íntimos de Deus</h1>
+  </section>
+
+  <section class="home-cards" aria-label="Acoes principais">
+    @for (card of cards; track card.path) {
+      <a class="home-card" [routerLink]="card.path" [attr.aria-label]="card.aria">
+        <span class="card-lines" aria-hidden="true"></span>
+        <span class="card-icon">
+          @switch (card.icon) {
+            @case ('users') {
+              <svg lucideUsersRound aria-hidden="true"></svg>
+            }
+            @case ('calendar') {
+              <svg lucideCalendarDays aria-hidden="true"></svg>
+            }
+            @default {
+              <svg lucideTicket aria-hidden="true"></svg>
+            }
+          }
+        </span>
+        <strong>{{ card.label }}</strong>
+        <span>{{ card.description }}</span>
+      </a>
+    }
+  </section>
+
+  <dnms-bottom-nav />
+</main>

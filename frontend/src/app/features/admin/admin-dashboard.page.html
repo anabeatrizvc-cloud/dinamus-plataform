@@ -1,0 +1,64 @@
+<main class="page-shell admin-page">
+  <header class="admin-topbar">
+    <img src="assets/home/wordmark-orange.png" alt="dnms." width="498" height="165" />
+    <nav aria-label="Navegação administrativa">
+      <a routerLink="/admin/dashboard">Painel</a>
+      <a routerLink="/admin/eventos">Eventos</a>
+      <a routerLink="/admin/membros">Membros</a>
+    </nav>
+    <button class="dnms-button secondary" type="button" (click)="auth.logout()">Sair</button>
+  </header>
+
+  <section class="admin-hero" aria-labelledby="admin-title">
+    <div>
+      <p>DNMS Platform</p>
+      <h1 id="admin-title">Painel da igreja</h1>
+      <span>Um espaço calmo para acompanhar pessoas, eventos e rotinas sem perder a essência pastoral.</span>
+    </div>
+    <a class="dnms-button" routerLink="/admin/eventos">Organizar evento</a>
+  </section>
+
+  <section class="highlight-grid" aria-label="Resumo da semana">
+    @for (item of highlights; track item.label) {
+      <article class="surface highlight-card">
+        @switch (item.icon) {
+          @case ('care') {
+            <svg lucideHeartHandshake aria-hidden="true"></svg>
+          }
+          @case ('ticket') {
+            <svg lucideTicket aria-hidden="true"></svg>
+          }
+          @default {
+            <svg lucideUsersRound aria-hidden="true"></svg>
+          }
+        }
+        <strong>{{ item.value }}</strong>
+        <span>{{ item.label }}</span>
+        <p>{{ item.detail }}</p>
+      </article>
+    }
+  </section>
+
+  <section class="module-grid" aria-label="Módulos administrativos">
+    @for (module of modules; track module.path) {
+      <a class="surface module-card" [class.primary]="module.tone === 'primary'" [routerLink]="module.path">
+        @switch (module.icon) {
+          @case ('users') {
+            <svg lucideUsersRound aria-hidden="true"></svg>
+          }
+          @case ('ticket') {
+            <svg lucideTicket aria-hidden="true"></svg>
+          }
+          @case ('calendar') {
+            <svg lucideCalendarDays aria-hidden="true"></svg>
+          }
+          @default {
+            <svg lucideSettings aria-hidden="true"></svg>
+          }
+        }
+        <h2>{{ module.label }}</h2>
+        <span>{{ module.metric }}</span>
+      </a>
+    }
+  </section>
+</main>

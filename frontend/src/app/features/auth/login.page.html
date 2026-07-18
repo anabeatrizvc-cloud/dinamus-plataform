@@ -1,0 +1,28 @@
+<main class="page-shell login-page">
+  <section class="surface panel">
+    <img src="assets/home/wordmark-orange.png" alt="dnms." width="498" height="165" />
+    <header>
+      <svg lucideLogIn aria-hidden="true"></svg>
+      <div>
+        <p>Área administrativa</p>
+        <h1>Entrar</h1>
+      </div>
+    </header>
+
+    <form class="form-grid" [formGroup]="form" (ngSubmit)="submit()">
+      <label class="field">
+        <span>Email</span>
+        <input formControlName="email" autocomplete="email" />
+      </label>
+      <label class="field">
+        <span>Senha</span>
+        <input type="password" formControlName="password" autocomplete="current-password" />
+      </label>
+      @if (error()) {
+        <p class="error-text">{{ error() }}</p>
+      }
+      <button class="dnms-button" type="submit">Entrar</button>
+      <a class="dnms-button secondary" routerLink="/">Voltar para Home</a>
+    </form>
+  </section>
+</main>

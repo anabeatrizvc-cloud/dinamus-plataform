@@ -1,0 +1,26 @@
+<main class="page-shell agenda-page">
+  <header class="agenda-hero">
+    <span>
+      <svg lucideCalendarDays aria-hidden="true"></svg>
+    </span>
+    <div>
+      <p>Encontros da semana</p>
+      <h1>Agenda</h1>
+    </div>
+  </header>
+
+  <section class="agenda-board" aria-label="Agenda fixa">
+    @for (group of schedule; track group.day) {
+      <article class="surface day-card">
+        <h2>{{ group.day }}</h2>
+        <ul>
+          @for (item of group.items; track item) {
+            <li>{{ item }}</li>
+          }
+        </ul>
+      </article>
+    }
+  </section>
+
+  <dnms-bottom-nav [compact]="true" />
+</main>

@@ -1,0 +1,23 @@
+<main class="page-shell gcs-page">
+  <section class="surface gc-panel" aria-labelledby="gcs-title">
+    <div class="copy">
+      <span class="icon-mark">
+        <svg lucideUsersRound aria-hidden="true"></svg>
+      </span>
+      <p>Grupos de conexão</p>
+      <h1 id="gcs-title">Encontre um GC perto de você.</h1>
+      <strong>Um lugar simples para caminhar com gente de verdade, perto da sua rotina.</strong>
+      <span class="hint">Aponte a câmera do celular para o QR Code e veja as opções disponíveis.</span>
+    </div>
+
+    <a class="qr-card" [href]="whatsappUrl" target="_blank" rel="noopener" aria-label="Abrir WhatsApp para encontrar um GC">
+      <img src="assets/gcs/qr-gcs.png" alt="QR Code para encontrar um GC perto de você" width="612" height="612" />
+      <div>
+        <svg lucideQrCode aria-hidden="true"></svg>
+        <span>Escaneie ou toque para chamar</span>
+      </div>
+    </a>
+  </section>
+
+  <dnms-bottom-nav [compact]="true" />
+</main>

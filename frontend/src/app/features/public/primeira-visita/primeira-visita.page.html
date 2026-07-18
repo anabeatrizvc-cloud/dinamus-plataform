@@ -1,0 +1,37 @@
+<main class="page-shell public-form">
+  <section class="surface panel">
+    <header>
+      <svg lucideChurch aria-hidden="true"></svg>
+      <div>
+        <p>Seja bem-vindo</p>
+        <h1>Primeira visita</h1>
+      </div>
+    </header>
+
+    @if (submitted()) {
+      <p class="success">Cadastro recebido. Vamos preparar uma recepção especial para você.</p>
+    } @else {
+      <form class="form-grid" [formGroup]="form" (ngSubmit)="submit()">
+        <label class="field">
+          <span>Nome</span>
+          <input formControlName="name" autocomplete="name" />
+        </label>
+        <label class="field">
+          <span>Telefone</span>
+          <input formControlName="phone" autocomplete="tel" />
+        </label>
+        <label class="field">
+          <span>Email</span>
+          <input formControlName="email" autocomplete="email" />
+        </label>
+        <label class="field">
+          <span>Data da visita</span>
+          <input type="date" formControlName="visitDate" />
+        </label>
+        <button class="dnms-button" type="submit">Confirmar visita</button>
+      </form>
+    }
+  </section>
+
+  <dnms-bottom-nav [compact]="true" />
+</main>

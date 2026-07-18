@@ -1,0 +1,33 @@
+<main class="page-shell public-form">
+  <section class="surface panel">
+    <header>
+      <svg lucideHeartHandshake aria-hidden="true"></svg>
+      <div>
+        <p>Cuidado pastoral</p>
+        <h1>Pedido de oração</h1>
+      </div>
+    </header>
+
+    @if (submitted()) {
+      <p class="success">Recebemos seu pedido. Nossa equipe pastoral vai orar com você.</p>
+    } @else {
+      <form class="form-grid" [formGroup]="form" (ngSubmit)="submit()">
+        <label class="field">
+          <span>Nome</span>
+          <input formControlName="name" autocomplete="name" />
+        </label>
+        <label class="field">
+          <span>Telefone</span>
+          <input formControlName="phone" autocomplete="tel" />
+        </label>
+        <label class="field">
+          <span>Pedido</span>
+          <textarea formControlName="message"></textarea>
+        </label>
+        <button class="dnms-button" type="submit">Enviar pedido</button>
+      </form>
+    }
+  </section>
+
+  <dnms-bottom-nav [compact]="true" />
+</main>

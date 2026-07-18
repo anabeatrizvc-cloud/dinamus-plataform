@@ -1,0 +1,93 @@
+<main class="page-shell admin-page">
+  <header class="admin-topbar">
+    <img src="assets/home/wordmark-orange.png" alt="dnms." width="498" height="165" />
+    <nav aria-label="Navegação administrativa">
+      <a routerLink="/admin/dashboard">Painel</a>
+      <a routerLink="/admin/eventos">Eventos</a>
+      <a routerLink="/admin/membros">Membros</a>
+    </nav>
+    <a class="dnms-button secondary" routerLink="/admin/dashboard">Dashboard</a>
+  </header>
+
+  <section class="admin-hero compact" aria-labelledby="module-title">
+    <div>
+      <p>Administração</p>
+      <h1 id="module-title">{{ title() }}</h1>
+      <span>Organize a operação com clareza, sem transformar cuidado em planilha.</span>
+    </div>
+  </section>
+
+  @if (isEventsModule()) {
+    <section class="events-workspace" aria-label="Administração dos eventos">
+      <form class="surface event-editor" [formGroup]="eventForm" (ngSubmit)="saveEvent()">
+        <header>
+          <svg lucideTicket aria-hidden="true"></svg>
+          <div>
+            <p>{{ editingId() ? 'Editando evento' : 'Novo evento' }}</p>
+            <h2>{{ editingId() ? 'Atualize os detalhes' : 'Crie uma inscrição' }}</h2>
+          </div>
+        </header>
+
+        <label class="field">
+          <span>Nome do evento</span>
+          <input formControlName="name" autocomplete="off" />
+        </label>
+
+        <div class="form-row">
+          <label class="field">
+            <span>Data de início</span>
+            <input type="date" formControlName="startsAt" />
+          </label>
+          <label class="field">
+            <span>Data de término opcional</span>
+            <input type="date" formControlName="endsAt" />
+          </label>
+        </div>
+
+        <label class="field">
+          <span>Link de inscrição</span>
+          <input formControlName="registrationUrl" autocomplete="url" />
+        </label>
+
+        <button class="dnms-button" type="submit">
+          <svg lucidePlus aria-hidden="true"></svg>
+          {{ editingId() ? 'Salvar alterações' : 'Criar evento' }}
+        </button>
+      </form>
+
+      <section class="event-admin-list" aria-label="Eventos cadastrados">
+        @for (event of events(); track event.id) {
+          <article class="surface event-admin-card">
+            <div class="date-pill">
+              <svg lucideCalendarDays aria-hidden="true"></svg>
+              <span>
+                {{ event.startsAt }}
+                @if (event.endsAt) {
+                  <small>até {{ event.endsAt }}</small>
+                }
+              </span>
+            </div>
+            <div class="event-copy">
+              <h2>{{ event.name }}</h2>
+              <a [href]="event.registrationUrl" target="_blank" rel="noopener">{{ event.registrationUrl }}</a>
+            </div>
+            <div class="event-actions">
+              <button type="button" aria-label="Editar evento" (click)="editEvent(event)">
+                <svg lucidePencil aria-hidden="true"></svg>
+              </button>
+              <button type="button" aria-label="Excluir evento" (click)="deleteEvent(event.id)">
+                <svg lucideTrash2 aria-hidden="true"></svg>
+              </button>
+            </div>
+          </article>
+        }
+      </section>
+    </section>
+  } @else {
+    <section class="surface workbench">
+      <strong>{{ title() }}</strong>
+      <p>Este módulo já está reservado na arquitetura da plataforma e seguirá a mesma experiência visual do painel.</p>
+      <button class="dnms-button" type="button">Preparar fluxo</button>
+    </section>
+  }
+</main>

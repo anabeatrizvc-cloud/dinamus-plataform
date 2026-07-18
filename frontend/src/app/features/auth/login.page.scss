@@ -1,0 +1,43 @@
+.login-page {
+  display: grid;
+  min-height: 100dvh;
+  place-items: center;
+}
+
+.panel {
+  display: grid;
+  width: min(100%, 520px);
+  gap: 26px;
+  padding: clamp(24px, 5vw, 42px);
+}
+
+img {
+  width: min(250px, 72%);
+  height: auto;
+  justify-self: center;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+svg {
+  color: var(--dnms-accent);
+}
+
+p,
+h1 {
+  margin: 0;
+}
+
+header p {
+  color: var(--dnms-muted);
+  text-transform: uppercase;
+}
+
+h1 {
+  font-size: 2.5rem;
+  line-height: 1;
+}

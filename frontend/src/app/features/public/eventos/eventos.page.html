@@ -1,0 +1,31 @@
+<main class="page-shell eventos-page">
+  <header class="eventos-hero">
+    <span>
+      <svg lucideTicket aria-hidden="true"></svg>
+    </span>
+    <div>
+      <p>Próximos encontros</p>
+      <h1>Eventos</h1>
+    </div>
+  </header>
+
+  <section class="event-grid" aria-label="Eventos abertos">
+    @for (event of events; track event.id) {
+      <article class="surface event-card">
+        <div>
+          <span>Evento</span>
+          <h2>{{ event.name }}</h2>
+        </div>
+        <p>
+          {{ event.startsAt }}
+          @if (event.endsAt) {
+            <span>ate {{ event.endsAt }}</span>
+          }
+        </p>
+        <a class="dnms-button" [href]="event.registrationUrl" target="_blank" rel="noopener">Inscrição</a>
+      </article>
+    }
+  </section>
+
+  <dnms-bottom-nav [compact]="true" />
+</main>

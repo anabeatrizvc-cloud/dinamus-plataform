@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+backend/node_modules/
+
+# Build outputs
+dist/
+build/
+target/
+.angular/
+coverage/
+playwright-report/
+test-results/
+
+# Local/runtime secrets
+.env
+.env.*
+!.env.example
+docker-compose.vps.generated.yml
+
+# Project prompts and private planning docs
+CODEX_MASTER_PROMPT.md
+*PROMPT*.md
+prompts/
+.codex/
+
+# Design/source docs not intended for deploy repository
+docs/
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/settings.json
+*.iml

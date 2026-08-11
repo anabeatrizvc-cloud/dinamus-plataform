@@ -200,8 +200,8 @@ public class CouchDbAcademicRepository implements AcademicRepository {
     private AcademicState seedState() {
         return new AcademicState(
             List.of(new CourseSummary("curso-fundamentos", "Fundamentos DNMS", "Formacao essencial para novos membros e lideres em desenvolvimento.", "2026-08-20", "2026-10-20", "OPEN")),
-            List.of(new DisciplineSummary("disc-doutrina", "curso-fundamentos", "Doutrina e vida crista", "Aulas praticas sobre fundamentos da fe, rotina devocional e servico.", List.of("professor-demo"), 2, true)),
-            List.of(new EnrollmentSummary("enroll-ana", "disc-doutrina", "aluno-demo", "ACTIVE")),
+            List.of(new DisciplineSummary("disc-doutrina", "curso-fundamentos", "Doutrina e vida crista", "Aulas praticas sobre fundamentos da fe, rotina devocional e servico.", List.of(), 2, true)),
+            List.of(),
             List.of(new LessonSummary("lesson-01", "disc-doutrina", "Identidade e familia espiritual", "2026-08-20", "", ""), new LessonSummary("lesson-02", "disc-doutrina", "Discipulado no cotidiano", "2026-08-27", "", "")),
             List.of(new MaterialSummary("material-01", "disc-doutrina", "lesson-01", "Guia da aula 1", "https://dinamus.recife/materiais/guia-aula-1")),
             List.of(new EvaluationSummary("eval-01", "disc-doutrina", "Resumo aplicado", 1, 10)),

@@ -12,6 +12,8 @@ type ScannerControls = {
   stop: () => void;
 };
 
+type ClassroomView = 'overview' | 'attendance' | 'materials' | 'grades' | 'setup';
+
 @Component({
   selector: 'dnms-classroom-page',
   imports: [ReactiveFormsModule, RouterLink, LucideBookOpen, LucideCalendarDays, LucideCheck, LucideQrCode, LucideUpload],
@@ -31,8 +33,10 @@ export class ClassroomPage implements OnInit {
   readonly workspace = signal<DisciplineWorkspace | null>(null);
   readonly selectedDisciplineId = signal('');
   readonly qrDataUrl = signal('');
+  readonly qrLesson = signal<LessonSummary | null>(null);
   readonly attendanceMessage = signal('');
   readonly scanning = signal(false);
+  readonly activeView = signal<ClassroomView>('attendance');
 
   readonly isTeacher = computed(() => this.auth.hasRole('ADMIN') || this.auth.hasRole('PROFESSOR'));
   readonly visibleDisciplines = computed(() => {
@@ -78,10 +82,15 @@ export class ClassroomPage implements OnInit {
   selectDiscipline(discipline: DisciplineSummary) {
     this.selectedDisciplineId.set(discipline.id);
     this.qrDataUrl.set('');
+    this.qrLesson.set(null);
     this.api.disciplineWorkspace(discipline.id).subscribe({
       next: (workspace) => this.workspace.set(workspace),
       error: () => this.workspace.set(null),
     });
+  }
+
+  setView(view: ClassroomView) {
+    this.activeView.set(view);
   }
 
   createLesson() {
@@ -144,6 +153,8 @@ export class ClassroomPage implements OnInit {
     this.api.generateAttendanceToken(lesson.id).subscribe({
       next: async (saved) => {
         this.workspace.update((current) => (current ? { ...current, lessons: current.lessons.map((item) => (item.id === saved.id ? saved : item)) } : current));
+        this.qrLesson.set(saved);
+        this.activeView.set('attendance');
         this.qrDataUrl.set(await QRCode.toDataURL(saved.attendanceToken, { margin: 1, width: 260, color: { dark: '#020202', light: '#ffffff' } }));
       },
     });
@@ -207,6 +218,32 @@ export class ClassroomPage implements OnInit {
 
   lessonAttendance(lessonId: string) {
     return this.workspace()?.attendance.filter((entry) => entry.lessonId === lessonId) ?? [];
+  }
+
+  pendingLessonAttendance(lessonId: string) {
+    return this.lessonAttendance(lessonId).filter((entry) => entry.status === 'PENDING');
+  }
+
+  lessonMaterialCount(lessonId: string) {
+    return this.workspace()?.materials.filter((material) => material.lessonId === lessonId).length ?? 0;
+  }
+
+  formatDate(value: string) {
+    if (!value) {
+      return 'Sem data';
+    }
+    const [year, month, day] = value.split('-').map(Number);
+    const date = new Date(year, (month ?? 1) - 1, day ?? 1);
+    return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short' }).format(date);
+  }
+
+  attendanceLabel(status: AttendanceEntry['status']) {
+    const labels = {
+      PENDING: 'Aguardando validação',
+      VALIDATED: 'Validada',
+      REJECTED: 'Invalidada',
+    };
+    return labels[status];
   }
 
   studentGrades(studentId: string) {

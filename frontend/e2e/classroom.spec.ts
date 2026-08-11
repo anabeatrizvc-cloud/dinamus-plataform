@@ -43,7 +43,7 @@ const workspace = {
   materials: [{ id: 'material-01', disciplineId: 'disc-doutrina', lessonId: 'lesson-01', title: 'Guia da aula 1', url: 'https://dinamus.recife/materiais/guia' }],
   evaluations: [{ id: 'eval-01', disciplineId: 'disc-doutrina', title: 'Resumo aplicado', weight: 1, maxScore: 10 }],
   grades: [{ id: 'grade-01', evaluationId: 'eval-01', studentId: 'aluno-demo', score: 8.5 }],
-  attendance: [],
+  attendance: [{ id: 'att-1', lessonId: 'lesson-01', studentId: 'aluno-demo', status: 'PENDING', scannedAt: '2026-08-20T10:00:00Z', validatedAt: '' }],
 };
 
 test.beforeEach(async ({ page }) => {
@@ -70,7 +70,7 @@ test('renders classroom workspace and QR action responsively', async ({ page }) 
   await expect(page.getByRole('heading', { name: /cursos, disciplinas e presença/i })).toBeVisible();
   await expect(page.getByRole('button', { name: /doutrina e vida crista/i })).toBeVisible();
   await expect(page.getByRole('heading', { name: /doutrina e vida crista/i })).toBeVisible();
-  await expect(page.locator('.student-row').filter({ hasText: 'Ana Beatriz' })).toBeVisible();
+  await expect(page.locator('.attendance-pill').filter({ hasText: 'Ana Beatriz' })).toBeVisible();
 
   await page.getByRole('button', { name: /gerar qr/i }).click();
   await expect(page.getByRole('img', { name: /qr code de presença/i })).toBeVisible();

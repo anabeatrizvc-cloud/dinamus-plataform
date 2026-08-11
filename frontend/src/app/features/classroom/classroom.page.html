@@ -1,13 +1,13 @@
 <main class="page-shell classroom-page">
   <header class="classroom-topbar">
-    <a routerLink="/">
+    <a class="brand-link" routerLink="/">
       <img src="assets/home/wordmark-orange.png" alt="dnms." width="498" height="165" />
     </a>
-    <div>
+    <div class="topbar-user">
       <span>Área de cursos</span>
       <strong>{{ auth.userName() }}</strong>
     </div>
-    <button class="dnms-button secondary" type="button" (click)="auth.logout()">Sair</button>
+    <button class="dnms-button secondary logout-button" type="button" (click)="auth.logout()">Sair</button>
   </header>
 
   <section class="classroom-hero">
@@ -17,110 +17,223 @@
     </div>
     <div class="hero-metric">
       <svg lucideBookOpen aria-hidden="true"></svg>
-      <span>{{ visibleDisciplines().length }}</span>
-      <small>disciplinas disponíveis</small>
+      <strong>{{ visibleDisciplines().length }}</strong>
+      <span>disciplinas disponíveis</span>
     </div>
   </section>
 
-  <section class="classroom-grid">
+  <section class="classroom-layout">
     <aside class="surface discipline-rail" aria-label="Disciplinas">
-      <strong>Disciplinas</strong>
-      @for (discipline of visibleDisciplines(); track discipline.id) {
-        <button type="button" [class.active]="selectedDisciplineId() === discipline.id" (click)="selectDiscipline(discipline)">
-          <svg lucideCalendarDays aria-hidden="true"></svg>
-          <span>{{ discipline.title }}</span>
-          <small>{{ discipline.usesGrades ? 'Notas e presença' : 'Somente presença' }}</small>
-        </button>
-      } @empty {
-        <p>Nenhuma disciplina disponível para este acesso.</p>
-      }
+      <div class="rail-heading">
+        <strong>Disciplinas</strong>
+        <span>{{ visibleDisciplines().length }} ativas</span>
+      </div>
+      <div class="discipline-list">
+        @for (discipline of visibleDisciplines(); track discipline.id) {
+          <button type="button" [class.active]="selectedDisciplineId() === discipline.id" (click)="selectDiscipline(discipline)">
+            <svg lucideCalendarDays aria-hidden="true"></svg>
+            <span>{{ discipline.title }}</span>
+            <small>{{ discipline.usesGrades ? 'Notas e presença' : 'Somente presença' }}</small>
+          </button>
+        } @empty {
+          <p>Nenhuma disciplina disponível para este acesso.</p>
+        }
+      </div>
     </aside>
 
     @if (workspace(); as data) {
-      <section class="classroom-main">
+      <section class="classroom-workspace">
         <article class="surface discipline-summary">
-          <div>
+          <div class="summary-copy">
             <span>{{ data.course.title }}</span>
             <h2>{{ data.discipline.title }}</h2>
             <p>{{ data.discipline.description }}</p>
           </div>
-          <div class="summary-stats">
+          <div class="summary-stats" aria-label="Resumo da disciplina">
             <span>{{ data.students.length }} alunos</span>
             <span>{{ data.lessons.length }} aulas</span>
             <span>{{ data.discipline.maxAbsences }} faltas limite</span>
           </div>
         </article>
 
-        <section class="panel-grid">
-          <article class="surface panel-card">
-            <header>
-              <svg lucideUpload aria-hidden="true"></svg>
-              <h3>Materiais</h3>
-            </header>
-            @for (material of data.materials; track material.id) {
-              <a class="material-link" [href]="material.url" target="_blank" rel="noopener">{{ material.title }}</a>
-            } @empty {
-              <p>Os materiais aparecerão aqui.</p>
-            }
-          </article>
+        <nav class="surface view-tabs" aria-label="Áreas da disciplina">
+          <button type="button" [class.active]="activeView() === 'attendance'" (click)="setView('attendance')">Presença</button>
+          <button type="button" [class.active]="activeView() === 'overview'" (click)="setView('overview')">Resumo</button>
+          <button type="button" [class.active]="activeView() === 'materials'" (click)="setView('materials')">Materiais</button>
+          <button type="button" [class.active]="activeView() === 'grades'" (click)="setView('grades')">Notas</button>
+          @if (isTeacher()) {
+            <button type="button" [class.active]="activeView() === 'setup'" (click)="setView('setup')">Configurar</button>
+          }
+        </nav>
 
-          <article class="surface panel-card">
-            <header>
-              <svg lucideCheck aria-hidden="true"></svg>
-              <h3>Notas</h3>
-            </header>
-            @for (student of data.students; track student.id) {
-              <div class="student-row">
-                <span>{{ student.name }}</span>
-                <strong>{{ average(student.id) }}</strong>
+        @if (activeView() === 'attendance') {
+          <section class="attendance-workspace">
+            <article class="surface attendance-command">
+              <div class="command-copy">
+                <span>{{ isTeacher() ? 'Presença em aula' : 'Entrada em aula' }}</span>
+                <h3>{{ isTeacher() ? 'Gere o QR Code da aula e acompanhe as confirmações.' : 'Escaneie o QR Code exibido pelo professor.' }}</h3>
+                <p>{{ isTeacher() ? 'Escolha a aula, gere o QR e valide as presenças recebidas quando terminar.' : 'A presença será enviada para validação do professor.' }}</p>
               </div>
-            }
-          </article>
-        </section>
 
-        <section class="surface lessons-panel">
-          <header>
-            <h3>Aulas e presença</h3>
-            @if (isTeacher()) {
-              <span>Gere o QR em aula e valide depois.</span>
-            }
-          </header>
-
-          @for (lesson of data.lessons; track lesson.id) {
-            <article class="lesson-card">
-              <div>
-                <strong>{{ lesson.title }}</strong>
-                <span>{{ lesson.lessonDate }}</span>
-              </div>
               @if (isTeacher()) {
-                <button class="dnms-button secondary" type="button" (click)="generateQr(lesson)">
-                  <svg lucideQrCode aria-hidden="true"></svg>
-                  Gerar QR
-                </button>
-                <button class="dnms-button" type="button" (click)="validateAll(lesson)">Validar todos</button>
-              }
-              <div class="attendance-list">
-                @for (entry of lessonAttendance(lesson.id); track entry.id) {
-                  <span>{{ studentName(entry.studentId) }} · {{ entry.status }}</span>
-                  @if (isTeacher()) {
-                    <button type="button" (click)="validateAttendance(entry, true)">Validar</button>
-                    <button type="button" (click)="validateAttendance(entry, false)">Invalidar</button>
+                <div class="qr-focus" [class.empty]="!qrDataUrl()">
+                  @if (qrDataUrl()) {
+                    <img [src]="qrDataUrl()" alt="QR Code de presença" />
+                    <div>
+                      <strong>{{ qrLesson()?.title }}</strong>
+                      <span>Aberto para leitura dos alunos</span>
+                    </div>
+                  } @else {
+                    <svg lucideQrCode aria-hidden="true"></svg>
+                    <strong>QR ainda não gerado</strong>
+                    <span>Use o botão Gerar QR em uma aula.</span>
                   }
+                </div>
+              } @else {
+                <div class="student-scan">
+                  <video #preview [class.visible]="scanning()" muted playsinline></video>
+                  <form [formGroup]="attendanceForm" (ngSubmit)="scanAttendance()">
+                    <input formControlName="token" placeholder="Código do QR" />
+                    <div class="scan-actions">
+                      <button class="dnms-button" type="button" (click)="startScanner()">Ler QR</button>
+                      <button class="dnms-button secondary" type="submit">Enviar</button>
+                    </div>
+                  </form>
+                  @if (attendanceMessage()) {
+                    <p>{{ attendanceMessage() }}</p>
+                  }
+                </div>
+              }
+            </article>
+
+            <section class="surface lesson-board" aria-label="Aulas e presença">
+              <header>
+                <div>
+                  <span>Plano de aulas</span>
+                  <h3>Aulas e presença</h3>
+                </div>
+                @if (isTeacher()) {
+                  <small>Valide individualmente ou em lote.</small>
+                }
+              </header>
+
+              <div class="lesson-list">
+                @for (lesson of data.lessons; track lesson.id) {
+                  <article class="lesson-item">
+                    <div class="lesson-main">
+                      <time>{{ formatDate(lesson.lessonDate) }}</time>
+                      <div>
+                        <strong>{{ lesson.title }}</strong>
+                        <span>{{ lessonMaterialCount(lesson.id) }} materiais · {{ lessonAttendance(lesson.id).length }} presenças</span>
+                      </div>
+                    </div>
+
+                    @if (isTeacher()) {
+                      <div class="lesson-actions">
+                        <button class="dnms-button secondary" type="button" (click)="generateQr(lesson)">
+                          <svg lucideQrCode aria-hidden="true"></svg>
+                          Gerar QR
+                        </button>
+                        <button class="dnms-button" type="button" (click)="validateAll(lesson)" [disabled]="!pendingLessonAttendance(lesson.id).length">
+                          Validar todos
+                        </button>
+                      </div>
+                    }
+
+                    <div class="attendance-list">
+                      @for (entry of lessonAttendance(lesson.id); track entry.id) {
+                        <div class="attendance-pill" [class.pending]="entry.status === 'PENDING'" [class.validated]="entry.status === 'VALIDATED'" [class.rejected]="entry.status === 'REJECTED'">
+                          <span>{{ studentName(entry.studentId) }}</span>
+                          <strong>{{ attendanceLabel(entry.status) }}</strong>
+                          @if (isTeacher()) {
+                            <div>
+                              <button type="button" (click)="validateAttendance(entry, true)">Validar</button>
+                              <button type="button" (click)="validateAttendance(entry, false)">Invalidar</button>
+                            </div>
+                          }
+                        </div>
+                      } @empty {
+                        <p class="empty-state">Nenhuma presença enviada nesta aula.</p>
+                      }
+                    </div>
+                  </article>
+                } @empty {
+                  <p class="empty-state">As aulas cadastradas aparecerão aqui.</p>
                 }
               </div>
-            </article>
-          }
-        </section>
-
-        @if (qrDataUrl()) {
-          <section class="surface qr-stage" aria-label="QR Code de presença">
-            <img [src]="qrDataUrl()" alt="QR Code de presença" />
-            <p>Aluno logado escaneia pela plataforma para enviar a presença.</p>
+            </section>
           </section>
         }
 
-        @if (isTeacher()) {
-          <section class="teacher-tools">
+        @if (activeView() === 'overview') {
+          <section class="overview-grid">
+            <article class="surface insight-card">
+              <span>Turma</span>
+              <strong>{{ data.students.length }}</strong>
+              <p>alunos matriculados nesta disciplina.</p>
+            </article>
+            <article class="surface insight-card">
+              <span>Presenças recebidas</span>
+              <strong>{{ data.attendance.length }}</strong>
+              <p>registros enviados pelos alunos.</p>
+            </article>
+            <article class="surface insight-card">
+              <span>Avaliação</span>
+              <strong>{{ data.discipline.usesGrades ? 'Com notas' : 'Por presença' }}</strong>
+              <p>modelo definido para a disciplina.</p>
+            </article>
+          </section>
+        }
+
+        @if (activeView() === 'materials') {
+          <section class="surface panel-card">
+            <header>
+              <svg lucideUpload aria-hidden="true"></svg>
+              <div>
+                <span>Biblioteca da disciplina</span>
+                <h3>Materiais</h3>
+              </div>
+            </header>
+            <div class="material-list">
+              @for (material of data.materials; track material.id) {
+                <a class="material-link" [href]="material.url" target="_blank" rel="noopener">
+                  <strong>{{ material.title }}</strong>
+                  <span>{{ material.lessonId ? 'Material de aula' : 'Geral da disciplina' }}</span>
+                </a>
+              } @empty {
+                <p class="empty-state">Os materiais aparecerão aqui.</p>
+              }
+            </div>
+          </section>
+        }
+
+        @if (activeView() === 'grades') {
+          <section class="surface panel-card">
+            <header>
+              <svg lucideCheck aria-hidden="true"></svg>
+              <div>
+                <span>Desempenho</span>
+                <h3>Notas</h3>
+              </div>
+            </header>
+            <div class="student-list">
+              @for (student of data.students; track student.id) {
+                <div class="student-row">
+                  <div>
+                    <strong>{{ student.name }}</strong>
+                    <span>{{ studentGrades(student.id).length }} notas lançadas</span>
+                  </div>
+                  <strong>{{ average(student.id) }}</strong>
+                </div>
+              } @empty {
+                <p class="empty-state">Nenhum aluno matriculado nesta disciplina.</p>
+              }
+            </div>
+          </section>
+        }
+
+        @if (isTeacher() && activeView() === 'setup') {
+          <section class="teacher-tools" aria-label="Configuração da disciplina">
             <form class="surface tool-card" [formGroup]="lessonForm" (ngSubmit)="createLesson()">
               <strong>Nova aula</strong>
               <input formControlName="title" placeholder="Tema da aula" />
@@ -166,22 +279,6 @@
               <input type="number" formControlName="score" placeholder="Nota" />
               <button class="dnms-button" type="submit">Salvar</button>
             </form>
-          </section>
-        } @else {
-          <section class="surface student-scan">
-            <header>
-              <svg lucideQrCode aria-hidden="true"></svg>
-              <h3>Marcar presença</h3>
-            </header>
-            <video #preview [class.visible]="scanning()" muted playsinline></video>
-            <form [formGroup]="attendanceForm" (ngSubmit)="scanAttendance()">
-              <input formControlName="token" placeholder="Código do QR" />
-              <button class="dnms-button" type="button" (click)="startScanner()">Ler QR</button>
-              <button class="dnms-button secondary" type="submit">Enviar</button>
-            </form>
-            @if (attendanceMessage()) {
-              <p>{{ attendanceMessage() }}</p>
-            }
           </section>
         }
       </section>

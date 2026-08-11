@@ -5,6 +5,7 @@
       <a routerLink="/admin/dashboard">Painel</a>
       <a routerLink="/admin/eventos">Eventos</a>
       <a routerLink="/admin/membros">Membros</a>
+      <a routerLink="/admin/cursos">Cursos</a>
     </nav>
     <button class="dnms-button secondary" type="button" (click)="auth.logout()">Sair</button>
   </header>
@@ -51,6 +52,9 @@
           }
           @case ('calendar') {
             <svg lucideCalendarDays aria-hidden="true"></svg>
+          }
+          @case ('book') {
+            <svg lucideBookOpen aria-hidden="true"></svg>
           }
           @default {
             <svg lucideSettings aria-hidden="true"></svg>

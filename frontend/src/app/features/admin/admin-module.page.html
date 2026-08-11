@@ -5,6 +5,7 @@
       <a routerLink="/admin/dashboard">Painel</a>
       <a routerLink="/admin/eventos">Eventos</a>
       <a routerLink="/admin/membros">Membros</a>
+      <a routerLink="/admin/cursos">Cursos</a>
     </nav>
     <a class="dnms-button secondary" routerLink="/admin/dashboard">Dashboard</a>
   </header>
@@ -85,6 +86,192 @@
             <div class="event-copy">
               <h2>Nenhum evento cadastrado</h2>
               <a>Crie o primeiro evento para exibir na página pública.</a>
+            </div>
+          </article>
+        }
+      </section>
+    </section>
+  } @else if (isMembersModule()) {
+    <section class="events-workspace" aria-label="Administração dos membros">
+      <form class="surface event-editor" [formGroup]="memberForm" (ngSubmit)="saveMember()">
+        <header>
+          <svg lucideUsersRound aria-hidden="true"></svg>
+          <div>
+            <p>{{ editingId() ? 'Editando membro' : 'Novo membro' }}</p>
+            <h2>Cadastro e acesso</h2>
+          </div>
+        </header>
+
+        <label class="field">
+          <span>Nome</span>
+          <input formControlName="name" autocomplete="name" />
+        </label>
+
+        <div class="form-row">
+          <label class="field">
+            <span>Telefone</span>
+            <input formControlName="phone" autocomplete="tel" />
+          </label>
+          <label class="field">
+            <span>E-mail opcional</span>
+            <input formControlName="email" autocomplete="email" />
+          </label>
+        </div>
+
+        <div class="role-row" aria-label="Funções do membro">
+          <label><input type="checkbox" formControlName="admin" /> Administrador</label>
+          <label><input type="checkbox" formControlName="professor" /> Professor</label>
+          <label><input type="checkbox" formControlName="active" /> Ativo</label>
+        </div>
+
+        <button class="dnms-button" type="submit" [disabled]="isSaving()">
+          <svg lucidePlus aria-hidden="true"></svg>
+          {{ editingId() ? 'Salvar membro' : 'Cadastrar membro' }}
+        </button>
+      </form>
+
+      <section class="event-admin-list" aria-label="Membros cadastrados">
+        @for (member of members(); track member.id) {
+          <article class="surface event-admin-card">
+            <div class="date-pill member-pill">
+              <svg lucideUsersRound aria-hidden="true"></svg>
+              <span>
+                {{ member.roles.join(' · ') }}
+                <small>{{ member.active ? 'Acesso ativo' : 'Aguardando senha' }}</small>
+              </span>
+            </div>
+            <div class="event-copy">
+              <h2>{{ member.name }}</h2>
+              <a>{{ member.phone }}</a>
+              @if (member.email) {
+                <a>{{ member.email }}</a>
+              }
+              @if (member.invitePending) {
+                <small class="setup-token">Convite: /setup-password?token={{ member.setupToken }}</small>
+              }
+            </div>
+            <div class="event-actions">
+              <button type="button" aria-label="Editar membro" (click)="editMember(member)">
+                <svg lucidePencil aria-hidden="true"></svg>
+              </button>
+              <button type="button" aria-label="Excluir membro" (click)="deleteMember(member.id)">
+                <svg lucideTrash2 aria-hidden="true"></svg>
+              </button>
+            </div>
+          </article>
+        }
+      </section>
+    </section>
+  } @else if (isCoursesModule()) {
+    <section class="academic-workspace" aria-label="Administração dos cursos">
+      <form class="surface event-editor" [formGroup]="courseForm" (ngSubmit)="saveCourse()">
+        <header>
+          <svg lucideBookOpen aria-hidden="true"></svg>
+          <div>
+            <p>Curso</p>
+            <h2>Nova jornada</h2>
+          </div>
+        </header>
+        <label class="field">
+          <span>Nome do curso</span>
+          <input formControlName="title" />
+        </label>
+        <label class="field">
+          <span>Descrição</span>
+          <textarea formControlName="description"></textarea>
+        </label>
+        <div class="form-row">
+          <label class="field">
+            <span>Início</span>
+            <input type="date" formControlName="startsAt" />
+          </label>
+          <label class="field">
+            <span>Término</span>
+            <input type="date" formControlName="endsAt" />
+          </label>
+        </div>
+        <button class="dnms-button" type="submit" [disabled]="isSaving()">
+          <svg lucidePlus aria-hidden="true"></svg>
+          Criar curso
+        </button>
+      </form>
+
+      <form class="surface event-editor" [formGroup]="disciplineForm" (ngSubmit)="saveDiscipline()">
+        <header>
+          <svg lucideCalendarDays aria-hidden="true"></svg>
+          <div>
+            <p>Disciplina</p>
+            <h2>Aulas e regras</h2>
+          </div>
+        </header>
+        <label class="field">
+          <span>Curso</span>
+          <select formControlName="courseId">
+            <option value="">Selecione</option>
+            @for (course of courses(); track course.id) {
+              <option [value]="course.id">{{ course.title }}</option>
+            }
+          </select>
+        </label>
+        <label class="field">
+          <span>Nome da disciplina</span>
+          <input formControlName="title" />
+        </label>
+        <label class="field">
+          <span>Professor</span>
+          <select formControlName="teacherId">
+            <option value="">Definir depois</option>
+            @for (professor of professors(); track professor.id) {
+              <option [value]="professor.id">{{ professor.name }}</option>
+            }
+          </select>
+        </label>
+        <div class="form-row">
+          <label class="field">
+            <span>Faltas permitidas</span>
+            <input type="number" min="0" formControlName="maxAbsences" />
+          </label>
+          <label class="field">
+            <span>Avaliação</span>
+            <select formControlName="usesGrades">
+              <option [ngValue]="true">Com notas</option>
+              <option [ngValue]="false">Somente presença</option>
+            </select>
+          </label>
+        </div>
+        <button class="dnms-button secondary" type="submit" [disabled]="isSaving()">Criar disciplina</button>
+      </form>
+
+      <section class="event-admin-list academic-list" aria-label="Cursos e disciplinas">
+        <form class="surface enrollment-card" [formGroup]="enrollmentForm" (ngSubmit)="enrollStudent()">
+          <strong>Matricular aluno</strong>
+          <select formControlName="disciplineId">
+            <option value="">Disciplina</option>
+            @for (discipline of disciplines(); track discipline.id) {
+              <option [value]="discipline.id">{{ discipline.title }}</option>
+            }
+          </select>
+          <select formControlName="studentId">
+            <option value="">Aluno</option>
+            @for (student of students(); track student.id) {
+              <option [value]="student.id">{{ student.name }}</option>
+            }
+          </select>
+          <button class="dnms-button" type="submit">Matricular</button>
+        </form>
+
+        @for (discipline of disciplines(); track discipline.id) {
+          <article class="surface event-admin-card">
+            <div class="date-pill">
+              <svg lucideBookOpen aria-hidden="true"></svg>
+              <span>
+                {{ courseTitle(discipline.courseId) }}
+                <small>{{ discipline.maxAbsences }} faltas permitidas</small>
+              </span>
+            </div>
+            <div class="event-copy">
+              <h2>{{ discipline.title }}</h2>
+              <a>{{ teacherNames(discipline.teacherIds) }} · {{ discipline.usesGrades ? 'com notas' : 'somente presença' }}</a>
             </div>
           </article>
         }

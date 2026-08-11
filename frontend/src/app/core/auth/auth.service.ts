@@ -21,6 +21,14 @@ export class AuthService {
     return this.api.login(email, password).pipe(tap((session) => this.persist(session)));
   }
 
+  setupPassword(token: string, password: string) {
+    return this.api.setupPassword(token, password).pipe(tap((session) => this.persist(session)));
+  }
+
+  hasRole(role: string) {
+    return Boolean(this.sessionState()?.user.roles.some((item) => item === role));
+  }
+
   logout() {
     localStorage.removeItem(STORAGE_KEY);
     this.sessionState.set(null);

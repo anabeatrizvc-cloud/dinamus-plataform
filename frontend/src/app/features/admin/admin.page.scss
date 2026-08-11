@@ -153,6 +153,13 @@ strong {
   gap: 18px;
 }
 
+.academic-workspace {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.78fr) minmax(260px, 0.78fr) minmax(0, 1.3fr);
+  gap: 18px;
+  align-items: start;
+}
+
 .event-editor,
 .event-admin-card,
 .workbench {
@@ -185,6 +192,24 @@ strong {
 .event-editor .dnms-button svg {
   width: 18px;
   height: 18px;
+}
+
+.role-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.role-row label {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--dnms-border);
+  border-radius: 14px;
+  background: rgba(5, 5, 5, 0.72);
+  color: var(--dnms-muted);
+  padding: 0 12px;
 }
 
 .form-row {
@@ -253,6 +278,19 @@ strong {
   white-space: nowrap;
 }
 
+.event-copy small,
+.setup-token {
+  display: block;
+  margin-top: 8px;
+  color: var(--dnms-accent);
+  font-size: 0.78rem;
+  overflow-wrap: anywhere;
+}
+
+.member-pill {
+  min-width: 190px;
+}
+
 .event-actions {
   display: flex;
   gap: 8px;
@@ -290,6 +328,32 @@ strong {
   line-height: 1.7;
 }
 
+.academic-list {
+  align-self: stretch;
+}
+
+.enrollment-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 10px;
+  padding: 18px;
+}
+
+.enrollment-card strong {
+  grid-column: 1 / -1;
+  font-size: 1.2rem;
+}
+
+.enrollment-card select {
+  min-height: 46px;
+  border: 1px solid var(--dnms-border);
+  border-radius: 12px;
+  background: #050505;
+  color: var(--dnms-text);
+  padding: 0 12px;
+}
+
 @media (max-width: 980px) {
   .admin-topbar {
     grid-template-columns: 1fr auto;
@@ -304,7 +368,8 @@ strong {
   }
 
   .admin-hero,
-  .events-workspace {
+  .events-workspace,
+  .academic-workspace {
     grid-template-columns: 1fr;
   }
 
@@ -348,6 +413,8 @@ strong {
   }
 
   .form-row,
+  .role-row,
+  .enrollment-card,
   .event-admin-card {
     grid-template-columns: 1fr;
   }

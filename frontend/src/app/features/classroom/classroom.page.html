@@ -1,0 +1,190 @@
+<main class="page-shell classroom-page">
+  <header class="classroom-topbar">
+    <a routerLink="/">
+      <img src="assets/home/wordmark-orange.png" alt="dnms." width="498" height="165" />
+    </a>
+    <div>
+      <span>Área de cursos</span>
+      <strong>{{ auth.userName() }}</strong>
+    </div>
+    <button class="dnms-button secondary" type="button" (click)="auth.logout()">Sair</button>
+  </header>
+
+  <section class="classroom-hero">
+    <div>
+      <p>Formação DNMS</p>
+      <h1>Cursos, disciplinas e presença em um só lugar.</h1>
+    </div>
+    <div class="hero-metric">
+      <svg lucideBookOpen aria-hidden="true"></svg>
+      <span>{{ visibleDisciplines().length }}</span>
+      <small>disciplinas disponíveis</small>
+    </div>
+  </section>
+
+  <section class="classroom-grid">
+    <aside class="surface discipline-rail" aria-label="Disciplinas">
+      <strong>Disciplinas</strong>
+      @for (discipline of visibleDisciplines(); track discipline.id) {
+        <button type="button" [class.active]="selectedDisciplineId() === discipline.id" (click)="selectDiscipline(discipline)">
+          <svg lucideCalendarDays aria-hidden="true"></svg>
+          <span>{{ discipline.title }}</span>
+          <small>{{ discipline.usesGrades ? 'Notas e presença' : 'Somente presença' }}</small>
+        </button>
+      } @empty {
+        <p>Nenhuma disciplina disponível para este acesso.</p>
+      }
+    </aside>
+
+    @if (workspace(); as data) {
+      <section class="classroom-main">
+        <article class="surface discipline-summary">
+          <div>
+            <span>{{ data.course.title }}</span>
+            <h2>{{ data.discipline.title }}</h2>
+            <p>{{ data.discipline.description }}</p>
+          </div>
+          <div class="summary-stats">
+            <span>{{ data.students.length }} alunos</span>
+            <span>{{ data.lessons.length }} aulas</span>
+            <span>{{ data.discipline.maxAbsences }} faltas limite</span>
+          </div>
+        </article>
+
+        <section class="panel-grid">
+          <article class="surface panel-card">
+            <header>
+              <svg lucideUpload aria-hidden="true"></svg>
+              <h3>Materiais</h3>
+            </header>
+            @for (material of data.materials; track material.id) {
+              <a class="material-link" [href]="material.url" target="_blank" rel="noopener">{{ material.title }}</a>
+            } @empty {
+              <p>Os materiais aparecerão aqui.</p>
+            }
+          </article>
+
+          <article class="surface panel-card">
+            <header>
+              <svg lucideCheck aria-hidden="true"></svg>
+              <h3>Notas</h3>
+            </header>
+            @for (student of data.students; track student.id) {
+              <div class="student-row">
+                <span>{{ student.name }}</span>
+                <strong>{{ average(student.id) }}</strong>
+              </div>
+            }
+          </article>
+        </section>
+
+        <section class="surface lessons-panel">
+          <header>
+            <h3>Aulas e presença</h3>
+            @if (isTeacher()) {
+              <span>Gere o QR em aula e valide depois.</span>
+            }
+          </header>
+
+          @for (lesson of data.lessons; track lesson.id) {
+            <article class="lesson-card">
+              <div>
+                <strong>{{ lesson.title }}</strong>
+                <span>{{ lesson.lessonDate }}</span>
+              </div>
+              @if (isTeacher()) {
+                <button class="dnms-button secondary" type="button" (click)="generateQr(lesson)">
+                  <svg lucideQrCode aria-hidden="true"></svg>
+                  Gerar QR
+                </button>
+                <button class="dnms-button" type="button" (click)="validateAll(lesson)">Validar todos</button>
+              }
+              <div class="attendance-list">
+                @for (entry of lessonAttendance(lesson.id); track entry.id) {
+                  <span>{{ studentName(entry.studentId) }} · {{ entry.status }}</span>
+                  @if (isTeacher()) {
+                    <button type="button" (click)="validateAttendance(entry, true)">Validar</button>
+                    <button type="button" (click)="validateAttendance(entry, false)">Invalidar</button>
+                  }
+                }
+              </div>
+            </article>
+          }
+        </section>
+
+        @if (qrDataUrl()) {
+          <section class="surface qr-stage" aria-label="QR Code de presença">
+            <img [src]="qrDataUrl()" alt="QR Code de presença" />
+            <p>Aluno logado escaneia pela plataforma para enviar a presença.</p>
+          </section>
+        }
+
+        @if (isTeacher()) {
+          <section class="teacher-tools">
+            <form class="surface tool-card" [formGroup]="lessonForm" (ngSubmit)="createLesson()">
+              <strong>Nova aula</strong>
+              <input formControlName="title" placeholder="Tema da aula" />
+              <input type="date" formControlName="lessonDate" />
+              <button class="dnms-button" type="submit">Adicionar</button>
+            </form>
+
+            <form class="surface tool-card" [formGroup]="materialForm" (ngSubmit)="addMaterial()">
+              <strong>Novo material</strong>
+              <select formControlName="lessonId">
+                <option value="">Geral da disciplina</option>
+                @for (lesson of data.lessons; track lesson.id) {
+                  <option [value]="lesson.id">{{ lesson.title }}</option>
+                }
+              </select>
+              <input formControlName="title" placeholder="Nome do material" />
+              <input formControlName="url" placeholder="Link do material" />
+              <button class="dnms-button" type="submit">Subir link</button>
+            </form>
+
+            <form class="surface tool-card" [formGroup]="evaluationForm" (ngSubmit)="addEvaluation()">
+              <strong>Avaliação</strong>
+              <input formControlName="title" placeholder="Nome da avaliação" />
+              <input type="number" formControlName="weight" placeholder="Peso" />
+              <input type="number" formControlName="maxScore" placeholder="Nota máxima" />
+              <button class="dnms-button" type="submit">Criar</button>
+            </form>
+
+            <form class="surface tool-card" [formGroup]="gradeForm" (ngSubmit)="saveGrade()">
+              <strong>Lançar nota</strong>
+              <select formControlName="evaluationId">
+                <option value="">Avaliação</option>
+                @for (evaluation of data.evaluations; track evaluation.id) {
+                  <option [value]="evaluation.id">{{ evaluation.title }}</option>
+                }
+              </select>
+              <select formControlName="studentId">
+                <option value="">Aluno</option>
+                @for (student of data.students; track student.id) {
+                  <option [value]="student.id">{{ student.name }}</option>
+                }
+              </select>
+              <input type="number" formControlName="score" placeholder="Nota" />
+              <button class="dnms-button" type="submit">Salvar</button>
+            </form>
+          </section>
+        } @else {
+          <section class="surface student-scan">
+            <header>
+              <svg lucideQrCode aria-hidden="true"></svg>
+              <h3>Marcar presença</h3>
+            </header>
+            <video #preview [class.visible]="scanning()" muted playsinline></video>
+            <form [formGroup]="attendanceForm" (ngSubmit)="scanAttendance()">
+              <input formControlName="token" placeholder="Código do QR" />
+              <button class="dnms-button" type="button" (click)="startScanner()">Ler QR</button>
+              <button class="dnms-button secondary" type="submit">Enviar</button>
+            </form>
+            @if (attendanceMessage()) {
+              <p>{{ attendanceMessage() }}</p>
+            }
+          </section>
+        }
+      </section>
+    }
+  </section>
+</main>

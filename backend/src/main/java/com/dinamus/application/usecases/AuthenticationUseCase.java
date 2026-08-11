@@ -1,7 +1,7 @@
 package com.dinamus.application.usecases;
 
 import com.dinamus.application.ports.AuthTokenPort;
-import com.dinamus.application.ports.ContentRepository;
+import com.dinamus.application.ports.IdentityRepository;
 import com.dinamus.application.ports.PasswordHasher;
 import com.dinamus.domain.model.UserAccount;
 import jakarta.inject.Singleton;
@@ -10,11 +10,11 @@ import java.util.List;
 
 @Singleton
 public class AuthenticationUseCase {
-    private final ContentRepository repository;
+    private final IdentityRepository repository;
     private final PasswordHasher passwordHasher;
     private final AuthTokenPort tokenPort;
 
-    public AuthenticationUseCase(ContentRepository repository, PasswordHasher passwordHasher, AuthTokenPort tokenPort) {
+    public AuthenticationUseCase(IdentityRepository repository, PasswordHasher passwordHasher, AuthTokenPort tokenPort) {
         this.repository = repository;
         this.passwordHasher = passwordHasher;
         this.tokenPort = tokenPort;

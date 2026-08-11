@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 
+import { adminGuard } from './core/auth/admin.guard';
 import { authGuard } from './core/auth/auth.guard';
 
 export const routes: Routes = [
@@ -39,8 +40,19 @@ export const routes: Routes = [
     title: 'Entrar | DNMS',
   },
   {
-    path: 'admin',
+    path: 'setup-password',
+    loadComponent: () => import('./features/auth/setup-password.page').then((m) => m.SetupPasswordPage),
+    title: 'Criar senha | DNMS',
+  },
+  {
+    path: 'cursos',
     canActivate: [authGuard],
+    loadComponent: () => import('./features/classroom/classroom.page').then((m) => m.ClassroomPage),
+    title: 'Cursos | DNMS',
+  },
+  {
+    path: 'admin',
+    canActivate: [authGuard, adminGuard],
     children: [
       {
         path: '',

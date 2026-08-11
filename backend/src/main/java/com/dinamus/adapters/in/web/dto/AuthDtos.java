@@ -16,6 +16,10 @@ public final class AuthDtos {
     }
 
     @Serdeable
+    public record SetupPasswordRequest(@NotBlank String token, @NotBlank @Size(min = 8) String password) {
+    }
+
+    @Serdeable
     public record LoginResponse(String accessToken, String refreshToken, UserDto user) {
     }
 

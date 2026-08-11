@@ -2,8 +2,12 @@ package com.dinamus;
 
 import com.dinamus.adapters.in.web.AdminController;
 import com.dinamus.adapters.in.web.dto.AuthDtos;
+import com.dinamus.domain.model.AttendanceEntry;
 import com.dinamus.domain.model.AgendaItem;
+import com.dinamus.domain.model.ClassroomDashboard;
 import com.dinamus.domain.model.EventSummary;
+import com.dinamus.domain.model.LessonSummary;
+import com.dinamus.domain.model.MemberSummary;
 import io.micronaut.core.type.Argument;
 import io.micronaut.http.HttpRequest;
 import io.micronaut.http.HttpStatus;
@@ -86,6 +90,75 @@ class PlatformApiTest {
     }
 
     @Test
+    void professorGeneratesQrAndStudentMarksAttendance() {
+        AuthDtos.LoginResponse professor = login("professor@dinamus.local", "dnms-prof");
+        AuthDtos.LoginResponse student = login("aluno@dinamus.local", "dnms-aluno");
+
+        ClassroomDashboard professorDashboard = client.toBlocking().retrieve(
+            HttpRequest.GET("/api/v1/classroom").bearerAuth(professor.accessToken()),
+            ClassroomDashboard.class
+        );
+
+        String disciplineId = professorDashboard.teachingDisciplines().getFirst().id();
+        LessonSummary lesson = client.toBlocking().retrieve(
+            HttpRequest.POST("/api/v1/classroom/teacher/lessons", Map.of(
+                "disciplineId", disciplineId,
+                "title", "Aula com QR",
+                "lessonDate", "2026-09-01"
+            )).bearerAuth(professor.accessToken()),
+            LessonSummary.class
+        );
+
+        LessonSummary withToken = client.toBlocking().retrieve(
+            HttpRequest.POST("/api/v1/classroom/teacher/lessons/" + lesson.id() + "/attendance-token", Map.of()).bearerAuth(professor.accessToken()),
+            LessonSummary.class
+        );
+
+        AttendanceEntry pending = client.toBlocking().retrieve(
+            HttpRequest.POST("/api/v1/classroom/attendance/scan", Map.of("token", withToken.attendanceToken())).bearerAuth(student.accessToken()),
+            AttendanceEntry.class
+        );
+
+        assertEquals("PENDING", pending.status());
+
+        AttendanceEntry validated = client.toBlocking().retrieve(
+            HttpRequest.POST("/api/v1/classroom/teacher/attendance/" + pending.id() + "/validate", Map.of("present", true)).bearerAuth(professor.accessToken()),
+            AttendanceEntry.class
+        );
+
+        assertEquals("VALIDATED", validated.status());
+    }
+
+    @Test
+    void adminCanCreateMemberInviteAndSetupPassword() {
+        AuthDtos.LoginResponse admin = login();
+
+        MemberSummary created = client.toBlocking().retrieve(
+            HttpRequest.POST("/api/v1/admin/members", Map.of(
+                "name", "Aluno Convidado",
+                "phone", "81999993333",
+                "email", "convidado@dinamus.local",
+                "roles", List.of("MEMBRO"),
+                "active", true
+            )).bearerAuth(admin.accessToken()),
+            MemberSummary.class
+        );
+
+        assertTrue(created.invitePending());
+
+        AuthDtos.LoginResponse session = client.toBlocking().retrieve(
+            HttpRequest.POST("/api/v1/auth/setup-password", Map.of(
+                "token", created.setupToken(),
+                "password", "senha-aluno"
+            )),
+            AuthDtos.LoginResponse.class
+        );
+
+        assertEquals("convidado@dinamus.local", session.user().email());
+        assertTrue(session.user().roles().contains("MEMBRO"));
+    }
+
+    @Test
     void adminDashboardRequiresToken() {
         HttpClientResponseException exception = assertThrows(HttpClientResponseException.class, () ->
             client.toBlocking().exchange(HttpRequest.GET("/api/v1/admin/dashboard"), String.class)
@@ -108,8 +181,12 @@ class PlatformApiTest {
     }
 
     private AuthDtos.LoginResponse login() {
+        return login("admin@dinamus.local", "dnms-admin");
+    }
+
+    private AuthDtos.LoginResponse login(String email, String password) {
         return client.toBlocking().retrieve(
-            HttpRequest.POST("/api/v1/auth/login", Map.of("email", "admin@dinamus.local", "password", "dnms-admin")),
+            HttpRequest.POST("/api/v1/auth/login", Map.of("email", email, "password", password)),
             AuthDtos.LoginResponse.class
         );
     }

@@ -1,14 +1,15 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { LucideCalendarDays, LucidePencil, LucidePlus, LucideTicket, LucideTrash2 } from '@lucide/angular';
+import { LucideBookOpen, LucideCalendarDays, LucidePencil, LucidePlus, LucideTicket, LucideTrash2, LucideUsersRound } from '@lucide/angular';
 
 import { DnmsApiService } from '../../core/api/dnms-api.service';
-import { EventPayload, EventSummary } from '../../core/models/platform.models';
+import { CourseSummary, DisciplineSummary, EventPayload, EventSummary, MemberPayload, MemberSummary, Role } from '../../core/models/platform.models';
 
 const labels: Record<string, string> = {
   membros: 'Membros',
   eventos: 'Eventos',
+  cursos: 'Cursos',
   agenda: 'Agenda',
   gcs: 'GCs',
   voluntariado: 'Voluntariado',
@@ -17,7 +18,7 @@ const labels: Record<string, string> = {
 
 @Component({
   selector: 'dnms-admin-module-page',
-  imports: [RouterLink, ReactiveFormsModule, LucideTicket, LucidePlus, LucidePencil, LucideTrash2, LucideCalendarDays],
+  imports: [RouterLink, ReactiveFormsModule, LucideTicket, LucidePlus, LucidePencil, LucideTrash2, LucideCalendarDays, LucideUsersRound, LucideBookOpen],
   templateUrl: './admin-module.page.html',
   styleUrl: './admin.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -27,13 +28,23 @@ export class AdminModulePage implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly fb = inject(FormBuilder);
   private readonly eventsState = signal<EventSummary[]>([]);
+  private readonly membersState = signal<MemberSummary[]>([]);
+  private readonly coursesState = signal<CourseSummary[]>([]);
+  private readonly disciplinesState = signal<DisciplineSummary[]>([]);
 
   readonly editingId = signal<string | null>(null);
   readonly isSaving = signal(false);
   readonly title = computed(() => labels[this.route.snapshot.paramMap.get('module') ?? ''] ?? 'Módulo');
   readonly moduleKey = computed(() => this.route.snapshot.paramMap.get('module') ?? '');
   readonly isEventsModule = computed(() => this.moduleKey() === 'eventos');
+  readonly isMembersModule = computed(() => this.moduleKey() === 'membros');
+  readonly isCoursesModule = computed(() => this.moduleKey() === 'cursos');
   readonly events = this.eventsState.asReadonly();
+  readonly members = this.membersState.asReadonly();
+  readonly courses = this.coursesState.asReadonly();
+  readonly disciplines = this.disciplinesState.asReadonly();
+  readonly professors = computed(() => this.members().filter((member) => member.roles.includes('PROFESSOR')));
+  readonly students = computed(() => this.members().filter((member) => member.roles.includes('MEMBRO')));
 
   readonly eventForm = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.minLength(3)]],
@@ -42,9 +53,46 @@ export class AdminModulePage implements OnInit {
     registrationUrl: ['', [Validators.required]],
   });
 
+  readonly memberForm = this.fb.nonNullable.group({
+    name: ['', [Validators.required, Validators.minLength(3)]],
+    phone: ['', [Validators.required]],
+    email: ['', [Validators.email]],
+    active: [true],
+    admin: [false],
+    professor: [false],
+  });
+
+  readonly courseForm = this.fb.nonNullable.group({
+    title: ['', [Validators.required, Validators.minLength(3)]],
+    description: [''],
+    startsAt: ['', [Validators.required]],
+    endsAt: [''],
+    status: ['OPEN'],
+  });
+
+  readonly disciplineForm = this.fb.nonNullable.group({
+    courseId: ['', [Validators.required]],
+    title: ['', [Validators.required, Validators.minLength(3)]],
+    description: [''],
+    teacherId: [''],
+    maxAbsences: [2],
+    usesGrades: [true],
+  });
+
+  readonly enrollmentForm = this.fb.nonNullable.group({
+    disciplineId: ['', [Validators.required]],
+    studentId: ['', [Validators.required]],
+  });
+
   ngOnInit() {
     if (this.isEventsModule()) {
       this.loadEvents();
+    }
+    if (this.isMembersModule()) {
+      this.loadMembers();
+    }
+    if (this.isCoursesModule()) {
+      this.loadAcademic();
     }
   }
 
@@ -98,6 +146,125 @@ export class AdminModulePage implements OnInit {
     });
   }
 
+  saveMember() {
+    this.memberForm.markAllAsTouched();
+    if (this.memberForm.invalid) {
+      return;
+    }
+    const value = this.memberForm.getRawValue();
+    const roles: Role[] = ['MEMBRO'];
+    if (value.admin) {
+      roles.push('ADMIN');
+    }
+    if (value.professor) {
+      roles.push('PROFESSOR');
+    }
+    const payload: MemberPayload = { name: value.name, phone: value.phone, email: value.email, active: value.active, roles };
+    const editingId = this.editingId();
+    this.isSaving.set(true);
+    const request = editingId ? this.api.updateMember(editingId, payload) : this.api.createMember(payload);
+    request.subscribe({
+      next: (saved) => {
+        this.membersState.update((members) => {
+          const without = members.filter((member) => member.id !== saved.id);
+          return [...without, saved];
+        });
+        this.finishEditing();
+      },
+      error: () => this.isSaving.set(false),
+    });
+  }
+
+  editMember(member: MemberSummary) {
+    this.editingId.set(member.id);
+    this.memberForm.setValue({
+      name: member.name,
+      phone: member.phone,
+      email: member.email,
+      active: member.active,
+      admin: member.roles.includes('ADMIN'),
+      professor: member.roles.includes('PROFESSOR'),
+    });
+  }
+
+  deleteMember(id: string) {
+    this.api.deleteMember(id).subscribe({
+      next: () => {
+        this.membersState.update((members) => members.filter((member) => member.id !== id));
+        if (this.editingId() === id) {
+          this.finishEditing();
+        }
+      },
+    });
+  }
+
+  saveCourse() {
+    this.courseForm.markAllAsTouched();
+    if (this.courseForm.invalid) {
+      return;
+    }
+    this.isSaving.set(true);
+    this.api.createCourse(this.courseForm.getRawValue()).subscribe({
+      next: (course) => {
+        this.coursesState.update((courses) => [...courses, course]);
+        this.courseForm.reset({ title: '', description: '', startsAt: '', endsAt: '', status: 'OPEN' });
+        this.isSaving.set(false);
+      },
+      error: () => this.isSaving.set(false),
+    });
+  }
+
+  saveDiscipline() {
+    this.disciplineForm.markAllAsTouched();
+    if (this.disciplineForm.invalid) {
+      return;
+    }
+    const value = this.disciplineForm.getRawValue();
+    this.isSaving.set(true);
+    this.api
+      .createDiscipline({
+        courseId: value.courseId,
+        title: value.title,
+        description: value.description,
+        teacherIds: value.teacherId ? [value.teacherId] : [],
+        maxAbsences: value.maxAbsences,
+        usesGrades: value.usesGrades,
+      })
+      .subscribe({
+        next: (discipline) => {
+          this.disciplinesState.update((disciplines) => [...disciplines, discipline]);
+          this.disciplineForm.reset({ courseId: value.courseId, title: '', description: '', teacherId: '', maxAbsences: 2, usesGrades: true });
+          this.isSaving.set(false);
+        },
+        error: () => this.isSaving.set(false),
+      });
+  }
+
+  enrollStudent() {
+    this.enrollmentForm.markAllAsTouched();
+    if (this.enrollmentForm.invalid) {
+      return;
+    }
+    const value = this.enrollmentForm.getRawValue();
+    this.isSaving.set(true);
+    this.api.enrollStudent(value.disciplineId, value.studentId).subscribe({
+      next: () => {
+        this.enrollmentForm.reset({ disciplineId: value.disciplineId, studentId: '' });
+        this.isSaving.set(false);
+      },
+      error: () => this.isSaving.set(false),
+    });
+  }
+
+  courseTitle(id: string) {
+    return this.courses().find((course) => course.id === id)?.title ?? 'Curso';
+  }
+
+  teacherNames(ids: string[]) {
+    const names = ids.map((id) => this.members().find((member) => member.id === id)?.name).filter(Boolean);
+    return names.length ? names.join(', ') : 'Professor a definir';
+  }
+
   private loadEvents() {
     this.api.listAdminEvents().subscribe({
       next: (events) => this.eventsState.set(events),
@@ -105,9 +272,29 @@ export class AdminModulePage implements OnInit {
     });
   }
 
+  private loadMembers() {
+    this.api.listMembers().subscribe({
+      next: (members) => this.membersState.set(members),
+      error: () => this.membersState.set([]),
+    });
+  }
+
+  private loadAcademic() {
+    this.loadMembers();
+    this.api.listAdminCourses().subscribe({
+      next: (courses) => this.coursesState.set(courses),
+      error: () => this.coursesState.set([]),
+    });
+    this.api.listAdminDisciplines().subscribe({
+      next: (disciplines) => this.disciplinesState.set(disciplines),
+      error: () => this.disciplinesState.set([]),
+    });
+  }
+
   private finishEditing() {
     this.editingId.set(null);
     this.eventForm.reset();
+    this.memberForm.reset({ name: '', phone: '', email: '', active: true, admin: false, professor: false });
     this.isSaving.set(false);
   }
 }

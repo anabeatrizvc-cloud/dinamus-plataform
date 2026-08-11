@@ -42,6 +42,11 @@ public class AdminMembersController {
         return members.update(id, request.name(), request.phone(), request.email(), request.roles(), request.active());
     }
 
+    @Post("/{id}/invite")
+    public MemberSummary resendInvite(@PathVariable String id) {
+        return members.resendInvite(id);
+    }
+
     @Delete("/{id}")
     public HttpResponse<?> delete(@PathVariable String id) {
         members.delete(id);

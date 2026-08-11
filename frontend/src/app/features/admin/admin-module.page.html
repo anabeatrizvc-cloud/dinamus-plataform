@@ -18,6 +18,10 @@
     </div>
   </section>
 
+  @if (feedback()) {
+    <aside class="surface admin-feedback" role="status">{{ feedback() }}</aside>
+  }
+
   @if (isEventsModule()) {
     <section class="events-workspace" aria-label="Administração dos eventos">
       <form class="surface event-editor" [formGroup]="eventForm" (ngSubmit)="saveEvent()">
@@ -147,10 +151,15 @@
                 <a>{{ member.email }}</a>
               }
               @if (member.invitePending) {
-                <small class="setup-token">Convite: /setup-password?token={{ member.setupToken }}</small>
+                <small class="setup-token">Convite: {{ inviteLink(member) }}</small>
               }
             </div>
             <div class="event-actions">
+              @if (member.email && member.invitePending) {
+                <button type="button" aria-label="Reenviar convite" (click)="resendInvite(member)">
+                  <svg lucidePlus aria-hidden="true"></svg>
+                </button>
+              }
               <button type="button" aria-label="Editar membro" (click)="editMember(member)">
                 <svg lucidePencil aria-hidden="true"></svg>
               </button>
@@ -164,118 +173,185 @@
     </section>
   } @else if (isCoursesModule()) {
     <section class="academic-workspace" aria-label="Administração dos cursos">
-      <form class="surface event-editor" [formGroup]="courseForm" (ngSubmit)="saveCourse()">
-        <header>
-          <svg lucideBookOpen aria-hidden="true"></svg>
-          <div>
-            <p>Curso</p>
-            <h2>Nova jornada</h2>
-          </div>
-        </header>
-        <label class="field">
-          <span>Nome do curso</span>
-          <input formControlName="title" />
-        </label>
-        <label class="field">
-          <span>Descrição</span>
-          <textarea formControlName="description"></textarea>
-        </label>
-        <div class="form-row">
-          <label class="field">
-            <span>Início</span>
-            <input type="date" formControlName="startsAt" />
-          </label>
-          <label class="field">
-            <span>Término</span>
-            <input type="date" formControlName="endsAt" />
-          </label>
-        </div>
-        <button class="dnms-button" type="submit" [disabled]="isSaving()">
-          <svg lucidePlus aria-hidden="true"></svg>
-          Criar curso
-        </button>
-      </form>
+      <nav class="surface academic-switcher" aria-label="Fluxo acadêmico">
+        <button type="button" [class.active]="academicView() === 'courses'" (click)="setAcademicView('courses')">Cursos</button>
+        <button type="button" [class.active]="academicView() === 'disciplines'" (click)="setAcademicView('disciplines')">Disciplinas</button>
+        <button type="button" [class.active]="academicView() === 'enrollments'" (click)="setAcademicView('enrollments')">Matrículas</button>
+      </nav>
 
-      <form class="surface event-editor" [formGroup]="disciplineForm" (ngSubmit)="saveDiscipline()">
-        <header>
-          <svg lucideCalendarDays aria-hidden="true"></svg>
-          <div>
-            <p>Disciplina</p>
-            <h2>Aulas e regras</h2>
-          </div>
-        </header>
-        <label class="field">
-          <span>Curso</span>
-          <select formControlName="courseId">
-            <option value="">Selecione</option>
-            @for (course of courses(); track course.id) {
-              <option [value]="course.id">{{ course.title }}</option>
-            }
-          </select>
-        </label>
-        <label class="field">
-          <span>Nome da disciplina</span>
-          <input formControlName="title" />
-        </label>
-        <label class="field">
-          <span>Professor</span>
-          <select formControlName="teacherId">
-            <option value="">Definir depois</option>
-            @for (professor of professors(); track professor.id) {
-              <option [value]="professor.id">{{ professor.name }}</option>
-            }
-          </select>
-        </label>
-        <div class="form-row">
-          <label class="field">
-            <span>Faltas permitidas</span>
-            <input type="number" min="0" formControlName="maxAbsences" />
-          </label>
-          <label class="field">
-            <span>Avaliação</span>
-            <select formControlName="usesGrades">
-              <option [ngValue]="true">Com notas</option>
-              <option [ngValue]="false">Somente presença</option>
-            </select>
-          </label>
-        </div>
-        <button class="dnms-button secondary" type="submit" [disabled]="isSaving()">Criar disciplina</button>
-      </form>
-
-      <section class="event-admin-list academic-list" aria-label="Cursos e disciplinas">
-        <form class="surface enrollment-card" [formGroup]="enrollmentForm" (ngSubmit)="enrollStudent()">
-          <strong>Matricular aluno</strong>
-          <select formControlName="disciplineId">
-            <option value="">Disciplina</option>
-            @for (discipline of disciplines(); track discipline.id) {
-              <option [value]="discipline.id">{{ discipline.title }}</option>
-            }
-          </select>
-          <select formControlName="studentId">
-            <option value="">Aluno</option>
-            @for (student of students(); track student.id) {
-              <option [value]="student.id">{{ student.name }}</option>
-            }
-          </select>
-          <button class="dnms-button" type="submit">Matricular</button>
-        </form>
-
-        @for (discipline of disciplines(); track discipline.id) {
-          <article class="surface event-admin-card">
-            <div class="date-pill">
+      @if (academicView() === 'courses') {
+        <section class="academic-dashboard">
+          <form class="surface academic-form" [formGroup]="courseForm" (ngSubmit)="saveCourse()">
+            <header>
               <svg lucideBookOpen aria-hidden="true"></svg>
-              <span>
-                {{ courseTitle(discipline.courseId) }}
-                <small>{{ discipline.maxAbsences }} faltas permitidas</small>
-              </span>
+              <div>
+                <p>Nova jornada</p>
+                <h2>Criar curso</h2>
+              </div>
+            </header>
+            <label class="field">
+              <span>Nome do curso</span>
+              <input formControlName="title" placeholder="Ex: Fundamentos da fé" />
+            </label>
+            <label class="field">
+              <span>Descrição</span>
+              <textarea formControlName="description" placeholder="Resumo curto para orientar alunos e professores"></textarea>
+            </label>
+            <div class="form-row">
+              <label class="field">
+                <span>Início</span>
+                <input type="date" formControlName="startsAt" />
+              </label>
+              <label class="field">
+                <span>Término opcional</span>
+                <input type="date" formControlName="endsAt" />
+              </label>
             </div>
-            <div class="event-copy">
-              <h2>{{ discipline.title }}</h2>
-              <a>{{ teacherNames(discipline.teacherIds) }} · {{ discipline.usesGrades ? 'com notas' : 'somente presença' }}</a>
+            <button class="dnms-button" type="submit" [disabled]="isSaving()">
+              <svg lucidePlus aria-hidden="true"></svg>
+              Criar curso
+            </button>
+          </form>
+
+          <section class="course-board" aria-label="Cursos cadastrados">
+            @for (course of courses(); track course.id) {
+              <article class="surface course-card" [class.selected]="selectedCourseId() === course.id">
+                <header>
+                  <span>{{ course.status === 'OPEN' ? 'Aberto' : course.status }}</span>
+                  <small>{{ coursePeriod(course) }}</small>
+                </header>
+                <h2>{{ course.title }}</h2>
+                <p>{{ course.description || 'Sem descrição cadastrada.' }}</p>
+                <div class="course-metrics">
+                  <strong>{{ courseDisciplines(course.id).length }}</strong>
+                  <span>disciplinas</span>
+                </div>
+                <button class="dnms-button secondary" type="button" (click)="selectCourse(course)">Gerenciar disciplinas</button>
+              </article>
+            } @empty {
+              <article class="surface empty-academic">
+                <svg lucideBookOpen aria-hidden="true"></svg>
+                <h2>Nenhum curso cadastrado</h2>
+                <p>Crie o primeiro curso para liberar disciplinas, matrículas e sala de aula.</p>
+              </article>
+            }
+          </section>
+        </section>
+      }
+
+      @if (academicView() === 'disciplines') {
+        <section class="academic-dashboard">
+          <form class="surface academic-form" [formGroup]="disciplineForm" (ngSubmit)="saveDiscipline()">
+            <header>
+              <svg lucideCalendarDays aria-hidden="true"></svg>
+              <div>
+                <p>Disciplina</p>
+                <h2>{{ selectedCourse()?.title || 'Aulas e regras' }}</h2>
+              </div>
+            </header>
+            <label class="field">
+              <span>Curso</span>
+              <select formControlName="courseId">
+                <option value="">Selecione</option>
+                @for (course of courses(); track course.id) {
+                  <option [value]="course.id">{{ course.title }}</option>
+                }
+              </select>
+            </label>
+            <label class="field">
+              <span>Nome da disciplina</span>
+              <input formControlName="title" placeholder="Ex: Doutrina e vida cristã" />
+            </label>
+            <label class="field">
+              <span>Descrição</span>
+              <textarea formControlName="description" placeholder="O que será trabalhado nesta disciplina"></textarea>
+            </label>
+            <label class="field">
+              <span>Professor</span>
+              <select formControlName="teacherId">
+                <option value="">Definir depois</option>
+                @for (professor of professors(); track professor.id) {
+                  <option [value]="professor.id">{{ professor.name }}</option>
+                }
+              </select>
+            </label>
+            <div class="form-row">
+              <label class="field">
+                <span>Faltas permitidas</span>
+                <input type="number" min="0" formControlName="maxAbsences" />
+              </label>
+              <label class="field">
+                <span>Avaliação</span>
+                <select formControlName="usesGrades">
+                  <option [ngValue]="true">Com notas</option>
+                  <option [ngValue]="false">Somente presença</option>
+                </select>
+              </label>
             </div>
-          </article>
-        }
-      </section>
+            <button class="dnms-button" type="submit" [disabled]="isSaving()">Criar disciplina</button>
+          </form>
+
+          <section class="course-board" aria-label="Disciplinas cadastradas">
+            @for (course of courses(); track course.id) {
+              <article class="surface course-detail-card">
+                <header>
+                  <span>Curso</span>
+                  <h2>{{ course.title }}</h2>
+                </header>
+                <div class="discipline-stack">
+                  @for (discipline of courseDisciplines(course.id); track discipline.id) {
+                    <div class="discipline-card">
+                      <strong>{{ discipline.title }}</strong>
+                      <span>{{ teacherNames(discipline.teacherIds) }}</span>
+                      <small>{{ discipline.maxAbsences }} faltas permitidas · {{ discipline.usesGrades ? 'com notas' : 'somente presença' }}</small>
+                    </div>
+                  } @empty {
+                    <p>Nenhuma disciplina cadastrada neste curso.</p>
+                  }
+                </div>
+              </article>
+            } @empty {
+              <article class="surface empty-academic">
+                <h2>Crie um curso primeiro</h2>
+                <p>As disciplinas precisam estar ligadas a uma jornada.</p>
+              </article>
+            }
+          </section>
+        </section>
+      }
+
+      @if (academicView() === 'enrollments') {
+        <section class="academic-dashboard compact-flow">
+          <form class="surface academic-form enrollment-flow" [formGroup]="enrollmentForm" (ngSubmit)="enrollStudent()">
+            <header>
+              <svg lucideUsersRound aria-hidden="true"></svg>
+              <div>
+                <p>Matrícula</p>
+                <h2>Adicionar aluno à disciplina</h2>
+              </div>
+            </header>
+            <label class="field">
+              <span>Disciplina</span>
+              <select formControlName="disciplineId">
+                <option value="">Selecione a disciplina</option>
+                @for (discipline of disciplines(); track discipline.id) {
+                  <option [value]="discipline.id">{{ courseTitle(discipline.courseId) }} — {{ discipline.title }}</option>
+                }
+              </select>
+            </label>
+            <label class="field">
+              <span>Aluno</span>
+              <select formControlName="studentId">
+                <option value="">Selecione o aluno</option>
+                @for (student of students(); track student.id) {
+                  <option [value]="student.id">{{ student.name }}</option>
+                }
+              </select>
+            </label>
+            <button class="dnms-button" type="submit" [disabled]="isSaving()">Matricular aluno</button>
+          </form>
+        </section>
+      }
     </section>
   } @else {
     <section class="surface workbench">

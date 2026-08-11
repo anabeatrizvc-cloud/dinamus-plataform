@@ -49,11 +49,15 @@ public class ManageMembersUseCase {
     public MemberSummary update(String id, String name, String phone, String email, List<String> roles, boolean active) {
         MemberAccount current = repository.findMemberById(id).orElseThrow(() -> new IllegalArgumentException("Member not found"));
         String normalizedEmail = normalizeEmail(email);
-        repository.findMemberByEmail(normalizedEmail)
-            .filter(found -> !found.id().equals(id))
-            .ifPresent(found -> {
-                throw new IllegalArgumentException("Member email already exists");
-            });
+        if (!normalizedEmail.isBlank()) {
+            repository.findMemberByEmail(normalizedEmail)
+                .filter(found -> !found.id().equals(id))
+                .ifPresent(found -> {
+                    throw new IllegalArgumentException("Member email already exists");
+                });
+        }
+
+        String setupToken = setupToken(current, normalizedEmail);
 
         MemberAccount updated = new MemberAccount(
             current.id(),
@@ -63,9 +67,28 @@ public class ManageMembersUseCase {
             current.passwordHash(),
             normalizeRoles(roles),
             active,
-            normalizedEmail.isBlank() || !current.passwordHash().isBlank() ? "" : current.passwordSetupToken()
+            setupToken
         );
-        return summary(repository.saveMember(updated));
+        MemberAccount saved = repository.saveMember(updated);
+        if (!setupToken.isBlank() && !setupToken.equals(current.passwordSetupToken())) {
+            invitations.sendPasswordSetup(saved);
+        }
+        return summary(saved);
+    }
+
+    public MemberSummary resendInvite(String id) {
+        MemberAccount current = repository.findMemberById(id).orElseThrow(() -> new IllegalArgumentException("Member not found"));
+        if (current.email().isBlank()) {
+            throw new IllegalArgumentException("Member has no email");
+        }
+        if (!current.passwordHash().isBlank()) {
+            return summary(current);
+        }
+        String token = current.passwordSetupToken().isBlank() ? UUID.randomUUID().toString() : current.passwordSetupToken();
+        MemberAccount updated = new MemberAccount(current.id(), current.name(), current.phone(), current.email(), current.passwordHash(), current.roles(), current.active(), token);
+        MemberAccount saved = repository.saveMember(updated);
+        invitations.sendPasswordSetup(saved);
+        return summary(saved);
     }
 
     public void delete(String id) {
@@ -91,6 +114,13 @@ public class ManageMembersUseCase {
 
     private String normalizeEmail(String value) {
         return normalize(value).toLowerCase(Locale.ROOT);
+    }
+
+    private String setupToken(MemberAccount current, String email) {
+        if (email.isBlank() || !current.passwordHash().isBlank()) {
+            return "";
+        }
+        return current.passwordSetupToken().isBlank() ? UUID.randomUUID().toString() : current.passwordSetupToken();
     }
 
     private String normalize(String value) {

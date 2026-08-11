@@ -48,7 +48,9 @@ public class CouchDbAcademicRepository implements AcademicRepository {
         request("PUT", databaseUri(), "");
         if (readState().isEmpty()) {
             saveState(seedState());
+            return;
         }
+        readState().map(this::withoutDemoContent).filter(AcademicState::changed).ifPresent(state -> saveState(state.withoutChangedFlag()));
     }
 
     @Override
@@ -199,16 +201,37 @@ public class CouchDbAcademicRepository implements AcademicRepository {
 
     private AcademicState seedState() {
         return new AcademicState(
-            List.of(new CourseSummary("curso-fundamentos", "Fundamentos DNMS", "Formacao essencial para novos membros e lideres em desenvolvimento.", "2026-08-20", "2026-10-20", "OPEN")),
-            List.of(new DisciplineSummary("disc-doutrina", "curso-fundamentos", "Doutrina e vida crista", "Aulas praticas sobre fundamentos da fe, rotina devocional e servico.", List.of(), 2, true)),
             List.of(),
-            List.of(new LessonSummary("lesson-01", "disc-doutrina", "Identidade e familia espiritual", "2026-08-20", "", ""), new LessonSummary("lesson-02", "disc-doutrina", "Discipulado no cotidiano", "2026-08-27", "", "")),
-            List.of(new MaterialSummary("material-01", "disc-doutrina", "lesson-01", "Guia da aula 1", "https://dinamus.recife/materiais/guia-aula-1")),
-            List.of(new EvaluationSummary("eval-01", "disc-doutrina", "Resumo aplicado", 1, 10)),
-            List.of(new GradeEntry("grade-01", "eval-01", "aluno-demo", 8.5)),
             List.of(),
-            ""
+            List.of(),
+            List.of(),
+            List.of(),
+            List.of(),
+            List.of(),
+            List.of(),
+            "",
+            false
         );
+    }
+
+    private AcademicState withoutDemoContent(AcademicState state) {
+        List<CourseSummary> courses = state.courses().stream().filter(item -> !item.id().equals("curso-fundamentos")).toList();
+        List<DisciplineSummary> disciplines = state.disciplines().stream().filter(item -> !item.id().equals("disc-doutrina") && !item.courseId().equals("curso-fundamentos")).toList();
+        List<EnrollmentSummary> enrollments = state.enrollments().stream().filter(item -> !item.disciplineId().equals("disc-doutrina") && !item.studentId().equals("aluno-demo")).toList();
+        List<LessonSummary> lessons = state.lessons().stream().filter(item -> !item.id().equals("lesson-01") && !item.id().equals("lesson-02") && !item.disciplineId().equals("disc-doutrina")).toList();
+        List<MaterialSummary> materials = state.materials().stream().filter(item -> !item.id().equals("material-01") && !item.disciplineId().equals("disc-doutrina")).toList();
+        List<EvaluationSummary> evaluations = state.evaluations().stream().filter(item -> !item.id().equals("eval-01") && !item.disciplineId().equals("disc-doutrina")).toList();
+        List<GradeEntry> grades = state.grades().stream().filter(item -> !item.id().equals("grade-01") && !item.studentId().equals("aluno-demo") && !item.evaluationId().equals("eval-01")).toList();
+        List<AttendanceEntry> attendance = state.attendance().stream().filter(item -> !item.studentId().equals("aluno-demo") && !item.lessonId().equals("lesson-01") && !item.lessonId().equals("lesson-02")).toList();
+        boolean changed = courses.size() != state.courses().size()
+            || disciplines.size() != state.disciplines().size()
+            || enrollments.size() != state.enrollments().size()
+            || lessons.size() != state.lessons().size()
+            || materials.size() != state.materials().size()
+            || evaluations.size() != state.evaluations().size()
+            || grades.size() != state.grades().size()
+            || attendance.size() != state.attendance().size();
+        return new AcademicState(courses, disciplines, enrollments, lessons, materials, evaluations, grades, attendance, state.rev(), changed);
     }
 
     private Optional<String> request(String method, String uri, String body) {
@@ -254,7 +277,8 @@ public class CouchDbAcademicRepository implements AcademicRepository {
         List<EvaluationSummary> evaluations,
         List<GradeEntry> grades,
         List<AttendanceEntry> attendance,
-        String rev
+        String rev,
+        boolean changed
     ) {
         static AcademicState fromDocument(StateDocument document) {
             return new AcademicState(
@@ -266,40 +290,45 @@ public class CouchDbAcademicRepository implements AcademicRepository {
                 document.evaluations() == null ? List.of() : document.evaluations(),
                 document.grades() == null ? List.of() : document.grades(),
                 document.attendance() == null ? List.of() : document.attendance(),
-                document._rev()
+                document._rev(),
+                false
             );
         }
 
         AcademicState withCourses(List<CourseSummary> value) {
-            return new AcademicState(value, disciplines, enrollments, lessons, materials, evaluations, grades, attendance, rev);
+            return new AcademicState(value, disciplines, enrollments, lessons, materials, evaluations, grades, attendance, rev, false);
         }
 
         AcademicState withDisciplines(List<DisciplineSummary> value) {
-            return new AcademicState(courses, value, enrollments, lessons, materials, evaluations, grades, attendance, rev);
+            return new AcademicState(courses, value, enrollments, lessons, materials, evaluations, grades, attendance, rev, false);
         }
 
         AcademicState withEnrollments(List<EnrollmentSummary> value) {
-            return new AcademicState(courses, disciplines, value, lessons, materials, evaluations, grades, attendance, rev);
+            return new AcademicState(courses, disciplines, value, lessons, materials, evaluations, grades, attendance, rev, false);
         }
 
         AcademicState withLessons(List<LessonSummary> value) {
-            return new AcademicState(courses, disciplines, enrollments, value, materials, evaluations, grades, attendance, rev);
+            return new AcademicState(courses, disciplines, enrollments, value, materials, evaluations, grades, attendance, rev, false);
         }
 
         AcademicState withMaterials(List<MaterialSummary> value) {
-            return new AcademicState(courses, disciplines, enrollments, lessons, value, evaluations, grades, attendance, rev);
+            return new AcademicState(courses, disciplines, enrollments, lessons, value, evaluations, grades, attendance, rev, false);
         }
 
         AcademicState withEvaluations(List<EvaluationSummary> value) {
-            return new AcademicState(courses, disciplines, enrollments, lessons, materials, value, grades, attendance, rev);
+            return new AcademicState(courses, disciplines, enrollments, lessons, materials, value, grades, attendance, rev, false);
         }
 
         AcademicState withGrades(List<GradeEntry> value) {
-            return new AcademicState(courses, disciplines, enrollments, lessons, materials, evaluations, value, attendance, rev);
+            return new AcademicState(courses, disciplines, enrollments, lessons, materials, evaluations, value, attendance, rev, false);
         }
 
         AcademicState withAttendance(List<AttendanceEntry> value) {
-            return new AcademicState(courses, disciplines, enrollments, lessons, materials, evaluations, grades, value, rev);
+            return new AcademicState(courses, disciplines, enrollments, lessons, materials, evaluations, grades, value, rev, false);
+        }
+
+        AcademicState withoutChangedFlag() {
+            return new AcademicState(courses, disciplines, enrollments, lessons, materials, evaluations, grades, attendance, rev, false);
         }
     }
 

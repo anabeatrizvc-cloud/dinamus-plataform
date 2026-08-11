@@ -155,9 +155,13 @@ strong {
 
 .academic-workspace {
   display: grid;
-  grid-template-columns: minmax(260px, 0.78fr) minmax(260px, 0.78fr) minmax(0, 1.3fr);
-  gap: 18px;
-  align-items: start;
+  gap: 16px;
+}
+
+.admin-feedback {
+  border-color: rgba(255, 82, 31, 0.42);
+  color: var(--dnms-text);
+  padding: 14px 18px;
 }
 
 .event-editor,
@@ -171,6 +175,187 @@ strong {
   align-content: start;
   gap: 18px;
   padding: 24px;
+}
+
+.academic-switcher {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 10px;
+}
+
+.academic-switcher button {
+  min-height: 40px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--dnms-muted);
+  font-weight: 800;
+  padding: 0 16px;
+}
+
+.academic-switcher button.active {
+  border-color: rgba(255, 82, 31, 0.58);
+  background: rgba(255, 82, 31, 0.16);
+  color: var(--dnms-text);
+}
+
+.academic-dashboard {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.42fr) minmax(0, 0.58fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.academic-dashboard.compact-flow {
+  grid-template-columns: minmax(0, 720px);
+}
+
+.academic-form {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+  padding: 22px;
+  box-shadow: var(--dnms-shadow-soft);
+}
+
+.academic-form header,
+.course-detail-card header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.academic-form header svg {
+  width: 30px;
+  height: 30px;
+  color: var(--dnms-accent);
+}
+
+.academic-form h2,
+.course-card h2,
+.course-detail-card h2,
+.empty-academic h2 {
+  font-size: clamp(1.28rem, 2vw, 1.75rem);
+  line-height: 1.12;
+}
+
+.academic-form p,
+.course-card header span,
+.course-detail-card header span {
+  color: var(--dnms-muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.academic-form textarea {
+  min-height: 108px;
+}
+
+.course-board {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.course-card,
+.course-detail-card,
+.empty-academic {
+  display: grid;
+  gap: 13px;
+  min-width: 0;
+  padding: 18px;
+  box-shadow: var(--dnms-shadow-soft);
+}
+
+.course-card.selected {
+  border-color: rgba(255, 82, 31, 0.62);
+}
+
+.course-card header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.course-card header small {
+  color: var(--dnms-muted);
+  text-align: right;
+}
+
+.course-card p,
+.empty-academic p,
+.discipline-stack p {
+  margin: 0;
+  color: var(--dnms-muted);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.course-metrics {
+  display: inline-grid;
+  width: fit-content;
+  min-width: 112px;
+  grid-template-columns: auto 1fr;
+  align-items: baseline;
+  gap: 7px;
+  border: 1px solid rgba(255, 82, 31, 0.3);
+  border-radius: 999px;
+  background: rgba(255, 82, 31, 0.12);
+  padding: 8px 12px;
+}
+
+.course-metrics strong {
+  font-size: 1.35rem;
+}
+
+.course-metrics span {
+  color: var(--dnms-muted);
+}
+
+.course-card .dnms-button {
+  width: 100%;
+  min-height: 42px;
+}
+
+.course-detail-card {
+  grid-column: span 1;
+}
+
+.discipline-stack {
+  display: grid;
+  gap: 10px;
+}
+
+.discipline-card {
+  display: grid;
+  gap: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 14px;
+  background: rgba(4, 4, 4, 0.56);
+  padding: 12px;
+}
+
+.discipline-card strong {
+  overflow-wrap: anywhere;
+}
+
+.discipline-card span,
+.discipline-card small {
+  color: var(--dnms-muted);
+}
+
+.empty-academic {
+  min-height: 220px;
+  align-content: center;
+}
+
+.empty-academic svg {
+  width: 34px;
+  height: 34px;
+  color: var(--dnms-accent);
 }
 
 .event-editor header {
@@ -369,12 +554,14 @@ strong {
 
   .admin-hero,
   .events-workspace,
-  .academic-workspace {
+  .academic-workspace,
+  .academic-dashboard {
     grid-template-columns: 1fr;
   }
 
   .module-grid,
-  .highlight-grid {
+  .highlight-grid,
+  .course-board {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -404,8 +591,29 @@ strong {
   }
 
   .module-grid,
-  .highlight-grid {
+  .highlight-grid,
+  .course-board {
     grid-template-columns: 1fr;
+  }
+
+  .academic-switcher {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 5px;
+  }
+
+  .academic-switcher button {
+    min-width: 0;
+    padding: 0 6px;
+    font-size: 0.76rem;
+  }
+
+  .academic-form,
+  .course-card,
+  .course-detail-card,
+  .empty-academic {
+    border-radius: 14px;
+    padding: 16px;
   }
 
   .module-card {

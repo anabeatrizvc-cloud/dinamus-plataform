@@ -5,6 +5,9 @@ import com.dinamus.adapters.in.web.dto.AuthDtos;
 import com.dinamus.domain.model.AttendanceEntry;
 import com.dinamus.domain.model.AgendaItem;
 import com.dinamus.domain.model.ClassroomDashboard;
+import com.dinamus.domain.model.CourseSummary;
+import com.dinamus.domain.model.DisciplineSummary;
+import com.dinamus.domain.model.EnrollmentSummary;
 import com.dinamus.domain.model.EventSummary;
 import com.dinamus.domain.model.LessonSummary;
 import com.dinamus.domain.model.MemberSummary;
@@ -156,6 +159,46 @@ class PlatformApiTest {
 
         assertEquals("convidado@dinamus.local", session.user().email());
         assertTrue(session.user().roles().contains("MEMBRO"));
+    }
+
+    @Test
+    void adminCanCreateCourseDisciplineAndEnrollment() {
+        AuthDtos.LoginResponse admin = login();
+
+        CourseSummary course = client.toBlocking().retrieve(
+            HttpRequest.POST("/api/v1/admin/academic/courses", Map.of(
+                "title", "Escola de Servico",
+                "description", "Formacao para voluntarios",
+                "startsAt", "2026-09-05",
+                "endsAt", "",
+                "status", "OPEN"
+            )).bearerAuth(admin.accessToken()),
+            CourseSummary.class
+        );
+
+        DisciplineSummary discipline = client.toBlocking().retrieve(
+            HttpRequest.POST("/api/v1/admin/academic/disciplines", Map.of(
+                "courseId", course.id(),
+                "title", "Cuidado com pessoas",
+                "description", "Rotina de acompanhamento",
+                "teacherIds", List.of("professor-demo"),
+                "maxAbsences", 2,
+                "usesGrades", false
+            )).bearerAuth(admin.accessToken()),
+            DisciplineSummary.class
+        );
+
+        EnrollmentSummary enrollment = client.toBlocking().retrieve(
+            HttpRequest.POST("/api/v1/admin/academic/enrollments", Map.of(
+                "disciplineId", discipline.id(),
+                "studentId", "aluno-demo"
+            )).bearerAuth(admin.accessToken()),
+            EnrollmentSummary.class
+        );
+
+        assertEquals("Escola de Servico", course.title());
+        assertEquals("Cuidado com pessoas", discipline.title());
+        assertEquals(discipline.id(), enrollment.disciplineId());
     }
 
     @Test

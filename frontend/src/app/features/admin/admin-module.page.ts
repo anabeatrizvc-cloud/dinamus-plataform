@@ -6,6 +6,8 @@ import { LucideBookOpen, LucideCalendarDays, LucidePencil, LucidePlus, LucideTic
 import { DnmsApiService } from '../../core/api/dnms-api.service';
 import { CourseSummary, DisciplineSummary, EventPayload, EventSummary, MemberPayload, MemberSummary, Role } from '../../core/models/platform.models';
 
+type AcademicView = 'courses' | 'disciplines' | 'enrollments';
+
 const labels: Record<string, string> = {
   membros: 'Membros',
   eventos: 'Eventos',
@@ -34,6 +36,9 @@ export class AdminModulePage implements OnInit {
 
   readonly editingId = signal<string | null>(null);
   readonly isSaving = signal(false);
+  readonly feedback = signal('');
+  readonly academicView = signal<AcademicView>('courses');
+  readonly selectedCourseId = signal('');
   readonly title = computed(() => labels[this.route.snapshot.paramMap.get('module') ?? ''] ?? 'Módulo');
   readonly moduleKey = computed(() => this.route.snapshot.paramMap.get('module') ?? '');
   readonly isEventsModule = computed(() => this.moduleKey() === 'eventos');
@@ -45,6 +50,7 @@ export class AdminModulePage implements OnInit {
   readonly disciplines = this.disciplinesState.asReadonly();
   readonly professors = computed(() => this.members().filter((member) => member.roles.includes('PROFESSOR')));
   readonly students = computed(() => this.members().filter((member) => member.roles.includes('MEMBRO')));
+  readonly selectedCourse = computed(() => this.courses().find((course) => course.id === this.selectedCourseId()) ?? null);
 
   readonly eventForm = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.minLength(3)]],
@@ -169,9 +175,10 @@ export class AdminModulePage implements OnInit {
           const without = members.filter((member) => member.id !== saved.id);
           return [...without, saved];
         });
+        this.feedback.set(saved.invitePending ? 'Membro salvo. O convite de senha foi enviado ou registrado no log do servidor.' : 'Membro salvo.');
         this.finishEditing();
       },
-      error: () => this.isSaving.set(false),
+      error: () => this.fail('Não foi possível salvar o membro. Confira os dados e a configuração de e-mail.'),
     });
   }
 
@@ -198,6 +205,22 @@ export class AdminModulePage implements OnInit {
     });
   }
 
+  resendInvite(member: MemberSummary) {
+    if (!member.email) {
+      this.feedback.set('Informe um e-mail antes de enviar convite.');
+      return;
+    }
+    this.isSaving.set(true);
+    this.api.resendMemberInvite(member.id).subscribe({
+      next: (saved) => {
+        this.membersState.update((members) => members.map((item) => (item.id === saved.id ? saved : item)));
+        this.isSaving.set(false);
+        this.feedback.set('Convite enviado ou registrado no log do servidor.');
+      },
+      error: () => this.fail('Não foi possível enviar o convite. Verifique as variáveis SMTP.'),
+    });
+  }
+
   saveCourse() {
     this.courseForm.markAllAsTouched();
     if (this.courseForm.invalid) {
@@ -207,10 +230,14 @@ export class AdminModulePage implements OnInit {
     this.api.createCourse(this.courseForm.getRawValue()).subscribe({
       next: (course) => {
         this.coursesState.update((courses) => [...courses, course]);
+        this.selectedCourseId.set(course.id);
+        this.disciplineForm.patchValue({ courseId: course.id });
+        this.academicView.set('disciplines');
+        this.feedback.set('Curso criado. Agora cadastre as disciplinas dessa jornada.');
         this.courseForm.reset({ title: '', description: '', startsAt: '', endsAt: '', status: 'OPEN' });
         this.isSaving.set(false);
       },
-      error: () => this.isSaving.set(false),
+      error: () => this.fail('Não foi possível criar o curso. Confira nome e data de início.'),
     });
   }
 
@@ -233,10 +260,13 @@ export class AdminModulePage implements OnInit {
       .subscribe({
         next: (discipline) => {
           this.disciplinesState.update((disciplines) => [...disciplines, discipline]);
+          this.selectedCourseId.set(discipline.courseId);
+          this.enrollmentForm.patchValue({ disciplineId: discipline.id });
+          this.feedback.set('Disciplina criada e adicionada ao curso.');
           this.disciplineForm.reset({ courseId: value.courseId, title: '', description: '', teacherId: '', maxAbsences: 2, usesGrades: true });
           this.isSaving.set(false);
         },
-        error: () => this.isSaving.set(false),
+        error: () => this.fail('Não foi possível criar a disciplina. Selecione um curso e confira o nome.'),
       });
   }
 
@@ -250,10 +280,29 @@ export class AdminModulePage implements OnInit {
     this.api.enrollStudent(value.disciplineId, value.studentId).subscribe({
       next: () => {
         this.enrollmentForm.reset({ disciplineId: value.disciplineId, studentId: '' });
+        this.feedback.set('Aluno matriculado na disciplina.');
         this.isSaving.set(false);
       },
-      error: () => this.isSaving.set(false),
+      error: () => this.fail('Não foi possível matricular. Confira aluno e disciplina.'),
     });
+  }
+
+  setAcademicView(view: AcademicView) {
+    this.academicView.set(view);
+  }
+
+  selectCourse(course: CourseSummary) {
+    this.selectedCourseId.set(course.id);
+    this.disciplineForm.patchValue({ courseId: course.id });
+    this.academicView.set('disciplines');
+  }
+
+  courseDisciplines(courseId: string) {
+    return this.disciplines().filter((discipline) => discipline.courseId === courseId);
+  }
+
+  coursePeriod(course: CourseSummary) {
+    return course.endsAt ? `${course.startsAt} até ${course.endsAt}` : course.startsAt;
   }
 
   courseTitle(id: string) {
@@ -263,6 +312,13 @@ export class AdminModulePage implements OnInit {
   teacherNames(ids: string[]) {
     const names = ids.map((id) => this.members().find((member) => member.id === id)?.name).filter(Boolean);
     return names.length ? names.join(', ') : 'Professor a definir';
+  }
+
+  inviteLink(member: MemberSummary) {
+    if (!member.setupToken) {
+      return '';
+    }
+    return `${globalThis.location?.origin ?? ''}/setup-password?token=${member.setupToken}`;
   }
 
   private loadEvents() {
@@ -282,7 +338,13 @@ export class AdminModulePage implements OnInit {
   private loadAcademic() {
     this.loadMembers();
     this.api.listAdminCourses().subscribe({
-      next: (courses) => this.coursesState.set(courses),
+      next: (courses) => {
+        this.coursesState.set(courses);
+        if (!this.selectedCourseId() && courses.length) {
+          this.selectedCourseId.set(courses[0].id);
+          this.disciplineForm.patchValue({ courseId: courses[0].id });
+        }
+      },
       error: () => this.coursesState.set([]),
     });
     this.api.listAdminDisciplines().subscribe({
@@ -296,5 +358,10 @@ export class AdminModulePage implements OnInit {
     this.eventForm.reset();
     this.memberForm.reset({ name: '', phone: '', email: '', active: true, admin: false, professor: false });
     this.isSaving.set(false);
+  }
+
+  private fail(message: string) {
+    this.isSaving.set(false);
+    this.feedback.set(message);
   }
 }

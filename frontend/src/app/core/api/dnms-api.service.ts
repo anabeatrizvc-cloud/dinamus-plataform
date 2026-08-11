@@ -73,6 +73,10 @@ export class DnmsApiService {
     return this.http.put<MemberSummary>(`${this.baseUrl}/admin/members/${id}`, payload);
   }
 
+  resendMemberInvite(id: string) {
+    return this.http.post<MemberSummary>(`${this.baseUrl}/admin/members/${id}/invite`, {});
+  }
+
   deleteMember(id: string) {
     return this.http.delete<void>(`${this.baseUrl}/admin/members/${id}`);
   }

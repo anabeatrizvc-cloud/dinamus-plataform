@@ -113,6 +113,20 @@ write_env_file() {
     printf 'CORS_ALLOWED_ORIGINS=https://%s\n' "$DOMAIN" >>"$ENV_FILE"
   fi
 
+  if grep -q '^APP_PUBLIC_URL=' "$ENV_FILE"; then
+    sed -i "s|^APP_PUBLIC_URL=.*|APP_PUBLIC_URL=https://$DOMAIN|" "$ENV_FILE"
+  else
+    printf 'APP_PUBLIC_URL=https://%s\n' "$DOMAIN" >>"$ENV_FILE"
+  fi
+
+  ensure_env_value "MAIL_SMTP_ENABLED" "false"
+  ensure_env_value "MAIL_SMTP_HOST" ""
+  ensure_env_value "MAIL_SMTP_PORT" "587"
+  ensure_env_value "MAIL_SMTP_USERNAME" ""
+  ensure_env_value "MAIL_SMTP_PASSWORD" ""
+  ensure_env_value "MAIL_FROM" "no-reply@$DOMAIN"
+  ensure_env_value "MAIL_SMTP_STARTTLS" "true"
+
   chmod 600 "$ENV_FILE"
 }
 
@@ -149,6 +163,14 @@ services:
       COUCHDB_USER: ${COUCHDB_USER}
       COUCHDB_PASSWORD: ${COUCHDB_PASSWORD}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
+      APP_PUBLIC_URL: ${APP_PUBLIC_URL}
+      MAIL_SMTP_ENABLED: ${MAIL_SMTP_ENABLED}
+      MAIL_SMTP_HOST: ${MAIL_SMTP_HOST}
+      MAIL_SMTP_PORT: ${MAIL_SMTP_PORT}
+      MAIL_SMTP_USERNAME: ${MAIL_SMTP_USERNAME}
+      MAIL_SMTP_PASSWORD: ${MAIL_SMTP_PASSWORD}
+      MAIL_FROM: ${MAIL_FROM}
+      MAIL_SMTP_STARTTLS: ${MAIL_SMTP_STARTTLS}
     depends_on:
       couchdb:
         condition: service_healthy

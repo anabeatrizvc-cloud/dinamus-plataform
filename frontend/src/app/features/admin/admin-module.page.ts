@@ -1,7 +1,9 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { LucideBookOpen, LucideCalendarDays, LucidePencil, LucidePlus, LucideTicket, LucideTrash2, LucideUsersRound } from '@lucide/angular';
+import { map } from 'rxjs';
 
 import { DnmsApiService } from '../../core/api/dnms-api.service';
 import { CourseSummary, DisciplineSummary, EventPayload, EventSummary, MemberPayload, MemberSummary, Role } from '../../core/models/platform.models';
@@ -29,6 +31,7 @@ export class AdminModulePage implements OnInit {
   private readonly api = inject(DnmsApiService);
   private readonly route = inject(ActivatedRoute);
   private readonly fb = inject(FormBuilder);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly eventsState = signal<EventSummary[]>([]);
   private readonly membersState = signal<MemberSummary[]>([]);
   private readonly coursesState = signal<CourseSummary[]>([]);
@@ -39,8 +42,10 @@ export class AdminModulePage implements OnInit {
   readonly feedback = signal('');
   readonly academicView = signal<AcademicView>('courses');
   readonly selectedCourseId = signal('');
-  readonly title = computed(() => labels[this.route.snapshot.paramMap.get('module') ?? ''] ?? 'Módulo');
-  readonly moduleKey = computed(() => this.route.snapshot.paramMap.get('module') ?? '');
+  readonly moduleKey = toSignal(this.route.paramMap.pipe(map((params) => params.get('module') ?? '')), {
+    initialValue: this.route.snapshot.paramMap.get('module') ?? '',
+  });
+  readonly title = computed(() => labels[this.moduleKey()] ?? 'Módulo');
   readonly isEventsModule = computed(() => this.moduleKey() === 'eventos');
   readonly isMembersModule = computed(() => this.moduleKey() === 'membros');
   readonly isCoursesModule = computed(() => this.moduleKey() === 'cursos');
@@ -91,15 +96,7 @@ export class AdminModulePage implements OnInit {
   });
 
   ngOnInit() {
-    if (this.isEventsModule()) {
-      this.loadEvents();
-    }
-    if (this.isMembersModule()) {
-      this.loadMembers();
-    }
-    if (this.isCoursesModule()) {
-      this.loadAcademic();
-    }
+    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => this.loadModule());
   }
 
   saveEvent() {
@@ -116,17 +113,19 @@ export class AdminModulePage implements OnInit {
       this.api.updateEvent(editingId, value).subscribe({
         next: (saved) => {
           this.eventsState.update((events) => events.map((event) => (event.id === editingId ? saved : event)));
+          this.feedback.set('Evento atualizado.');
           this.finishEditing();
         },
-        error: () => this.isSaving.set(false),
+        error: () => this.fail('Não foi possível atualizar o evento. Confira os dados e tente novamente.'),
       });
     } else {
       this.api.createEvent(value).subscribe({
         next: (saved) => {
           this.eventsState.update((events) => [...events, saved]);
+          this.feedback.set('Evento criado e publicado na página pública.');
           this.finishEditing();
         },
-        error: () => this.isSaving.set(false),
+        error: () => this.fail('Não foi possível criar o evento. Confira nome, data e link de inscrição.'),
       });
     }
   }
@@ -145,10 +144,12 @@ export class AdminModulePage implements OnInit {
     this.api.deleteEvent(id).subscribe({
       next: () => {
         this.eventsState.update((events) => events.filter((event) => event.id !== id));
+        this.feedback.set('Evento excluído.');
         if (this.editingId() === id) {
           this.finishEditing();
         }
       },
+      error: () => this.fail('Não foi possível excluir o evento.'),
     });
   }
 
@@ -198,10 +199,12 @@ export class AdminModulePage implements OnInit {
     this.api.deleteMember(id).subscribe({
       next: () => {
         this.membersState.update((members) => members.filter((member) => member.id !== id));
+        this.feedback.set('Membro excluído.');
         if (this.editingId() === id) {
           this.finishEditing();
         }
       },
+      error: () => this.fail('Não foi possível excluir o membro.'),
     });
   }
 
@@ -353,10 +356,27 @@ export class AdminModulePage implements OnInit {
     });
   }
 
+  private loadModule() {
+    this.feedback.set('');
+    this.editingId.set(null);
+    this.isSaving.set(false);
+    if (this.isEventsModule()) {
+      this.loadEvents();
+    } else if (this.isMembersModule()) {
+      this.loadMembers();
+    } else if (this.isCoursesModule()) {
+      this.loadAcademic();
+    }
+  }
+
   private finishEditing() {
     this.editingId.set(null);
-    this.eventForm.reset();
-    this.memberForm.reset({ name: '', phone: '', email: '', active: true, admin: false, professor: false });
+    if (this.isEventsModule()) {
+      this.eventForm.reset({ name: '', startsAt: '', endsAt: '', registrationUrl: '' });
+    }
+    if (this.isMembersModule()) {
+      this.memberForm.reset({ name: '', phone: '', email: '', active: true, admin: false, professor: false });
+    }
     this.isSaving.set(false);
   }
 

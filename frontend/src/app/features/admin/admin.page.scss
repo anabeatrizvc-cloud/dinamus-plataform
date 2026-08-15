@@ -3,6 +3,20 @@
   min-height: 100dvh;
   align-content: start;
   gap: 22px;
+  overflow-x: hidden;
+}
+
+.admin-page *,
+.admin-page *::before,
+.admin-page *::after {
+  min-width: 0;
+}
+
+.admin-page input,
+.admin-page textarea,
+.admin-page select,
+.admin-page button {
+  max-width: 100%;
 }
 
 .admin-topbar {
@@ -151,6 +165,7 @@ strong {
   display: grid;
   grid-template-columns: minmax(320px, 0.78fr) minmax(0, 1.22fr);
   gap: 18px;
+  min-width: 0;
 }
 
 .academic-workspace {
@@ -174,6 +189,7 @@ strong {
   display: grid;
   align-content: start;
   gap: 18px;
+  min-width: 0;
   padding: 24px;
 }
 
@@ -413,6 +429,7 @@ strong {
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 18px;
+  min-width: 0;
   padding: 20px;
 }
 
@@ -532,6 +549,8 @@ strong {
 
 .enrollment-card select {
   min-height: 46px;
+  width: 100%;
+  max-width: 100%;
   border: 1px solid var(--dnms-border);
   border-radius: 12px;
   background: #050505;
@@ -587,7 +606,7 @@ strong {
   }
 
   .admin-hero h1 {
-    font-size: 2.35rem;
+    font-size: clamp(2rem, 12vw, 2.35rem);
   }
 
   .module-grid,
@@ -625,6 +644,27 @@ strong {
   .enrollment-card,
   .event-admin-card {
     grid-template-columns: 1fr;
+  }
+
+  .events-workspace,
+  .academic-dashboard {
+    gap: 12px;
+  }
+
+  .event-editor,
+  .event-admin-card {
+    border-radius: 14px;
+    padding: 16px;
+  }
+
+  .field input,
+  .field textarea,
+  .field select {
+    min-height: 46px;
+  }
+
+  .role-row label {
+    min-height: 44px;
   }
 
   .date-pill {

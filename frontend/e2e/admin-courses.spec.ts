@@ -57,7 +57,7 @@ test('admin creates course and discipline without layout overflow', async ({ pag
   await page.getByLabel('Início').fill('2026-10-01');
   await page.getByRole('button', { name: /criar curso/i }).click();
 
-  await expect(page.getByRole('button', { name: 'Disciplinas' })).toHaveClass(/active/);
+  await expect(page.getByRole('button', { name: 'Disciplinas', exact: true })).toHaveClass(/active/);
   await expect(page.getByLabel('Disciplinas cadastradas').getByRole('heading', { name: 'Escola de Servico' })).toBeVisible();
 
   await page.getByLabel('Nome da disciplina').fill('Serviço e cuidado');

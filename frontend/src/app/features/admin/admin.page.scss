@@ -585,28 +585,75 @@ strong {
   }
 }
 
+@media (max-width: 760px) {
+  .course-board {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 640px) {
   .admin-page {
-    gap: 16px;
+    width: min(100% - 24px, 520px);
+    gap: 14px;
+    padding-block: 16px 24px;
+  }
+
+  .admin-topbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    padding-top: 0;
   }
 
   .admin-topbar img {
-    width: 104px;
+    width: 92px;
+  }
+
+  .admin-topbar > .dnms-button {
+    width: auto;
+    min-height: 34px;
+    padding-inline: 12px;
+    font-size: 0.7rem;
+  }
+
+  .admin-topbar nav {
+    width: 100%;
+    gap: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 16px;
+    background: rgba(8, 8, 8, 0.72);
+    padding: 6px;
+    scrollbar-width: none;
+  }
+
+  .admin-topbar nav::-webkit-scrollbar {
+    display: none;
   }
 
   .admin-topbar nav a {
-    min-height: 38px;
-    padding: 9px 12px;
-    font-size: 0.82rem;
+    flex: 0 0 auto;
+    min-height: 34px;
+    border-radius: 12px;
+    padding: 8px 11px;
+    font-size: 0.76rem;
+    white-space: nowrap;
   }
 
   .admin-hero {
-    border-radius: 20px;
-    padding: 22px;
+    border-radius: 16px;
+    padding: 18px;
+    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.32);
   }
 
   .admin-hero h1 {
-    font-size: clamp(2rem, 12vw, 2.35rem);
+    max-width: none;
+    font-size: clamp(1.85rem, 10vw, 2.25rem);
+    line-height: 1;
+  }
+
+  .admin-hero span {
+    margin-top: 10px;
+    font-size: 0.92rem;
+    line-height: 1.45;
   }
 
   .module-grid,
@@ -616,15 +663,26 @@ strong {
   }
 
   .academic-switcher {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 5px;
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    border-radius: 16px;
+    padding: 6px;
+    scrollbar-width: none;
+  }
+
+  .academic-switcher::-webkit-scrollbar {
+    display: none;
   }
 
   .academic-switcher button {
-    min-width: 0;
-    padding: 0 6px;
-    font-size: 0.76rem;
+    flex: 0 0 auto;
+    min-height: 34px;
+    min-width: 88px;
+    border-radius: 12px;
+    padding: 0 10px;
+    font-size: 0.72rem;
+    white-space: nowrap;
   }
 
   .academic-form,
@@ -632,7 +690,40 @@ strong {
   .course-detail-card,
   .empty-academic {
     border-radius: 14px;
-    padding: 16px;
+    padding: 14px;
+  }
+
+  .academic-form {
+    gap: 13px;
+  }
+
+  .academic-form header,
+  .event-editor header,
+  .course-detail-card header {
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .academic-form header svg,
+  .event-editor header svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .academic-form h2,
+  .event-editor h2,
+  .course-card h2,
+  .course-detail-card h2,
+  .empty-academic h2 {
+    font-size: 1.12rem;
+    line-height: 1.18;
+  }
+
+  .academic-form p,
+  .event-editor p,
+  .course-card header span,
+  .course-detail-card header span {
+    font-size: 0.72rem;
   }
 
   .module-card {
@@ -654,24 +745,181 @@ strong {
   .event-editor,
   .event-admin-card {
     border-radius: 14px;
-    padding: 16px;
+    padding: 14px;
+    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.32);
+  }
+
+  .event-editor {
+    gap: 13px;
   }
 
   .field input,
   .field textarea,
   .field select {
-    min-height: 46px;
+    min-height: 44px;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 0.9rem;
+  }
+
+  .field textarea {
+    min-height: 96px;
+  }
+
+  .field span {
+    font-size: 0.82rem;
+  }
+
+  .dnms-button {
+    width: 100%;
+    min-height: 42px;
+    padding-inline: 14px;
+    font-size: 0.76rem;
   }
 
   .role-row label {
-    min-height: 44px;
+    min-height: 42px;
+    border-radius: 12px;
+    padding-inline: 10px;
+    font-size: 0.88rem;
+  }
+
+  .event-admin-card {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "date actions"
+      "copy copy";
+    align-items: start;
+    gap: 12px;
   }
 
   .date-pill {
+    grid-area: date;
+    min-width: 0;
+    width: fit-content;
+    max-width: 100%;
+    border-radius: 13px;
+    gap: 8px;
+    padding: 9px 10px;
+  }
+
+  .date-pill svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .date-pill span {
+    font-size: 0.82rem;
+  }
+
+  .date-pill small {
+    font-size: 0.68rem;
+  }
+
+  .member-pill {
     min-width: 0;
   }
 
+  .event-copy {
+    grid-area: copy;
+  }
+
+  .event-copy h2 {
+    font-size: 1.08rem;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+  }
+
+  .event-copy a {
+    margin-top: 5px;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
   .event-actions {
+    grid-area: actions;
     justify-content: end;
+    gap: 6px;
+  }
+
+  .event-actions button {
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+  }
+
+  .event-actions svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  .course-card,
+  .course-detail-card,
+  .discipline-card {
+    gap: 10px;
+  }
+
+  .course-card header {
+    align-items: flex-start;
+  }
+
+  .course-card header small {
+    max-width: 44%;
+    font-size: 0.72rem;
+  }
+
+  .course-metrics {
+    min-width: 0;
+    border-radius: 13px;
+    padding: 7px 10px;
+  }
+
+  .discipline-card {
+    border-radius: 12px;
+    padding: 10px;
+  }
+
+  .empty-academic {
+    min-height: 150px;
+  }
+}
+
+@media (max-width: 380px) {
+  .admin-page {
+    width: min(100% - 18px, 520px);
+  }
+
+  .admin-topbar > .dnms-button {
+    padding-inline: 10px;
+    font-size: 0.66rem;
+  }
+
+  .admin-hero,
+  .event-editor,
+  .event-admin-card,
+  .academic-form,
+  .course-card,
+  .course-detail-card,
+  .empty-academic {
+    padding: 12px;
+  }
+
+  .academic-switcher button {
+    min-width: 82px;
+    font-size: 0.68rem;
+  }
+
+  .event-admin-card {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "date"
+      "copy"
+      "actions";
+  }
+
+  .event-actions {
+    justify-content: start;
   }
 }

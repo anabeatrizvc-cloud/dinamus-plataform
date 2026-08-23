@@ -1,7 +1,10 @@
 package com.dinamus.adapters.out.persistence;
 
 import com.dinamus.application.ports.AcademicRepository;
+import com.dinamus.domain.model.AttendanceAudit;
 import com.dinamus.domain.model.AttendanceEntry;
+import com.dinamus.domain.model.AttendanceSession;
+import com.dinamus.domain.model.ActivitySummary;
 import com.dinamus.domain.model.CourseSummary;
 import com.dinamus.domain.model.DisciplineSummary;
 import com.dinamus.domain.model.EnrollmentSummary;
@@ -9,6 +12,7 @@ import com.dinamus.domain.model.EvaluationSummary;
 import com.dinamus.domain.model.GradeEntry;
 import com.dinamus.domain.model.LessonSummary;
 import com.dinamus.domain.model.MaterialSummary;
+import com.dinamus.domain.model.RecordedLesson;
 import io.micronaut.context.annotation.Requires;
 import jakarta.inject.Singleton;
 
@@ -43,6 +47,10 @@ public class InMemoryAcademicRepository implements AcademicRepository {
         new GradeEntry("grade-01", "eval-01", "aluno-demo", 8.5)
     ));
     private final List<AttendanceEntry> attendance = new CopyOnWriteArrayList<>();
+    private final List<AttendanceSession> attendanceSessions = new CopyOnWriteArrayList<>();
+    private final List<AttendanceAudit> attendanceAudits = new CopyOnWriteArrayList<>();
+    private final List<RecordedLesson> recordings = new CopyOnWriteArrayList<>();
+    private final List<ActivitySummary> activities = new CopyOnWriteArrayList<>();
 
     @Override
     public List<CourseSummary> listCourses() {
@@ -148,5 +156,52 @@ public class InMemoryAcademicRepository implements AcademicRepository {
     @Override
     public List<AttendanceEntry> listAttendance() {
         return new ArrayList<>(attendance);
+    }
+
+    @Override
+    public AttendanceSession saveAttendanceSession(AttendanceSession session) {
+        attendanceSessions.removeIf(item -> item.id().equals(session.id()));
+        attendanceSessions.add(session);
+        return session;
+    }
+
+    @Override
+    public List<AttendanceSession> listAttendanceSessions() {
+        return new ArrayList<>(attendanceSessions);
+    }
+
+    @Override
+    public AttendanceAudit saveAttendanceAudit(AttendanceAudit audit) {
+        attendanceAudits.add(audit);
+        return audit;
+    }
+
+    @Override
+    public List<AttendanceAudit> listAttendanceAudits() {
+        return new ArrayList<>(attendanceAudits);
+    }
+
+    @Override
+    public RecordedLesson saveRecording(RecordedLesson recording) {
+        recordings.removeIf(item -> item.id().equals(recording.id()));
+        recordings.add(recording);
+        return recording;
+    }
+
+    @Override
+    public List<RecordedLesson> listRecordings() {
+        return new ArrayList<>(recordings);
+    }
+
+    @Override
+    public ActivitySummary saveActivity(ActivitySummary activity) {
+        activities.removeIf(item -> item.id().equals(activity.id()));
+        activities.add(activity);
+        return activity;
+    }
+
+    @Override
+    public List<ActivitySummary> listActivities() {
+        return new ArrayList<>(activities);
     }
 }

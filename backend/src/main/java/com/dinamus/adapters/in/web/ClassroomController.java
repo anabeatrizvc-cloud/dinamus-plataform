@@ -4,12 +4,15 @@ import com.dinamus.adapters.in.web.dto.AcademicDtos;
 import com.dinamus.application.usecases.ClassroomUseCase;
 import com.dinamus.application.usecases.ManageAcademicUseCase;
 import com.dinamus.domain.model.AttendanceEntry;
+import com.dinamus.domain.model.AttendanceSession;
+import com.dinamus.domain.model.ActivitySummary;
 import com.dinamus.domain.model.ClassroomDashboard;
 import com.dinamus.domain.model.DisciplineWorkspace;
 import com.dinamus.domain.model.EvaluationSummary;
 import com.dinamus.domain.model.GradeEntry;
 import com.dinamus.domain.model.LessonSummary;
 import com.dinamus.domain.model.MaterialSummary;
+import com.dinamus.domain.model.RecordedLesson;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
@@ -61,6 +64,18 @@ public class ClassroomController {
         return academic.addMaterial(principal.getName(), request.disciplineId(), request.lessonId(), request.title(), request.url());
     }
 
+    @Post("/teacher/recorded-lessons")
+    @Secured({"ADMIN", "PROFESSOR"})
+    public RecordedLesson addRecording(Principal principal, @Valid @Body AcademicDtos.RecordingRequest request) {
+        return academic.addRecording(principal.getName(), request.disciplineId(), request.lessonId(), request.title(), request.youtubeUrl(), request.visibleToStudents());
+    }
+
+    @Post("/teacher/activities")
+    @Secured({"ADMIN", "PROFESSOR"})
+    public ActivitySummary addActivity(Principal principal, @Valid @Body AcademicDtos.ActivityRequest request) {
+        return academic.addActivity(principal.getName(), request.disciplineId(), request.lessonId(), request.title(), request.description(), request.dueAt(), request.points());
+    }
+
     @Post("/teacher/evaluations")
     @Secured({"ADMIN", "PROFESSOR"})
     public EvaluationSummary addEvaluation(Principal principal, @Valid @Body AcademicDtos.EvaluationRequest request) {
@@ -79,10 +94,46 @@ public class ClassroomController {
         return academic.generateAttendanceToken(principal.getName(), lessonId);
     }
 
+    @Post("/teacher/lessons/{lessonId}/attendance-sessions")
+    @Secured({"ADMIN", "PROFESSOR"})
+    public LessonSummary openAttendanceSession(Principal principal, @PathVariable String lessonId) {
+        return academic.generateAttendanceToken(principal.getName(), lessonId);
+    }
+
+    @Post("/teacher/attendance-sessions/{sessionId}/close")
+    @Secured({"ADMIN", "PROFESSOR"})
+    public AttendanceSession closeAttendanceSession(Principal principal, @PathVariable String sessionId) {
+        return academic.closeAttendanceSession(principal.getName(), sessionId);
+    }
+
+    @Post("/teacher/attendance-sessions/{sessionId}/extend")
+    @Secured({"ADMIN", "PROFESSOR"})
+    public AttendanceSession extendAttendanceSession(Principal principal, @PathVariable String sessionId, @Body AcademicDtos.AttendanceSessionExtendRequest request) {
+        return academic.extendAttendanceSession(principal.getName(), sessionId, request.minutes());
+    }
+
+    @Get("/teacher/lessons/{lessonId}/attendance")
+    @Secured({"ADMIN", "PROFESSOR"})
+    public List<AttendanceEntry> lessonAttendance(Principal principal, @PathVariable String lessonId) {
+        return academic.lessonAttendance(principal.getName(), lessonId);
+    }
+
     @Post("/teacher/attendance/{attendanceId}/validate")
     @Secured({"ADMIN", "PROFESSOR"})
     public AttendanceEntry validateAttendance(Principal principal, @PathVariable String attendanceId, @Body AcademicDtos.AttendanceValidationRequest request) {
         return academic.validateAttendance(principal.getName(), attendanceId, request.present());
+    }
+
+    @Post("/teacher/attendance/{attendanceId}/invalidate")
+    @Secured({"ADMIN", "PROFESSOR"})
+    public AttendanceEntry invalidateAttendance(Principal principal, @PathVariable String attendanceId) {
+        return academic.validateAttendance(principal.getName(), attendanceId, false);
+    }
+
+    @Post("/teacher/attendance/{attendanceId}/justify")
+    @Secured({"ADMIN", "PROFESSOR"})
+    public AttendanceEntry justifyAttendance(Principal principal, @PathVariable String attendanceId) {
+        return academic.justifyAttendance(principal.getName(), attendanceId);
     }
 
     @Post("/teacher/lessons/{lessonId}/attendance/validate-all")

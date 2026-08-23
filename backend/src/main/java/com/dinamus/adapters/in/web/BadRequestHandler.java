@@ -8,16 +8,35 @@ import io.micronaut.http.server.exceptions.ExceptionHandler;
 import io.micronaut.serde.annotation.Serdeable;
 import jakarta.inject.Singleton;
 
+import java.util.Map;
+
 @Produces
 @Singleton
 @Requires(classes = {IllegalArgumentException.class, ExceptionHandler.class})
 public class BadRequestHandler implements ExceptionHandler<IllegalArgumentException, HttpResponse<BadRequestHandler.ApiError>> {
     @Override
     public HttpResponse<ApiError> handle(HttpRequest request, IllegalArgumentException exception) {
-        return HttpResponse.badRequest(new ApiError(exception.getMessage()));
+        return HttpResponse.badRequest(new ApiError(code(exception.getMessage()), exception.getMessage(), Map.of()));
     }
 
     @Serdeable
-    public record ApiError(String message) {
+    public record ApiError(String code, String message, Map<String, Object> details) {
+    }
+
+    private String code(String message) {
+        if (message == null) {
+            return "VALIDATION_ERROR";
+        }
+        String normalized = message.toLowerCase();
+        if (normalized.contains("already") || normalized.contains("ja esta")) {
+            return "DUPLICATE_RESOURCE";
+        }
+        if (normalized.contains("expired") || normalized.contains("encerrada")) {
+            return "ATTENDANCE_SESSION_EXPIRED";
+        }
+        if (normalized.contains("invalid attendance token") || normalized.contains("qr")) {
+            return "INVALID_ATTENDANCE_TOKEN";
+        }
+        return "VALIDATION_ERROR";
     }
 }

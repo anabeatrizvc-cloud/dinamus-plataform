@@ -1,7 +1,10 @@
 package com.dinamus.adapters.out.persistence;
 
 import com.dinamus.application.ports.AcademicRepository;
+import com.dinamus.domain.model.AttendanceAudit;
 import com.dinamus.domain.model.AttendanceEntry;
+import com.dinamus.domain.model.AttendanceSession;
+import com.dinamus.domain.model.ActivitySummary;
 import com.dinamus.domain.model.CourseSummary;
 import com.dinamus.domain.model.DisciplineSummary;
 import com.dinamus.domain.model.EnrollmentSummary;
@@ -9,6 +12,7 @@ import com.dinamus.domain.model.EvaluationSummary;
 import com.dinamus.domain.model.GradeEntry;
 import com.dinamus.domain.model.LessonSummary;
 import com.dinamus.domain.model.MaterialSummary;
+import com.dinamus.domain.model.RecordedLesson;
 import io.micronaut.context.annotation.Requires;
 import io.micronaut.serde.ObjectMapper;
 import io.micronaut.serde.annotation.Serdeable;
@@ -48,9 +52,7 @@ public class CouchDbAcademicRepository implements AcademicRepository {
         request("PUT", databaseUri(), "");
         if (readState().isEmpty()) {
             saveState(seedState());
-            return;
         }
-        readState().map(this::withoutDemoContent).filter(AcademicState::changed).ifPresent(state -> saveState(state.withoutChangedFlag()));
     }
 
     @Override
@@ -166,6 +168,56 @@ public class CouchDbAcademicRepository implements AcademicRepository {
         return readState().map(AcademicState::attendance).orElseGet(List::of);
     }
 
+    @Override
+    public AttendanceSession saveAttendanceSession(AttendanceSession session) {
+        AcademicState state = readState().orElseGet(this::seedState);
+        saveState(state.withAttendanceSessions(replace(state.attendanceSessions(), session, AttendanceSession::id)));
+        return session;
+    }
+
+    @Override
+    public List<AttendanceSession> listAttendanceSessions() {
+        return readState().map(AcademicState::attendanceSessions).orElseGet(List::of);
+    }
+
+    @Override
+    public AttendanceAudit saveAttendanceAudit(AttendanceAudit audit) {
+        AcademicState state = readState().orElseGet(this::seedState);
+        List<AttendanceAudit> audits = new ArrayList<>(state.attendanceAudits());
+        audits.add(audit);
+        saveState(state.withAttendanceAudits(audits));
+        return audit;
+    }
+
+    @Override
+    public List<AttendanceAudit> listAttendanceAudits() {
+        return readState().map(AcademicState::attendanceAudits).orElseGet(List::of);
+    }
+
+    @Override
+    public RecordedLesson saveRecording(RecordedLesson recording) {
+        AcademicState state = readState().orElseGet(this::seedState);
+        saveState(state.withRecordings(replace(state.recordings(), recording, RecordedLesson::id)));
+        return recording;
+    }
+
+    @Override
+    public List<RecordedLesson> listRecordings() {
+        return readState().map(AcademicState::recordings).orElseGet(List::of);
+    }
+
+    @Override
+    public ActivitySummary saveActivity(ActivitySummary activity) {
+        AcademicState state = readState().orElseGet(this::seedState);
+        saveState(state.withActivities(replace(state.activities(), activity, ActivitySummary::id)));
+        return activity;
+    }
+
+    @Override
+    public List<ActivitySummary> listActivities() {
+        return readState().map(AcademicState::activities).orElseGet(List::of);
+    }
+
     private <T> List<T> replace(List<T> items, T value, IdReader<T> reader) {
         List<T> changed = new ArrayList<>(items);
         changed.removeIf(item -> reader.id(item).equals(reader.id(value)));
@@ -189,8 +241,39 @@ public class CouchDbAcademicRepository implements AcademicRepository {
     private void saveState(AcademicState state) {
         try {
             Map<String, Object> document = state.rev().isBlank()
-                ? Map.of("_id", DOCUMENT_ID, "courses", state.courses(), "disciplines", state.disciplines(), "enrollments", state.enrollments(), "lessons", state.lessons(), "materials", state.materials(), "evaluations", state.evaluations(), "grades", state.grades(), "attendance", state.attendance())
-                : Map.of("_id", DOCUMENT_ID, "_rev", state.rev(), "courses", state.courses(), "disciplines", state.disciplines(), "enrollments", state.enrollments(), "lessons", state.lessons(), "materials", state.materials(), "evaluations", state.evaluations(), "grades", state.grades(), "attendance", state.attendance());
+                ? Map.ofEntries(
+                    Map.entry("_id", DOCUMENT_ID),
+                    Map.entry("schemaVersion", 2),
+                    Map.entry("courses", state.courses()),
+                    Map.entry("disciplines", state.disciplines()),
+                    Map.entry("enrollments", state.enrollments()),
+                    Map.entry("lessons", state.lessons()),
+                    Map.entry("materials", state.materials()),
+                    Map.entry("evaluations", state.evaluations()),
+                    Map.entry("grades", state.grades()),
+                    Map.entry("attendance", state.attendance()),
+                    Map.entry("attendanceSessions", state.attendanceSessions()),
+                    Map.entry("attendanceAudits", state.attendanceAudits()),
+                    Map.entry("recordings", state.recordings()),
+                    Map.entry("activities", state.activities())
+                )
+                : Map.ofEntries(
+                    Map.entry("_id", DOCUMENT_ID),
+                    Map.entry("_rev", state.rev()),
+                    Map.entry("schemaVersion", 2),
+                    Map.entry("courses", state.courses()),
+                    Map.entry("disciplines", state.disciplines()),
+                    Map.entry("enrollments", state.enrollments()),
+                    Map.entry("lessons", state.lessons()),
+                    Map.entry("materials", state.materials()),
+                    Map.entry("evaluations", state.evaluations()),
+                    Map.entry("grades", state.grades()),
+                    Map.entry("attendance", state.attendance()),
+                    Map.entry("attendanceSessions", state.attendanceSessions()),
+                    Map.entry("attendanceAudits", state.attendanceAudits()),
+                    Map.entry("recordings", state.recordings()),
+                    Map.entry("activities", state.activities())
+                );
             if (request("PUT", documentUri(), objectMapper.writeValueAsString(document)).isEmpty()) {
                 throw new IllegalStateException("Could not persist academic state");
             }
@@ -209,29 +292,13 @@ public class CouchDbAcademicRepository implements AcademicRepository {
             List.of(),
             List.of(),
             List.of(),
+            List.of(),
+            List.of(),
+            List.of(),
+            List.of(),
             "",
             false
         );
-    }
-
-    private AcademicState withoutDemoContent(AcademicState state) {
-        List<CourseSummary> courses = state.courses().stream().filter(item -> !item.id().equals("curso-fundamentos")).toList();
-        List<DisciplineSummary> disciplines = state.disciplines().stream().filter(item -> !item.id().equals("disc-doutrina") && !item.courseId().equals("curso-fundamentos")).toList();
-        List<EnrollmentSummary> enrollments = state.enrollments().stream().filter(item -> !item.disciplineId().equals("disc-doutrina") && !item.studentId().equals("aluno-demo")).toList();
-        List<LessonSummary> lessons = state.lessons().stream().filter(item -> !item.id().equals("lesson-01") && !item.id().equals("lesson-02") && !item.disciplineId().equals("disc-doutrina")).toList();
-        List<MaterialSummary> materials = state.materials().stream().filter(item -> !item.id().equals("material-01") && !item.disciplineId().equals("disc-doutrina")).toList();
-        List<EvaluationSummary> evaluations = state.evaluations().stream().filter(item -> !item.id().equals("eval-01") && !item.disciplineId().equals("disc-doutrina")).toList();
-        List<GradeEntry> grades = state.grades().stream().filter(item -> !item.id().equals("grade-01") && !item.studentId().equals("aluno-demo") && !item.evaluationId().equals("eval-01")).toList();
-        List<AttendanceEntry> attendance = state.attendance().stream().filter(item -> !item.studentId().equals("aluno-demo") && !item.lessonId().equals("lesson-01") && !item.lessonId().equals("lesson-02")).toList();
-        boolean changed = courses.size() != state.courses().size()
-            || disciplines.size() != state.disciplines().size()
-            || enrollments.size() != state.enrollments().size()
-            || lessons.size() != state.lessons().size()
-            || materials.size() != state.materials().size()
-            || evaluations.size() != state.evaluations().size()
-            || grades.size() != state.grades().size()
-            || attendance.size() != state.attendance().size();
-        return new AcademicState(courses, disciplines, enrollments, lessons, materials, evaluations, grades, attendance, state.rev(), changed);
     }
 
     private Optional<String> request(String method, String uri, String body) {
@@ -277,6 +344,10 @@ public class CouchDbAcademicRepository implements AcademicRepository {
         List<EvaluationSummary> evaluations,
         List<GradeEntry> grades,
         List<AttendanceEntry> attendance,
+        List<AttendanceSession> attendanceSessions,
+        List<AttendanceAudit> attendanceAudits,
+        List<RecordedLesson> recordings,
+        List<ActivitySummary> activities,
         String rev,
         boolean changed
     ) {
@@ -290,45 +361,65 @@ public class CouchDbAcademicRepository implements AcademicRepository {
                 document.evaluations() == null ? List.of() : document.evaluations(),
                 document.grades() == null ? List.of() : document.grades(),
                 document.attendance() == null ? List.of() : document.attendance(),
+                document.attendanceSessions() == null ? List.of() : document.attendanceSessions(),
+                document.attendanceAudits() == null ? List.of() : document.attendanceAudits(),
+                document.recordings() == null ? List.of() : document.recordings(),
+                document.activities() == null ? List.of() : document.activities(),
                 document._rev(),
                 false
             );
         }
 
         AcademicState withCourses(List<CourseSummary> value) {
-            return new AcademicState(value, disciplines, enrollments, lessons, materials, evaluations, grades, attendance, rev, false);
+            return new AcademicState(value, disciplines, enrollments, lessons, materials, evaluations, grades, attendance, attendanceSessions, attendanceAudits, recordings, activities, rev, false);
         }
 
         AcademicState withDisciplines(List<DisciplineSummary> value) {
-            return new AcademicState(courses, value, enrollments, lessons, materials, evaluations, grades, attendance, rev, false);
+            return new AcademicState(courses, value, enrollments, lessons, materials, evaluations, grades, attendance, attendanceSessions, attendanceAudits, recordings, activities, rev, false);
         }
 
         AcademicState withEnrollments(List<EnrollmentSummary> value) {
-            return new AcademicState(courses, disciplines, value, lessons, materials, evaluations, grades, attendance, rev, false);
+            return new AcademicState(courses, disciplines, value, lessons, materials, evaluations, grades, attendance, attendanceSessions, attendanceAudits, recordings, activities, rev, false);
         }
 
         AcademicState withLessons(List<LessonSummary> value) {
-            return new AcademicState(courses, disciplines, enrollments, value, materials, evaluations, grades, attendance, rev, false);
+            return new AcademicState(courses, disciplines, enrollments, value, materials, evaluations, grades, attendance, attendanceSessions, attendanceAudits, recordings, activities, rev, false);
         }
 
         AcademicState withMaterials(List<MaterialSummary> value) {
-            return new AcademicState(courses, disciplines, enrollments, lessons, value, evaluations, grades, attendance, rev, false);
+            return new AcademicState(courses, disciplines, enrollments, lessons, value, evaluations, grades, attendance, attendanceSessions, attendanceAudits, recordings, activities, rev, false);
         }
 
         AcademicState withEvaluations(List<EvaluationSummary> value) {
-            return new AcademicState(courses, disciplines, enrollments, lessons, materials, value, grades, attendance, rev, false);
+            return new AcademicState(courses, disciplines, enrollments, lessons, materials, value, grades, attendance, attendanceSessions, attendanceAudits, recordings, activities, rev, false);
         }
 
         AcademicState withGrades(List<GradeEntry> value) {
-            return new AcademicState(courses, disciplines, enrollments, lessons, materials, evaluations, value, attendance, rev, false);
+            return new AcademicState(courses, disciplines, enrollments, lessons, materials, evaluations, value, attendance, attendanceSessions, attendanceAudits, recordings, activities, rev, false);
         }
 
         AcademicState withAttendance(List<AttendanceEntry> value) {
-            return new AcademicState(courses, disciplines, enrollments, lessons, materials, evaluations, grades, value, rev, false);
+            return new AcademicState(courses, disciplines, enrollments, lessons, materials, evaluations, grades, value, attendanceSessions, attendanceAudits, recordings, activities, rev, false);
+        }
+
+        AcademicState withAttendanceSessions(List<AttendanceSession> value) {
+            return new AcademicState(courses, disciplines, enrollments, lessons, materials, evaluations, grades, attendance, value, attendanceAudits, recordings, activities, rev, false);
+        }
+
+        AcademicState withAttendanceAudits(List<AttendanceAudit> value) {
+            return new AcademicState(courses, disciplines, enrollments, lessons, materials, evaluations, grades, attendance, attendanceSessions, value, recordings, activities, rev, false);
+        }
+
+        AcademicState withRecordings(List<RecordedLesson> value) {
+            return new AcademicState(courses, disciplines, enrollments, lessons, materials, evaluations, grades, attendance, attendanceSessions, attendanceAudits, value, activities, rev, false);
+        }
+
+        AcademicState withActivities(List<ActivitySummary> value) {
+            return new AcademicState(courses, disciplines, enrollments, lessons, materials, evaluations, grades, attendance, attendanceSessions, attendanceAudits, recordings, value, rev, false);
         }
 
         AcademicState withoutChangedFlag() {
-            return new AcademicState(courses, disciplines, enrollments, lessons, materials, evaluations, grades, attendance, rev, false);
+            return new AcademicState(courses, disciplines, enrollments, lessons, materials, evaluations, grades, attendance, attendanceSessions, attendanceAudits, recordings, activities, rev, false);
         }
     }
 
@@ -343,7 +434,11 @@ public class CouchDbAcademicRepository implements AcademicRepository {
         List<MaterialSummary> materials,
         List<EvaluationSummary> evaluations,
         List<GradeEntry> grades,
-        List<AttendanceEntry> attendance
+        List<AttendanceEntry> attendance,
+        List<AttendanceSession> attendanceSessions,
+        List<AttendanceAudit> attendanceAudits,
+        List<RecordedLesson> recordings,
+        List<ActivitySummary> activities
     ) {
     }
 }

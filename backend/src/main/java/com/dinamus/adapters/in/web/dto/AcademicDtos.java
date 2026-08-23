@@ -31,6 +31,14 @@ public final class AcademicDtos {
     }
 
     @Serdeable
+    public record RecordingRequest(@NotBlank String disciplineId, String lessonId, @NotBlank @Size(min = 3) String title, @NotBlank String youtubeUrl, boolean visibleToStudents) {
+    }
+
+    @Serdeable
+    public record ActivityRequest(@NotBlank String disciplineId, String lessonId, @NotBlank @Size(min = 3) String title, String description, String dueAt, double points) {
+    }
+
+    @Serdeable
     public record EvaluationRequest(@NotBlank String disciplineId, @NotBlank @Size(min = 3) String title, double weight, double maxScore) {
     }
 
@@ -44,5 +52,9 @@ public final class AcademicDtos {
 
     @Serdeable
     public record AttendanceValidationRequest(boolean present) {
+    }
+
+    @Serdeable
+    public record AttendanceSessionExtendRequest(int minutes) {
     }
 }

@@ -13,7 +13,8 @@
   <section class="classroom-hero">
     <div>
       <p>Formação DNMS</p>
-      <h1>Cursos, disciplinas e presença em um só lugar.</h1>
+      <h1>Sua sala de aula na DNMS.</h1>
+      <span>Proxima aula, presença, materiais e gravações em uma experiência simples para celular.</span>
     </div>
     <div class="hero-metric">
       <svg lucideBookOpen aria-hidden="true"></svg>
@@ -21,6 +22,10 @@
       <span>disciplinas disponíveis</span>
     </div>
   </section>
+
+  @if (classroomFeedback()) {
+    <aside class="surface classroom-feedback" role="status">{{ classroomFeedback() }}</aside>
+  }
 
   <section class="classroom-layout">
     <aside class="surface discipline-rail" aria-label="Disciplinas">
@@ -60,7 +65,10 @@
           <button type="button" [class.active]="activeView() === 'attendance'" (click)="setView('attendance')">Presença</button>
           <button type="button" [class.active]="activeView() === 'overview'" (click)="setView('overview')">Resumo</button>
           <button type="button" [class.active]="activeView() === 'materials'" (click)="setView('materials')">Materiais</button>
-          <button type="button" [class.active]="activeView() === 'grades'" (click)="setView('grades')">Notas</button>
+          <button type="button" [class.active]="activeView() === 'activities'" (click)="setView('activities')">Atividades</button>
+          @if (data.discipline.usesGrades) {
+            <button type="button" [class.active]="activeView() === 'grades'" (click)="setView('grades')">Notas</button>
+          }
           @if (isTeacher()) {
             <button type="button" [class.active]="activeView() === 'setup'" (click)="setView('setup')">Configurar</button>
           }
@@ -142,13 +150,14 @@
 
                     <div class="attendance-list">
                       @for (entry of lessonAttendance(lesson.id); track entry.id) {
-                        <div class="attendance-pill" [class.pending]="entry.status === 'PENDING'" [class.validated]="entry.status === 'VALIDATED'" [class.rejected]="entry.status === 'REJECTED'">
+                        <div class="attendance-pill" [class.pending]="isPending(entry.status)" [class.validated]="isPresent(entry.status)" [class.rejected]="isRejected(entry.status)" [class.justified]="entry.status === 'JUSTIFIED_ABSENCE'">
                           <span>{{ studentName(entry.studentId) }}</span>
                           <strong>{{ attendanceLabel(entry.status) }}</strong>
                           @if (isTeacher()) {
                             <div>
                               <button type="button" (click)="validateAttendance(entry, true)">Validar</button>
                               <button type="button" (click)="validateAttendance(entry, false)">Invalidar</button>
+                              <button type="button" (click)="justifyAttendance(entry)">Justificar</button>
                             </div>
                           }
                         </div>
@@ -204,6 +213,54 @@
                 <p class="empty-state">Os materiais aparecerão aqui.</p>
               }
             </div>
+
+            <div class="recording-section">
+              <div class="recording-heading">
+                <svg lucidePlayCircle aria-hidden="true"></svg>
+                <div>
+                  <span>Aulas gravadas</span>
+                  <h3>Gravações liberadas</h3>
+                </div>
+              </div>
+              <div class="recording-grid">
+                @for (recording of data.recordings; track recording.id) {
+                  <article class="recording-card">
+                    <div>
+                      <strong>{{ recording.title }}</strong>
+                      <span>{{ recording.lessonId ? 'Gravação vinculada à aula' : 'Gravação da disciplina' }}</span>
+                    </div>
+                    <iframe [src]="recordingUrl(recording)" title="Aula gravada" loading="lazy" allowfullscreen></iframe>
+                  </article>
+                } @empty {
+                  <p class="empty-state">Nenhuma gravação liberada para este acesso.</p>
+                }
+              </div>
+            </div>
+          </section>
+        }
+
+        @if (activeView() === 'activities') {
+          <section class="surface panel-card">
+            <header>
+              <svg lucideCheck aria-hidden="true"></svg>
+              <div>
+                <span>Atividades</span>
+                <h3>Pendências e orientações</h3>
+              </div>
+            </header>
+            <div class="activity-list">
+              @for (activity of data.activities; track activity.id) {
+                <article class="activity-card">
+                  <div>
+                    <strong>{{ activity.title }}</strong>
+                    <span>{{ activity.description || 'Orientação publicada pelo professor.' }}</span>
+                  </div>
+                  <small>{{ activity.dueAt ? 'Prazo: ' + activity.dueAt : 'Sem prazo' }} · {{ activity.points ? activity.points + ' pontos' : 'sem pontuação' }}</small>
+                </article>
+              } @empty {
+                <p class="empty-state">Nenhuma atividade publicada para esta disciplina.</p>
+              }
+            </div>
           </section>
         }
 
@@ -252,6 +309,35 @@
               <input formControlName="title" placeholder="Nome do material" />
               <input formControlName="url" placeholder="Link do material" />
               <button class="dnms-button" type="submit">Subir link</button>
+            </form>
+
+            <form class="surface tool-card" [formGroup]="recordingForm" (ngSubmit)="addRecording()">
+              <strong>Aula gravada</strong>
+              <select formControlName="lessonId">
+                <option value="">Geral da disciplina</option>
+                @for (lesson of data.lessons; track lesson.id) {
+                  <option [value]="lesson.id">{{ lesson.title }}</option>
+                }
+              </select>
+              <input formControlName="title" placeholder="Título da gravação" />
+              <input formControlName="youtubeUrl" placeholder="Link do YouTube" />
+              <label class="soft-toggle"><input type="checkbox" formControlName="visibleToStudents" /> Liberar para alunos</label>
+              <button class="dnms-button" type="submit">Liberar gravação</button>
+            </form>
+
+            <form class="surface tool-card" [formGroup]="activityForm" (ngSubmit)="addActivity()">
+              <strong>Nova atividade</strong>
+              <select formControlName="lessonId">
+                <option value="">Geral da disciplina</option>
+                @for (lesson of data.lessons; track lesson.id) {
+                  <option [value]="lesson.id">{{ lesson.title }}</option>
+                }
+              </select>
+              <input formControlName="title" placeholder="Título da atividade" />
+              <input formControlName="description" placeholder="Orientação para os alunos" />
+              <input type="date" formControlName="dueAt" />
+              <input type="number" min="0" formControlName="points" placeholder="Pontuação opcional" />
+              <button class="dnms-button" type="submit">Publicar atividade</button>
             </form>
 
             <form class="surface tool-card" [formGroup]="evaluationForm" (ngSubmit)="addEvaluation()">

@@ -11,8 +11,11 @@ public record DisciplineWorkspace(
     List<MemberSummary> students,
     List<LessonSummary> lessons,
     List<MaterialSummary> materials,
+    List<RecordedLesson> recordings,
+    List<ActivitySummary> activities,
     List<EvaluationSummary> evaluations,
     List<GradeEntry> grades,
-    List<AttendanceEntry> attendance
+    List<AttendanceEntry> attendance,
+    List<AttendanceAudit> attendanceAudits
 ) {
 }

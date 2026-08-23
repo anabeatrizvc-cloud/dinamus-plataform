@@ -14,4 +14,11 @@ public record DisciplineSummary(
     int maxAbsences,
     boolean usesGrades
 ) {
+    public DisciplineSummary {
+        id = id == null ? "" : id;
+        courseId = courseId == null ? "" : courseId;
+        title = title == null ? "" : title;
+        description = description == null ? "" : description;
+        teacherIds = teacherIds == null ? List.of() : teacherIds;
+    }
 }

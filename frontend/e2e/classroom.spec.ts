@@ -41,9 +41,12 @@ const workspace = {
   students: [{ id: 'aluno-demo', name: 'Ana Beatriz', phone: '81999992222', email: 'aluno@dinamus.local', roles: ['MEMBRO'], active: true, invitePending: false, setupToken: '' }],
   lessons: [{ id: 'lesson-01', disciplineId: 'disc-doutrina', title: 'Identidade e familia espiritual', lessonDate: '2026-08-20', attendanceToken: '', attendanceTokenExpiresAt: '' }],
   materials: [{ id: 'material-01', disciplineId: 'disc-doutrina', lessonId: 'lesson-01', title: 'Guia da aula 1', url: 'https://dinamus.recife/materiais/guia' }],
+  recordings: [{ id: 'rec-01', disciplineId: 'disc-doutrina', lessonId: 'lesson-01', title: 'Gravação da aula 1', provider: 'YOUTUBE', providerVideoId: 'dQw4w9WgXcQ', embedUrl: 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ', visibleToStudents: true, createdBy: 'professor-demo', createdAt: '2026-08-20T10:00:00Z' }],
+  activities: [{ id: 'act-01', disciplineId: 'disc-doutrina', lessonId: 'lesson-01', title: 'Resumo da aula', description: 'Enviar reflexao pessoal.', dueAt: '2026-08-27', points: 10, status: 'PUBLISHED' }],
   evaluations: [{ id: 'eval-01', disciplineId: 'disc-doutrina', title: 'Resumo aplicado', weight: 1, maxScore: 10 }],
   grades: [{ id: 'grade-01', evaluationId: 'eval-01', studentId: 'aluno-demo', score: 8.5 }],
-  attendance: [{ id: 'att-1', lessonId: 'lesson-01', studentId: 'aluno-demo', status: 'PENDING', scannedAt: '2026-08-20T10:00:00Z', validatedAt: '' }],
+  attendance: [{ id: 'att-1', lessonId: 'lesson-01', studentId: 'aluno-demo', status: 'PENDING_VALIDATION', scannedAt: '2026-08-20T10:00:00Z', validatedAt: '' }],
+  attendanceAudits: [],
 };
 
 test.beforeEach(async ({ page }) => {
@@ -67,7 +70,7 @@ test.beforeEach(async ({ page }) => {
 test('renders classroom workspace and QR action responsively', async ({ page }) => {
   await page.goto('/cursos', { waitUntil: 'domcontentloaded' });
 
-  await expect(page.getByRole('heading', { name: /cursos, disciplinas e presença/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /sua sala de aula na dnms/i })).toBeVisible();
   await expect(page.getByRole('button', { name: /doutrina e vida crista/i })).toBeVisible();
   await expect(page.getByRole('heading', { name: /doutrina e vida crista/i })).toBeVisible();
   await expect(page.locator('.attendance-pill').filter({ hasText: 'Ana Beatriz' })).toBeVisible();

@@ -177,6 +177,7 @@
         <button type="button" [class.active]="academicView() === 'courses'" (click)="setAcademicView('courses')">Cursos</button>
         <button type="button" [class.active]="academicView() === 'disciplines'" (click)="setAcademicView('disciplines')">Disciplinas</button>
         <button type="button" [class.active]="academicView() === 'enrollments'" (click)="setAcademicView('enrollments')">Matrículas</button>
+        <button type="button" [class.active]="academicView() === 'reports'" (click)="setAcademicView('reports')">Relatórios</button>
       </nav>
 
       @if (academicView() === 'courses') {
@@ -185,7 +186,7 @@
             <header>
               <svg lucideBookOpen aria-hidden="true"></svg>
               <div>
-                <p>Nova jornada</p>
+                <p>Etapa 1 de 3 · Nova jornada</p>
                 <h2>Criar curso</h2>
               </div>
             </header>
@@ -245,7 +246,7 @@
             <header>
               <svg lucideCalendarDays aria-hidden="true"></svg>
               <div>
-                <p>Disciplina</p>
+                <p>Etapa 2 de 3 · Disciplina</p>
                 <h2>{{ selectedCourse()?.title || 'Aulas e regras' }}</h2>
               </div>
             </header>
@@ -269,7 +270,7 @@
             <label class="field">
               <span>Professor</span>
               <select formControlName="teacherId">
-                <option value="">Definir depois</option>
+                <option value="">Selecione o professor</option>
                 @for (professor of professors(); track professor.id) {
                   <option [value]="professor.id">{{ professor.name }}</option>
                 }
@@ -326,7 +327,7 @@
             <header>
               <svg lucideUsersRound aria-hidden="true"></svg>
               <div>
-                <p>Matrícula</p>
+                <p>Etapa 3 de 3 · Matrícula</p>
                 <h2>Adicionar aluno à disciplina</h2>
               </div>
             </header>
@@ -350,6 +351,52 @@
             </label>
             <button class="dnms-button" type="submit" [disabled]="isSaving()">Matricular aluno</button>
           </form>
+        </section>
+      }
+
+      @if (academicView() === 'reports') {
+        <section class="academic-dashboard compact-flow">
+          <form class="surface academic-form enrollment-flow" [formGroup]="reportForm" (ngSubmit)="loadAttendanceReport()">
+            <header>
+              <svg lucideCalendarDays aria-hidden="true"></svg>
+              <div>
+                <p>Frequência</p>
+                <h2>Relatório da disciplina</h2>
+              </div>
+            </header>
+            <label class="field">
+              <span>Disciplina</span>
+              <select formControlName="disciplineId">
+                <option value="">Selecione a disciplina</option>
+                @for (discipline of disciplines(); track discipline.id) {
+                  <option [value]="discipline.id">{{ courseTitle(discipline.courseId) }} — {{ discipline.title }}</option>
+                }
+              </select>
+            </label>
+            <button class="dnms-button" type="submit" [disabled]="isSaving()">Gerar prévia</button>
+          </form>
+
+          <section class="event-admin-list report-list" aria-label="Relatório de frequência">
+            @for (row of reportRows(); track row.studentId) {
+              <article class="surface event-admin-card">
+                <div class="date-pill member-pill">
+                  <svg lucideUsersRound aria-hidden="true"></svg>
+                  <span>{{ row.frequencyPercent }}%<small>{{ row.situation }}</small></span>
+                </div>
+                <div class="event-copy">
+                  <h2>{{ row.studentName }}</h2>
+                  <a>{{ row.presences }} presenças · {{ row.absences }} faltas</a>
+                </div>
+              </article>
+            } @empty {
+              <article class="surface event-admin-card">
+                <div class="event-copy">
+                  <h2>Sem relatório carregado</h2>
+                  <a>Escolha uma disciplina para ver a prévia antes de exportar.</a>
+                </div>
+              </article>
+            }
+          </section>
         </section>
       }
     </section>

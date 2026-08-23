@@ -11,4 +11,12 @@ public record LessonSummary(
     String attendanceToken,
     String attendanceTokenExpiresAt
 ) {
+    public LessonSummary {
+        id = id == null ? "" : id;
+        disciplineId = disciplineId == null ? "" : disciplineId;
+        title = title == null ? "" : title;
+        lessonDate = lessonDate == null ? "" : lessonDate;
+        attendanceToken = attendanceToken == null ? "" : attendanceToken;
+        attendanceTokenExpiresAt = attendanceTokenExpiresAt == null ? "" : attendanceTokenExpiresAt;
+    }
 }

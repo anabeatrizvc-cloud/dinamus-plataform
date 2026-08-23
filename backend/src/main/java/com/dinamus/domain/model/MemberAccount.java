@@ -15,6 +15,16 @@ public record MemberAccount(
     boolean active,
     String passwordSetupToken
 ) {
+    public MemberAccount {
+        id = id == null ? "" : id;
+        name = name == null ? "" : name;
+        phone = phone == null ? "" : phone;
+        email = email == null ? "" : email;
+        passwordHash = passwordHash == null ? "" : passwordHash;
+        roles = roles == null ? List.of("MEMBRO") : roles;
+        passwordSetupToken = passwordSetupToken == null ? "" : passwordSetupToken;
+    }
+
     public UserAccount toUserAccount() {
         return new UserAccount(id, name, email, passwordHash, roles, active);
     }

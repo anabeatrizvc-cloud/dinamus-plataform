@@ -1,22 +1,23 @@
 import { ChangeDetectionStrategy, Component, ElementRef, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
+import { DomSanitizer } from '@angular/platform-browser';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { LucideBookOpen, LucideCalendarDays, LucideCheck, LucideQrCode, LucideUpload } from '@lucide/angular';
+import { LucideBookOpen, LucideCalendarDays, LucideCheck, LucidePlayCircle, LucideQrCode, LucideUpload } from '@lucide/angular';
 import * as QRCode from 'qrcode';
 
 import { DnmsApiService } from '../../core/api/dnms-api.service';
 import { AuthService } from '../../core/auth/auth.service';
-import { AttendanceEntry, ClassroomDashboard, DisciplineSummary, DisciplineWorkspace, GradeEntry, LessonSummary } from '../../core/models/platform.models';
+import { AttendanceEntry, ClassroomDashboard, DisciplineSummary, DisciplineWorkspace, GradeEntry, LessonSummary, RecordedLesson } from '../../core/models/platform.models';
 
 type ScannerControls = {
   stop: () => void;
 };
 
-type ClassroomView = 'overview' | 'attendance' | 'materials' | 'grades' | 'setup';
+type ClassroomView = 'overview' | 'attendance' | 'materials' | 'activities' | 'grades' | 'setup';
 
 @Component({
   selector: 'dnms-classroom-page',
-  imports: [ReactiveFormsModule, RouterLink, LucideBookOpen, LucideCalendarDays, LucideCheck, LucideQrCode, LucideUpload],
+  imports: [ReactiveFormsModule, RouterLink, LucideBookOpen, LucideCalendarDays, LucideCheck, LucidePlayCircle, LucideQrCode, LucideUpload],
   templateUrl: './classroom.page.html',
   styleUrl: './classroom.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -25,6 +26,7 @@ export class ClassroomPage implements OnInit {
   private readonly api = inject(DnmsApiService);
   readonly auth = inject(AuthService);
   private readonly fb = inject(FormBuilder);
+  private readonly sanitizer = inject(DomSanitizer);
   private scannerControls: ScannerControls | null = null;
 
   @ViewChild('preview') preview?: ElementRef<HTMLVideoElement>;
@@ -35,6 +37,7 @@ export class ClassroomPage implements OnInit {
   readonly qrDataUrl = signal('');
   readonly qrLesson = signal<LessonSummary | null>(null);
   readonly attendanceMessage = signal('');
+  readonly classroomFeedback = signal('');
   readonly scanning = signal(false);
   readonly activeView = signal<ClassroomView>('attendance');
 
@@ -57,6 +60,21 @@ export class ClassroomPage implements OnInit {
     lessonId: [''],
     title: ['', [Validators.required, Validators.minLength(3)]],
     url: ['', [Validators.required]],
+  });
+
+  readonly recordingForm = this.fb.nonNullable.group({
+    lessonId: [''],
+    title: ['', [Validators.required, Validators.minLength(3)]],
+    youtubeUrl: ['', [Validators.required]],
+    visibleToStudents: [true],
+  });
+
+  readonly activityForm = this.fb.nonNullable.group({
+    lessonId: [''],
+    title: ['', [Validators.required, Validators.minLength(3)]],
+    description: [''],
+    dueAt: [''],
+    points: [0],
   });
 
   readonly evaluationForm = this.fb.nonNullable.group({
@@ -83,9 +101,13 @@ export class ClassroomPage implements OnInit {
     this.selectedDisciplineId.set(discipline.id);
     this.qrDataUrl.set('');
     this.qrLesson.set(null);
+    this.classroomFeedback.set('');
     this.api.disciplineWorkspace(discipline.id).subscribe({
       next: (workspace) => this.workspace.set(workspace),
-      error: () => this.workspace.set(null),
+      error: () => {
+        this.workspace.set(null);
+        this.classroomFeedback.set('Nao conseguimos carregar esta disciplina. Tente novamente.');
+      },
     });
   }
 
@@ -104,7 +126,9 @@ export class ClassroomPage implements OnInit {
       next: (lesson) => {
         this.workspace.update((current) => (current ? { ...current, lessons: [...current.lessons, lesson] } : current));
         this.lessonForm.reset();
+        this.classroomFeedback.set('Aula cadastrada com sucesso.');
       },
+      error: () => this.classroomFeedback.set('Nao foi possivel criar a aula. Confira o tema e a data.'),
     });
   }
 
@@ -119,7 +143,45 @@ export class ClassroomPage implements OnInit {
       next: (material) => {
         this.workspace.update((current) => (current ? { ...current, materials: [...current.materials, material] } : current));
         this.materialForm.reset();
+        this.classroomFeedback.set('Material publicado.');
       },
+      error: () => this.classroomFeedback.set('Nao foi possivel publicar o material. Confira o link.'),
+    });
+  }
+
+  addRecording() {
+    const workspace = this.workspace();
+    this.recordingForm.markAllAsTouched();
+    if (!workspace || this.recordingForm.invalid) {
+      this.classroomFeedback.set('Informe titulo e link do YouTube para liberar a gravacao.');
+      return;
+    }
+    const value = this.recordingForm.getRawValue();
+    this.api.addRecording(workspace.discipline.id, value.lessonId, value.title, value.youtubeUrl, value.visibleToStudents).subscribe({
+      next: (recording) => {
+        this.workspace.update((current) => (current ? { ...current, recordings: [...(current.recordings ?? []), recording] } : current));
+        this.recordingForm.reset({ lessonId: '', title: '', youtubeUrl: '', visibleToStudents: true });
+        this.classroomFeedback.set('Gravacao liberada para os alunos autorizados.');
+      },
+      error: () => this.classroomFeedback.set('Nao foi possivel liberar a gravacao. Confira o link do YouTube.'),
+    });
+  }
+
+  addActivity() {
+    const workspace = this.workspace();
+    this.activityForm.markAllAsTouched();
+    if (!workspace || this.activityForm.invalid) {
+      this.classroomFeedback.set('Informe o titulo da atividade antes de publicar.');
+      return;
+    }
+    const value = this.activityForm.getRawValue();
+    this.api.addActivity(workspace.discipline.id, value.lessonId, value.title, value.description, value.dueAt, value.points).subscribe({
+      next: (activity) => {
+        this.workspace.update((current) => (current ? { ...current, activities: [...current.activities, activity] } : current));
+        this.activityForm.reset({ lessonId: '', title: '', description: '', dueAt: '', points: 0 });
+        this.classroomFeedback.set('Atividade publicada para os alunos.');
+      },
+      error: () => this.classroomFeedback.set('Nao foi possivel publicar a atividade.'),
     });
   }
 
@@ -134,7 +196,9 @@ export class ClassroomPage implements OnInit {
       next: (evaluation) => {
         this.workspace.update((current) => (current ? { ...current, evaluations: [...current.evaluations, evaluation] } : current));
         this.evaluationForm.reset({ title: '', weight: 1, maxScore: 10 });
+        this.classroomFeedback.set('Avaliacao criada.');
       },
+      error: () => this.classroomFeedback.set('Nao foi possivel criar a avaliacao.'),
     });
   }
 
@@ -145,7 +209,11 @@ export class ClassroomPage implements OnInit {
     }
     const value = this.gradeForm.getRawValue();
     this.api.saveGrade(value.evaluationId, value.studentId, value.score).subscribe({
-      next: (grade) => this.replaceGrade(grade),
+      next: (grade) => {
+        this.replaceGrade(grade);
+        this.classroomFeedback.set('Notas salvas.');
+      },
+      error: () => this.classroomFeedback.set('A nota precisa estar dentro da escala configurada.'),
     });
   }
 
@@ -156,7 +224,9 @@ export class ClassroomPage implements OnInit {
         this.qrLesson.set(saved);
         this.activeView.set('attendance');
         this.qrDataUrl.set(await QRCode.toDataURL(saved.attendanceToken, { margin: 1, width: 260, color: { dark: '#020202', light: '#ffffff' } }));
+        this.classroomFeedback.set('Chamada aberta. O QR Code ja pode ser exibido.');
       },
+      error: () => this.classroomFeedback.set('Nao foi possivel abrir a chamada. Verifique se ja existe uma chamada aberta.'),
     });
   }
 
@@ -167,10 +237,10 @@ export class ClassroomPage implements OnInit {
     }
     this.api.scanAttendance(this.attendanceForm.getRawValue().token).subscribe({
       next: (entry) => {
-        this.attendanceMessage.set(entry.status === 'PENDING' ? 'Presença enviada para validação do professor.' : 'Presença registrada.');
+        this.attendanceMessage.set(this.isPending(entry.status) ? 'Presenca registrada! Aguarde a validacao do professor.' : 'Presenca ja registrada para esta aula.');
         this.attendanceForm.reset();
       },
-      error: () => this.attendanceMessage.set('Não foi possível validar esse QR Code.'),
+      error: () => this.attendanceMessage.set('Nao foi possivel validar esse QR Code. Confira se a chamada ainda esta aberta.'),
     });
   }
 
@@ -198,7 +268,21 @@ export class ClassroomPage implements OnInit {
 
   validateAttendance(attendance: AttendanceEntry, present: boolean) {
     this.api.validateAttendance(attendance.id, present).subscribe({
-      next: (saved) => this.replaceAttendance(saved),
+      next: (saved) => {
+        this.replaceAttendance(saved);
+        this.classroomFeedback.set(present ? 'Presenca validada.' : 'Presenca invalidada.');
+      },
+      error: () => this.classroomFeedback.set('Nao foi possivel alterar esta presenca.'),
+    });
+  }
+
+  justifyAttendance(attendance: AttendanceEntry) {
+    this.api.justifyAttendance(attendance.id).subscribe({
+      next: (saved) => {
+        this.replaceAttendance(saved);
+        this.classroomFeedback.set('Falta justificada.');
+      },
+      error: () => this.classroomFeedback.set('Nao foi possivel justificar esta presenca.'),
     });
   }
 
@@ -208,7 +292,9 @@ export class ClassroomPage implements OnInit {
         for (const entry of entries) {
           this.replaceAttendance(entry);
         }
+        this.classroomFeedback.set('Presencas validadas em lote.');
       },
+      error: () => this.classroomFeedback.set('Nao foi possivel validar as presencas em lote.'),
     });
   }
 
@@ -221,7 +307,7 @@ export class ClassroomPage implements OnInit {
   }
 
   pendingLessonAttendance(lessonId: string) {
-    return this.lessonAttendance(lessonId).filter((entry) => entry.status === 'PENDING');
+    return this.lessonAttendance(lessonId).filter((entry) => this.isPending(entry.status));
   }
 
   lessonMaterialCount(lessonId: string) {
@@ -240,10 +326,31 @@ export class ClassroomPage implements OnInit {
   attendanceLabel(status: AttendanceEntry['status']) {
     const labels = {
       PENDING: 'Aguardando validação',
-      VALIDATED: 'Validada',
+      PENDING_VALIDATION: 'Aguardando validação',
+      VALIDATED: 'Presente',
+      PRESENT: 'Presente',
       REJECTED: 'Invalidada',
+      INVALIDATED: 'Invalidada',
+      ABSENT: 'Falta',
+      JUSTIFIED_ABSENCE: 'Falta justificada',
     };
     return labels[status];
+  }
+
+  isPending(status: AttendanceEntry['status']) {
+    return status === 'PENDING' || status === 'PENDING_VALIDATION';
+  }
+
+  isPresent(status: AttendanceEntry['status']) {
+    return status === 'PRESENT' || status === 'VALIDATED';
+  }
+
+  isRejected(status: AttendanceEntry['status']) {
+    return status === 'REJECTED' || status === 'INVALIDATED' || status === 'ABSENT';
+  }
+
+  recordingUrl(recording: RecordedLesson) {
+    return this.sanitizer.bypassSecurityTrustResourceUrl(recording.embedUrl);
   }
 
   studentGrades(studentId: string) {

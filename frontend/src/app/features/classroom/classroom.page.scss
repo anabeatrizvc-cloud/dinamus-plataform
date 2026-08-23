@@ -29,6 +29,7 @@
 
 .topbar-user span,
 .classroom-hero p,
+.classroom-hero > div > span,
 .hero-metric span,
 .rail-heading span,
 .summary-copy span,
@@ -42,6 +43,8 @@
 .panel-card header span,
 .student-row span,
 .material-link span,
+.recording-heading span,
+.recording-card span,
 .empty-state,
 .qr-focus span {
   color: var(--dnms-muted);
@@ -83,6 +86,22 @@
   margin: 0;
   font-size: clamp(1.65rem, 3vw, 3.35rem);
   line-height: 1.03;
+}
+
+.classroom-hero > div > span {
+  display: block;
+  max-width: 620px;
+  margin-top: 10px;
+  line-height: 1.52;
+}
+
+.classroom-feedback {
+  border-color: rgba(255, 82, 31, 0.42);
+  background:
+    linear-gradient(135deg, rgba(255, 82, 31, 0.14), transparent 52%),
+    rgba(8, 8, 8, 0.9);
+  color: var(--dnms-text);
+  padding: 13px 16px;
 }
 
 .hero-metric {
@@ -371,14 +390,16 @@
 
 .lesson-list,
 .student-list,
-.material-list {
+.material-list,
+.activity-list {
   display: grid;
   gap: 10px;
 }
 
 .lesson-item,
 .student-row,
-.material-link {
+.material-link,
+.activity-card {
   min-width: 0;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 14px;
@@ -492,6 +513,10 @@
   border-color: rgba(244, 95, 95, 0.34);
 }
 
+.attendance-pill.justified {
+  border-color: rgba(255, 214, 102, 0.38);
+}
+
 .attendance-pill div {
   display: flex;
   flex-wrap: wrap;
@@ -547,11 +572,87 @@
 }
 
 .student-row,
-.material-link {
+.material-link,
+.activity-card {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 12px;
+}
+
+.activity-card div {
+  display: grid;
+  gap: 4px;
+}
+
+.activity-card strong,
+.activity-card span,
+.activity-card small {
+  overflow-wrap: anywhere;
+}
+
+.activity-card span,
+.activity-card small {
+  color: var(--dnms-muted);
+}
+
+.recording-section {
+  display: grid;
+  gap: 14px;
+  margin-top: 8px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.recording-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.recording-heading svg {
+  width: 24px;
+  height: 24px;
+  color: var(--dnms-accent);
+}
+
+.recording-heading h3 {
+  margin: 0;
+  font-size: clamp(1.16rem, 2vw, 1.55rem);
+}
+
+.recording-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.recording-card {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  background: rgba(4, 4, 4, 0.58);
+  padding: 12px;
+}
+
+.recording-card div {
+  display: grid;
+  gap: 4px;
+}
+
+.recording-card strong,
+.recording-card span {
+  overflow-wrap: anywhere;
+}
+
+.recording-card iframe {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 0;
+  border-radius: 12px;
+  background: #050505;
 }
 
 .student-row > strong {
@@ -564,6 +665,18 @@
 
 .tool-card strong {
   font-size: 1rem;
+}
+
+.soft-toggle {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid var(--dnms-border);
+  border-radius: 12px;
+  background: #050505;
+  color: var(--dnms-muted);
+  padding: 0 12px;
 }
 
 @media (max-width: 1120px) {
@@ -597,9 +710,20 @@
     grid-template-columns: 1fr;
   }
 
+  .classroom-hero {
+    padding: 22px;
+  }
+
   .hero-metric {
+    width: fit-content;
+    min-width: 0;
+    grid-template-columns: auto auto auto;
     justify-self: start;
-    min-width: 150px;
+    padding: 11px 15px;
+  }
+
+  .hero-metric strong {
+    font-size: 1.45rem;
   }
 
   .summary-stats {
@@ -607,7 +731,8 @@
   }
 
   .overview-grid,
-  .teacher-tools {
+  .teacher-tools,
+  .recording-grid {
     grid-template-columns: 1fr;
   }
 
@@ -703,17 +828,16 @@
   }
 
   .view-tabs {
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    display: flex;
     gap: 4px;
-    overflow: visible;
+    overflow-x: auto;
     padding: 8px;
   }
 
   .view-tabs button {
     min-height: 34px;
     min-width: 0;
-    padding: 0 4px;
+    padding: 0 10px;
     font-size: 0.72rem;
   }
 
@@ -745,6 +869,7 @@
   .scan-actions,
   .student-row,
   .material-link,
+  .activity-card,
   .attendance-pill {
     grid-template-columns: 1fr;
   }

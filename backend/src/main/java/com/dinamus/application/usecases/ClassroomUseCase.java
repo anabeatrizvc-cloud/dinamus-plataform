@@ -2,6 +2,8 @@ package com.dinamus.application.usecases;
 
 import com.dinamus.application.ports.AcademicRepository;
 import com.dinamus.application.ports.IdentityRepository;
+import com.dinamus.domain.model.AttendanceSession;
+import com.dinamus.domain.model.AttendanceSessionProjection;
 import com.dinamus.domain.model.AttendanceEntry;
 import com.dinamus.domain.model.ClassroomDashboard;
 import com.dinamus.domain.model.CourseSummary;
@@ -14,7 +16,9 @@ import com.dinamus.domain.model.MemberSummary;
 import com.dinamus.domain.model.UserAccount;
 import jakarta.inject.Singleton;
 
+import java.security.MessageDigest;
 import java.time.Instant;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.UUID;
 
@@ -69,31 +73,66 @@ public class ClassroomUseCase {
             students,
             academicRepository.listLessons().stream().filter(item -> item.disciplineId().equals(disciplineId)).toList(),
             academicRepository.listMaterials().stream().filter(item -> item.disciplineId().equals(disciplineId)).toList(),
+            academicRepository.listRecordings().stream()
+                .filter(item -> item.disciplineId().equals(disciplineId))
+                .filter(item -> user.roles().contains("ADMIN") || discipline.teacherIds().contains(user.id()) || item.visibleToStudents())
+                .toList(),
+            academicRepository.listActivities().stream().filter(item -> item.disciplineId().equals(disciplineId) && (user.roles().contains("ADMIN") || discipline.teacherIds().contains(user.id()) || item.status().equals("PUBLISHED"))).toList(),
             academicRepository.listEvaluations().stream().filter(item -> item.disciplineId().equals(disciplineId)).toList(),
             academicRepository.listGrades(),
-            academicRepository.listAttendance()
+            academicRepository.listAttendance(),
+            academicRepository.listAttendanceAudits()
         );
     }
 
     public AttendanceEntry scanAttendance(String email, String token) {
         UserAccount user = current(email);
-        LessonSummary lesson = academicRepository.listLessons().stream()
-            .filter(item -> item.attendanceToken().equals(token))
+        AttendanceSession session = academicRepository.listAttendanceSessions().stream()
+            .filter(item -> item.tokenHash().equals(hash(token)))
+            .filter(item -> item.status().equals("OPEN"))
             .findFirst()
             .orElseThrow(() -> new IllegalArgumentException("Invalid attendance token"));
-        if (!lesson.attendanceTokenExpiresAt().isBlank() && Instant.parse(lesson.attendanceTokenExpiresAt()).isBefore(Instant.now())) {
+        if (!session.expiresAt().isBlank() && Instant.parse(session.expiresAt()).isBefore(Instant.now())) {
             throw new IllegalArgumentException("Attendance token expired");
         }
+        LessonSummary lesson = academicRepository.listLessons().stream()
+            .filter(item -> item.id().equals(session.lessonId()))
+            .findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("Lesson not found"));
         boolean enrolled = academicRepository.listEnrollments().stream()
-            .anyMatch(item -> item.disciplineId().equals(lesson.disciplineId()) && item.studentId().equals(user.id()));
+            .anyMatch(item -> item.disciplineId().equals(lesson.disciplineId()) && item.studentId().equals(user.id()) && item.status().equals("ACTIVE"));
         if (!enrolled) {
             throw new SecurityException("Student is not enrolled in this discipline");
         }
         return academicRepository.listAttendance().stream()
             .filter(item -> item.lessonId().equals(lesson.id()) && item.studentId().equals(user.id()))
             .findFirst()
-            .map(current -> academicRepository.saveAttendance(new AttendanceEntry(current.id(), current.lessonId(), current.studentId(), "PENDING", Instant.now().toString(), "")))
-            .orElseGet(() -> academicRepository.saveAttendance(new AttendanceEntry(UUID.randomUUID().toString(), lesson.id(), user.id(), "PENDING", Instant.now().toString(), "")));
+            .orElseGet(() -> academicRepository.saveAttendance(new AttendanceEntry(UUID.randomUUID().toString(), lesson.id(), user.id(), "PENDING_VALIDATION", Instant.now().toString(), "")));
+    }
+
+    public AttendanceSessionProjection projectedSession(String publicCodeOrToken) {
+        String tokenHash = hash(publicCodeOrToken);
+        AttendanceSession session = academicRepository.listAttendanceSessions().stream()
+            .filter(item -> item.publicCode().equalsIgnoreCase(publicCodeOrToken) || item.tokenHash().equals(tokenHash))
+            .findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("Attendance session not found"));
+        LessonSummary lesson = academicRepository.listLessons().stream()
+            .filter(item -> item.id().equals(session.lessonId()))
+            .findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("Lesson not found"));
+        DisciplineSummary discipline = academicRepository.findDiscipline(lesson.disciplineId()).orElseThrow(() -> new IllegalArgumentException("Discipline not found"));
+        CourseSummary course = academicRepository.findCourse(discipline.courseId()).orElseThrow(() -> new IllegalArgumentException("Course not found"));
+        int expectedCount = (int) academicRepository.listEnrollments().stream()
+            .filter(item -> item.disciplineId().equals(discipline.id()) && item.status().equals("ACTIVE"))
+            .count();
+        int registeredCount = (int) academicRepository.listAttendance().stream()
+            .filter(item -> item.lessonId().equals(lesson.id()))
+            .count();
+        String status = session.status();
+        if (status.equals("OPEN") && !session.expiresAt().isBlank() && Instant.parse(session.expiresAt()).isBefore(Instant.now())) {
+            status = "EXPIRED";
+        }
+        return new AttendanceSessionProjection(session.publicCode(), course.title(), discipline.title(), lesson.title(), lesson.lessonDate(), status, session.expiresAt(), registeredCount, expectedCount);
     }
 
     private boolean canAccessDiscipline(UserAccount user, DisciplineSummary discipline) {
@@ -108,5 +147,13 @@ public class ClassroomUseCase {
         return identityRepository.findUserByEmail(email)
             .or(() -> identityRepository.findMemberById(email).map(MemberAccount::toUserAccount))
             .orElseThrow(() -> new SecurityException("User not found"));
+    }
+
+    private String hash(String value) {
+        try {
+            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(value.getBytes()));
+        } catch (Exception exception) {
+            throw new IllegalStateException("Could not hash token", exception);
+        }
     }
 }

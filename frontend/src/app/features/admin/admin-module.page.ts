@@ -6,9 +6,9 @@ import { LucideBookOpen, LucideCalendarDays, LucidePencil, LucidePlus, LucideTic
 import { map } from 'rxjs';
 
 import { DnmsApiService } from '../../core/api/dnms-api.service';
-import { CourseSummary, DisciplineSummary, EventPayload, EventSummary, MemberPayload, MemberSummary, Role } from '../../core/models/platform.models';
+import { AttendanceReportRow, CourseSummary, DisciplineSummary, EventPayload, EventSummary, MemberPayload, MemberSummary, Role } from '../../core/models/platform.models';
 
-type AcademicView = 'courses' | 'disciplines' | 'enrollments';
+type AcademicView = 'courses' | 'disciplines' | 'enrollments' | 'reports';
 
 const labels: Record<string, string> = {
   membros: 'Membros',
@@ -36,6 +36,7 @@ export class AdminModulePage implements OnInit {
   private readonly membersState = signal<MemberSummary[]>([]);
   private readonly coursesState = signal<CourseSummary[]>([]);
   private readonly disciplinesState = signal<DisciplineSummary[]>([]);
+  private readonly reportRowsState = signal<AttendanceReportRow[]>([]);
 
   readonly editingId = signal<string | null>(null);
   readonly isSaving = signal(false);
@@ -53,6 +54,7 @@ export class AdminModulePage implements OnInit {
   readonly members = this.membersState.asReadonly();
   readonly courses = this.coursesState.asReadonly();
   readonly disciplines = this.disciplinesState.asReadonly();
+  readonly reportRows = this.reportRowsState.asReadonly();
   readonly professors = computed(() => this.members().filter((member) => member.roles.includes('PROFESSOR')));
   readonly students = computed(() => this.members().filter((member) => member.roles.includes('MEMBRO')));
   readonly selectedCourse = computed(() => this.courses().find((course) => course.id === this.selectedCourseId()) ?? null);
@@ -85,7 +87,7 @@ export class AdminModulePage implements OnInit {
     courseId: ['', [Validators.required]],
     title: ['', [Validators.required, Validators.minLength(3)]],
     description: [''],
-    teacherId: [''],
+    teacherId: ['', [Validators.required]],
     maxAbsences: [2],
     usesGrades: [true],
   });
@@ -93,6 +95,10 @@ export class AdminModulePage implements OnInit {
   readonly enrollmentForm = this.fb.nonNullable.group({
     disciplineId: ['', [Validators.required]],
     studentId: ['', [Validators.required]],
+  });
+
+  readonly reportForm = this.fb.nonNullable.group({
+    disciplineId: ['', [Validators.required]],
   });
 
   ngOnInit() {
@@ -269,7 +275,7 @@ export class AdminModulePage implements OnInit {
           this.disciplineForm.reset({ courseId: value.courseId, title: '', description: '', teacherId: '', maxAbsences: 2, usesGrades: true });
           this.isSaving.set(false);
         },
-        error: () => this.fail('Não foi possível criar a disciplina. Selecione um curso e confira o nome.'),
+        error: () => this.fail('Não foi possível criar a disciplina. Selecione curso, professor e confira o nome.'),
       });
   }
 
@@ -287,6 +293,22 @@ export class AdminModulePage implements OnInit {
         this.isSaving.set(false);
       },
       error: () => this.fail('Não foi possível matricular. Confira aluno e disciplina.'),
+    });
+  }
+
+  loadAttendanceReport() {
+    this.reportForm.markAllAsTouched();
+    if (this.reportForm.invalid) {
+      return;
+    }
+    this.isSaving.set(true);
+    this.api.attendanceReport(this.reportForm.getRawValue().disciplineId).subscribe({
+      next: (rows) => {
+        this.reportRowsState.set(rows);
+        this.feedback.set(rows.length ? 'Relatório carregado.' : 'Nenhum aluno encontrado para esta disciplina.');
+        this.isSaving.set(false);
+      },
+      error: () => this.fail('Não foi possível carregar o relatório de frequência.'),
     });
   }
 
@@ -351,7 +373,12 @@ export class AdminModulePage implements OnInit {
       error: () => this.coursesState.set([]),
     });
     this.api.listAdminDisciplines().subscribe({
-      next: (disciplines) => this.disciplinesState.set(disciplines),
+      next: (disciplines) => {
+        this.disciplinesState.set(disciplines);
+        if (disciplines.length && !this.reportForm.getRawValue().disciplineId) {
+          this.reportForm.patchValue({ disciplineId: disciplines[0].id });
+        }
+      },
       error: () => this.disciplinesState.set([]),
     });
   }

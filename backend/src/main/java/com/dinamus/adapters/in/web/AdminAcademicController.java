@@ -5,10 +5,12 @@ import com.dinamus.application.usecases.ManageAcademicUseCase;
 import com.dinamus.domain.model.CourseSummary;
 import com.dinamus.domain.model.DisciplineSummary;
 import com.dinamus.domain.model.EnrollmentSummary;
+import com.dinamus.domain.model.AttendanceReportRow;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.Post;
+import io.micronaut.http.annotation.QueryValue;
 import io.micronaut.security.annotation.Secured;
 import io.micronaut.validation.Validated;
 import jakarta.validation.Valid;
@@ -48,5 +50,10 @@ public class AdminAcademicController {
     @Post("/enrollments")
     public EnrollmentSummary enroll(@Valid @Body AcademicDtos.EnrollmentRequest request) {
         return academic.enroll(request.disciplineId(), request.studentId());
+    }
+
+    @Get("/reports/attendance")
+    public List<AttendanceReportRow> attendanceReport(@QueryValue String disciplineId) {
+        return academic.attendanceReport(disciplineId);
     }
 }

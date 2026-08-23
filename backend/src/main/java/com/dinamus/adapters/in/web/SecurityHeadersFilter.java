@@ -16,7 +16,8 @@ public class SecurityHeadersFilter implements HttpServerFilter {
             .header("X-Content-Type-Options", "nosniff")
             .header("X-Frame-Options", "DENY")
             .header("Referrer-Policy", "strict-origin-when-cross-origin")
-            .header("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+            .header("Permissions-Policy", "camera=(self), microphone=(), geolocation=()")
+            .header("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; frame-src https://www.youtube.com https://www.youtube-nocookie.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'")
         );
     }
 }

@@ -1,6 +1,9 @@
 package com.dinamus.application.ports;
 
 import com.dinamus.domain.model.AttendanceEntry;
+import com.dinamus.domain.model.AttendanceAudit;
+import com.dinamus.domain.model.AttendanceSession;
+import com.dinamus.domain.model.ActivitySummary;
 import com.dinamus.domain.model.CourseSummary;
 import com.dinamus.domain.model.DisciplineSummary;
 import com.dinamus.domain.model.EnrollmentSummary;
@@ -8,6 +11,7 @@ import com.dinamus.domain.model.EvaluationSummary;
 import com.dinamus.domain.model.GradeEntry;
 import com.dinamus.domain.model.LessonSummary;
 import com.dinamus.domain.model.MaterialSummary;
+import com.dinamus.domain.model.RecordedLesson;
 
 import java.util.List;
 import java.util.Optional;
@@ -48,4 +52,20 @@ public interface AcademicRepository {
     AttendanceEntry saveAttendance(AttendanceEntry attendance);
 
     List<AttendanceEntry> listAttendance();
+
+    AttendanceSession saveAttendanceSession(AttendanceSession session);
+
+    List<AttendanceSession> listAttendanceSessions();
+
+    AttendanceAudit saveAttendanceAudit(AttendanceAudit audit);
+
+    List<AttendanceAudit> listAttendanceAudits();
+
+    RecordedLesson saveRecording(RecordedLesson recording);
+
+    List<RecordedLesson> listRecordings();
+
+    ActivitySummary saveActivity(ActivitySummary activity);
+
+    List<ActivitySummary> listActivities();
 }

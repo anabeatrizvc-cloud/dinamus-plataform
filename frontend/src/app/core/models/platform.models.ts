@@ -81,6 +81,39 @@ export interface MaterialSummary {
   url: string;
 }
 
+export interface RecordedLesson {
+  id: string;
+  disciplineId: string;
+  lessonId: string;
+  title: string;
+  provider: 'YOUTUBE';
+  providerVideoId: string;
+  embedUrl: string;
+  visibleToStudents: boolean;
+  createdBy: string;
+  createdAt: string;
+}
+
+export interface ActivitySummary {
+  id: string;
+  disciplineId: string;
+  lessonId: string;
+  title: string;
+  description: string;
+  dueAt: string;
+  points: number;
+  status: string;
+}
+
+export interface AttendanceReportRow {
+  studentId: string;
+  studentName: string;
+  presences: number;
+  absences: number;
+  frequencyPercent: number;
+  situation: string;
+}
+
 export interface EvaluationSummary {
   id: string;
   disciplineId: string;
@@ -107,7 +140,7 @@ export interface AttendanceEntry {
   id: string;
   lessonId: string;
   studentId: string;
-  status: 'PENDING' | 'VALIDATED' | 'REJECTED';
+  status: 'PENDING' | 'PENDING_VALIDATION' | 'VALIDATED' | 'REJECTED' | 'PRESENT' | 'ABSENT' | 'JUSTIFIED_ABSENCE' | 'INVALIDATED';
   scannedAt: string;
   validatedAt: string;
 }
@@ -124,9 +157,12 @@ export interface DisciplineWorkspace {
   students: MemberSummary[];
   lessons: LessonSummary[];
   materials: MaterialSummary[];
+  recordings: RecordedLesson[];
+  activities: ActivitySummary[];
   evaluations: EvaluationSummary[];
   grades: GradeEntry[];
   attendance: AttendanceEntry[];
+  attendanceAudits: unknown[];
 }
 
 export interface CoursePayload {

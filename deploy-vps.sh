@@ -2,13 +2,14 @@
 set -Eeuo pipefail
 
 APP_NAME="dnms-platform"
-APP_PORT="127.0.0.1:8088"
+APP_PORT="${DNMS_PROXY_PORT:-127.0.0.1:8088}"
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ENV_FILE="$PROJECT_DIR/.env.production"
 COMPOSE_FILE="$PROJECT_DIR/docker-compose.vps.generated.yml"
 NGINX_SITE="/etc/nginx/sites-available/$APP_NAME"
 NGINX_LINK="/etc/nginx/sites-enabled/$APP_NAME"
 ACME_ROOT="/var/www/letsencrypt"
+BACKUP_ROOT="${DNMS_BACKUP_ROOT:-/opt/dnms-backups}"
 
 log() {
   printf '\n[%s] %s\n' "$APP_NAME" "$*"
@@ -61,6 +62,26 @@ check_project() {
   [[ -f frontend/Dockerfile ]] || fail "frontend/Dockerfile nao encontrado. Execute este script na raiz do projeto."
   [[ -f backend/Dockerfile ]] || fail "backend/Dockerfile nao encontrado. Execute este script na raiz do projeto."
   [[ -f infrastructure/nginx/reverse-proxy.conf ]] || fail "config interna do Nginx nao encontrada."
+}
+
+preflight_production() {
+  log "Executando preflight seguro"
+
+  if grep -nE "docker compose .*down[[:space:]]+-v|docker-compose .*down[[:space:]]+-v" "$PROJECT_DIR"/docker-compose*.yml "$PROJECT_DIR"/deploy*.sh >/dev/null 2>&1; then
+    fail "comando destrutivo 'down -v' encontrado no projeto. Remova antes do deploy."
+  fi
+
+  if ss -tulpn 2>/dev/null | grep -q "${APP_PORT##*:}"; then
+    local current
+    current="$(docker ps --format '{{.Names}} {{.Ports}}' | grep "${APP_PORT##*:}" || true)"
+    if [[ -n "$current" && "$current" != *"reverse-proxy"* ]]; then
+      fail "porta ${APP_PORT} ja esta em uso por outro processo/container: $current"
+    fi
+  fi
+
+  if docker ps --format '{{.Names}}' | grep -q '^dnms-platform-reverse-proxy-1$'; then
+    log "Encontrado reverse proxy antigo dnms-platform. Pare-o manualmente se ele estiver segurando a porta."
+  fi
 }
 
 install_system_packages() {
@@ -126,8 +147,46 @@ write_env_file() {
   ensure_env_value "MAIL_SMTP_PASSWORD" ""
   ensure_env_value "MAIL_FROM" "no-reply@$DOMAIN"
   ensure_env_value "MAIL_SMTP_STARTTLS" "true"
+  ensure_env_value "DNMS_PROXY_PORT" "$APP_PORT"
+  ensure_env_value "APP_STORAGE_PATH" "/app/storage"
+  ensure_env_value "APP_MAX_UPLOAD_BYTES" "10485760"
 
   chmod 600 "$ENV_FILE"
+}
+
+backup_couchdb() {
+  if [[ ! -f "$COMPOSE_FILE" || ! -f "$ENV_FILE" ]]; then
+    log "Backup CouchDB pulado: ainda nao existe compose/env de producao."
+    return
+  fi
+
+  if ! docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" ps couchdb 2>/dev/null | grep -q "Up"; then
+    log "Backup CouchDB pulado: container couchdb ainda nao esta ativo."
+    return
+  fi
+
+  local backup_dir
+  backup_dir="$BACKUP_ROOT/$(date +%Y%m%d-%H%M%S)"
+  mkdir -p "$backup_dir"
+  chmod 700 "$backup_dir"
+
+  cp "$ENV_FILE" "$backup_dir/env.production.bak"
+  cp "$COMPOSE_FILE" "$backup_dir/compose.bak" 2>/dev/null || true
+  docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" ps >"$backup_dir/compose-ps.txt" || true
+  docker volume ls >"$backup_dir/volumes.txt" || true
+
+  set -a
+  # shellcheck disable=SC1090
+  source "$ENV_FILE"
+  set +a
+
+  if docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" exec -T couchdb \
+    curl -fsS "http://${COUCHDB_USER}:${COUCHDB_PASSWORD}@127.0.0.1:5984/dnms_platform/_all_docs?include_docs=true" \
+    >"$backup_dir/dnms_platform-all-docs.json"; then
+    log "Backup CouchDB salvo em $backup_dir"
+  else
+    fail "backup do CouchDB falhou. Corrija antes de subir para nao arriscar dados de producao."
+  fi
 }
 
 write_compose_file() {
@@ -171,6 +230,10 @@ services:
       MAIL_SMTP_PASSWORD: ${MAIL_SMTP_PASSWORD}
       MAIL_FROM: ${MAIL_FROM}
       MAIL_SMTP_STARTTLS: ${MAIL_SMTP_STARTTLS}
+      APP_STORAGE_PATH: ${APP_STORAGE_PATH}
+      APP_MAX_UPLOAD_BYTES: ${APP_MAX_UPLOAD_BYTES}
+    volumes:
+      - app-uploads:/app/storage
     depends_on:
       couchdb:
         condition: service_healthy
@@ -197,7 +260,7 @@ services:
     image: nginx:1.27-alpine
     restart: unless-stopped
     ports:
-      - "127.0.0.1:8088:80"
+      - "${DNMS_PROXY_PORT}:80"
     volumes:
       - ./infrastructure/nginx/reverse-proxy.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
@@ -213,6 +276,7 @@ services:
 
 volumes:
   couchdb-data:
+  app-uploads:
 YAML
 }
 
@@ -281,7 +345,8 @@ server {
   add_header X-Content-Type-Options nosniff always;
   add_header X-Frame-Options DENY always;
   add_header Referrer-Policy strict-origin-when-cross-origin always;
-  add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+  add_header Permissions-Policy "camera=(self), microphone=(), geolocation=()" always;
+  add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; frame-src https://www.youtube.com https://www.youtube-nocookie.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none';" always;
 
   location / {
     limit_req zone=dnms_rate burst=40 nodelay;
@@ -348,8 +413,10 @@ main() {
   require_root "$@"
   read_settings
   check_project
+  preflight_production
   install_system_packages
   write_env_file
+  backup_couchdb
   write_compose_file
   deploy_containers
   configure_ssl

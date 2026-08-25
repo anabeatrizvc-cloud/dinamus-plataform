@@ -1,14 +1,34 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { LucideCamera, LucideCheckCircle2, LucideLoaderCircle } from '@lucide/angular';
+import {
+  LucideBadgeCheck,
+  LucideCheck,
+  LucideCheckCircle2,
+  LucideImagePlus,
+  LucideLoaderCircle,
+  LucidePhone,
+  LucideRefreshCw,
+  LucideUserRound,
+} from '@lucide/angular';
 
 import { DnmsApiService } from '../../../core/api/dnms-api.service';
 import { EcoLesson } from '../../../core/models/platform.models';
 
 @Component({
   selector: 'dnms-eco-attendance-page',
-  imports: [ReactiveFormsModule, RouterLink, LucideCamera, LucideCheckCircle2, LucideLoaderCircle],
+  imports: [
+    ReactiveFormsModule,
+    RouterLink,
+    LucideBadgeCheck,
+    LucideCheck,
+    LucideCheckCircle2,
+    LucideImagePlus,
+    LucideLoaderCircle,
+    LucidePhone,
+    LucideRefreshCw,
+    LucideUserRound,
+  ],
   templateUrl: './eco-attendance.page.html',
   styleUrl: './eco-attendance.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -20,6 +40,7 @@ export class EcoAttendancePage implements OnInit {
 
   readonly lesson = signal<EcoLesson | null>(null);
   readonly photoPreview = signal('');
+  readonly photoAccepted = signal(false);
   readonly error = signal('');
   readonly success = signal('');
   readonly isSaving = signal(false);
@@ -77,13 +98,32 @@ export class EcoAttendancePage implements OnInit {
     try {
       const dataUrl = await this.resizeImage(file);
       this.photoPreview.set(dataUrl);
-      this.form.controls.photoDataUrl.setValue(dataUrl);
+      this.photoAccepted.set(false);
+      this.form.controls.photoDataUrl.setValue('');
     } catch {
       this.error.set('Não foi possível processar a selfie. Tente outra foto.');
       input.value = '';
     } finally {
       this.isProcessingPhoto.set(false);
     }
+  }
+
+  usePhoto() {
+    const preview = this.photoPreview();
+    if (!preview) {
+      return;
+    }
+    this.photoAccepted.set(true);
+    this.form.controls.photoDataUrl.setValue(preview);
+    this.error.set('');
+  }
+
+  retakePhoto(input: HTMLInputElement) {
+    input.value = '';
+    this.photoPreview.set('');
+    this.photoAccepted.set(false);
+    this.form.controls.photoDataUrl.setValue('');
+    input.click();
   }
 
   submit() {
@@ -109,6 +149,7 @@ export class EcoAttendancePage implements OnInit {
         this.isSaving.set(false);
         this.form.reset({ name: '', phone: '', photoDataUrl: '' });
         this.photoPreview.set('');
+        this.photoAccepted.set(false);
       },
       error: () => {
         this.error.set('Não foi possível enviar sua presença. Confira os dados e tente novamente.');

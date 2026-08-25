@@ -37,10 +37,10 @@ export class EcoPage implements OnInit {
   }
 
   private async renderQrCode(lesson: EcoLesson) {
-    const origin = globalThis.location?.origin ?? '';
-    const url = `${origin}/eco/presenca?data=${encodeURIComponent(lesson.lessonDate)}`;
-    this.attendanceUrl.set(url);
-    this.qrCode.set(await QRCode.toDataURL(url, {
+    const url = new URL('/eco/presenca', globalThis.location?.origin ?? 'https://igrejadinamusrecife.com.br');
+    url.searchParams.set('data', lesson.lessonDate);
+    this.attendanceUrl.set(url.toString());
+    this.qrCode.set(await QRCode.toDataURL(url.toString(), {
       errorCorrectionLevel: 'M',
       margin: 2,
       width: 360,

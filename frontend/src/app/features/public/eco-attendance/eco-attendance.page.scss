@@ -1,27 +1,38 @@
+:host {
+  display: block;
+}
+
 .eco-attendance-page {
   display: grid;
   min-height: 100dvh;
   place-items: center;
   overflow-x: hidden;
-  padding: clamp(16px, 4vw, 42px);
+  padding:
+    max(16px, env(safe-area-inset-top))
+    max(14px, env(safe-area-inset-right))
+    max(20px, env(safe-area-inset-bottom))
+    max(14px, env(safe-area-inset-left));
   background:
-    radial-gradient(circle at 12% 0%, rgba(255, 82, 31, 0.2), transparent 18rem),
-    radial-gradient(circle at 80% 100%, rgba(255, 255, 255, 0.055), transparent 18rem),
-    #020202;
+    radial-gradient(circle at 16% 0%, rgba(255, 82, 31, 0.2), transparent 18rem),
+    radial-gradient(circle at 86% 82%, rgba(255, 255, 255, 0.055), transparent 18rem),
+    linear-gradient(180deg, #080201 0%, #020202 58%, #000 100%);
 }
 
-.attendance-card {
+.attendance-shell {
   display: grid;
-  width: min(100%, 470px);
-  gap: 22px;
+  width: min(100%, 440px);
+  gap: 18px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 26px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.012)),
-    rgba(8, 8, 8, 0.9);
-  box-shadow: var(--dnms-shadow);
-  padding: clamp(22px, 5vw, 34px);
+    linear-gradient(145deg, rgba(255, 82, 31, 0.13), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.065), rgba(255, 255, 255, 0.012)),
+    rgba(9, 9, 9, 0.93);
+  box-shadow:
+    0 28px 78px rgba(0, 0, 0, 0.52),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  padding: clamp(20px, 5vw, 32px);
 }
 
 .attendance-logo {
@@ -30,60 +41,152 @@
 }
 
 .attendance-logo img {
-  width: 132px;
+  display: block;
+  width: clamp(104px, 28vw, 136px);
   height: auto;
 }
 
-header {
+.attendance-hero {
   display: grid;
-  gap: 7px;
+  gap: 8px;
 }
 
-header p,
-header h1 {
+.attendance-hero p,
+.attendance-hero h1,
+.attendance-hero span {
   margin: 0;
 }
 
-header p {
+.attendance-hero p {
   color: var(--dnms-accent);
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 900;
   text-transform: uppercase;
 }
 
-header h1 {
+.attendance-hero h1 {
+  max-width: 9em;
   color: var(--dnms-text);
-  font-size: clamp(2.35rem, 9vw, 3.4rem);
+  font-size: clamp(2.1rem, 11vw, 3.25rem);
   line-height: 0.98;
 }
 
-header span {
-  color: rgba(247, 247, 244, 0.72);
+.attendance-hero span {
+  max-width: 31rem;
+  color: rgba(247, 247, 244, 0.66);
+  font-size: 0.95rem;
+  line-height: 1.48;
 }
 
-form {
-  display: grid;
-  gap: 15px;
-}
-
-.field input {
-  min-width: 0;
-}
-
-.selfie-field {
-  display: grid;
-  min-height: 190px;
-  place-items: center;
-  overflow: hidden;
-  border: 1px dashed rgba(255, 82, 31, 0.58);
-  border-radius: 18px;
+.lesson-badge {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  border-radius: 17px;
   background:
-    linear-gradient(135deg, rgba(255, 82, 31, 0.12), transparent 46%),
-    rgba(0, 0, 0, 0.34);
-  cursor: pointer;
+    linear-gradient(135deg, rgba(255, 82, 31, 0.16), rgba(255, 82, 31, 0.055)),
+    rgba(255, 255, 255, 0.035);
+  padding: 12px;
 }
 
-.selfie-field input {
+.lesson-badge svg {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  color: var(--dnms-accent);
+}
+
+.lesson-badge div {
+  display: grid;
+  gap: 2px;
+}
+
+.lesson-badge small {
+  color: rgba(247, 247, 244, 0.56);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.lesson-badge strong {
+  color: var(--dnms-text);
+  font-size: 0.96rem;
+}
+
+.attendance-form {
+  display: grid;
+  gap: 14px;
+}
+
+.form-field {
+  display: grid;
+  gap: 8px;
+}
+
+.form-field label {
+  color: rgba(247, 247, 244, 0.76);
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.input-control {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  min-height: 50px;
+  gap: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 15px;
+  background: rgba(0, 0, 0, 0.44);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+  padding: 0 13px;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.input-control:focus-within {
+  border-color: rgba(255, 82, 31, 0.68);
+  background: rgba(0, 0, 0, 0.58);
+  box-shadow:
+    0 0 0 4px rgba(255, 82, 31, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.055);
+}
+
+.input-control svg {
+  width: 18px;
+  height: 18px;
+  color: rgba(255, 82, 31, 0.82);
+}
+
+.input-control input {
+  min-width: 0;
+  width: 100%;
+  height: 50px;
+  border: 0;
+  appearance: none;
+  background: transparent;
+  color: var(--dnms-text);
+  font: inherit;
+  outline: 0;
+}
+
+.input-control input::placeholder {
+  color: rgba(247, 247, 244, 0.34);
+}
+
+.selfie-card {
+  display: grid;
+  gap: 12px;
+  border-radius: 19px;
+  background:
+    linear-gradient(135deg, rgba(255, 82, 31, 0.105), transparent 48%),
+    rgba(0, 0, 0, 0.28);
+  padding: 12px;
+}
+
+.selfie-card > input {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -91,37 +194,158 @@ form {
   pointer-events: none;
 }
 
-.selfie-field span {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
+.selfie-empty,
+.soft-action,
+.confirm-button {
+  border: 0;
+  appearance: none;
+  font: inherit;
+}
+
+.selfie-empty {
+  display: grid;
+  min-height: 138px;
+  place-items: center;
+  gap: 7px;
+  border: 1px dashed rgba(255, 82, 31, 0.48);
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.22);
   color: var(--dnms-text);
+  cursor: pointer;
+  padding: 18px;
+  text-align: center;
+}
+
+.selfie-empty svg {
+  width: 30px;
+  height: 30px;
+  color: var(--dnms-accent);
+}
+
+.selfie-empty strong {
+  font-size: 1rem;
   font-weight: 900;
   text-transform: uppercase;
 }
 
-.selfie-field svg {
-  width: 24px;
-  height: 24px;
+.selfie-empty span {
+  max-width: 16rem;
+  color: rgba(247, 247, 244, 0.58);
+  font-size: 0.86rem;
+  line-height: 1.35;
+}
+
+.selfie-preview {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+}
+
+.selfie-preview img {
+  width: 96px;
+  aspect-ratio: 1;
+  border-radius: 16px;
+  object-fit: cover;
+  background: #050505;
+}
+
+.selfie-preview-copy {
+  display: grid;
+  gap: 5px;
+}
+
+.selfie-preview-copy strong {
+  color: var(--dnms-text);
+  font-size: 1rem;
+}
+
+.selfie-preview-copy span {
+  color: rgba(247, 247, 244, 0.62);
+  font-size: 0.88rem;
+  line-height: 1.38;
+}
+
+.selfie-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.soft-action {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--dnms-text);
+  cursor: pointer;
+  font-size: 0.84rem;
+  font-weight: 900;
+}
+
+.soft-action.primary {
+  border-color: rgba(255, 82, 31, 0.42);
+  background: rgba(255, 82, 31, 0.14);
+}
+
+.soft-action:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.soft-action svg {
+  width: 17px;
+  height: 17px;
   color: var(--dnms-accent);
 }
 
-.selfie-field img {
+.confirm-button {
+  display: inline-flex;
   width: 100%;
-  height: 100%;
-  max-height: 280px;
-  object-fit: cover;
+  min-height: 54px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 1px solid var(--dnms-accent);
+  border-radius: 999px;
+  background: linear-gradient(180deg, #ff6531, #ff4618);
+  color: #070707;
+  cursor: pointer;
+  font-weight: 950;
+  letter-spacing: 0;
+  padding: 0 20px;
+  text-transform: uppercase;
+}
+
+.confirm-button:disabled {
+  cursor: progress;
+  opacity: 0.72;
+}
+
+.confirm-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+.success-state,
+.error-text {
+  margin: 0;
+  border-radius: 15px;
+  line-height: 1.38;
+  padding: 12px;
 }
 
 .success-state {
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  border: 1px solid rgba(95, 224, 160, 0.4);
-  border-radius: 16px;
-  background: rgba(95, 224, 160, 0.1);
+  border: 1px solid rgba(95, 224, 160, 0.34);
+  background: rgba(95, 224, 160, 0.095);
   color: var(--dnms-text);
-  padding: 14px;
 }
 
 .success-state svg {
@@ -132,11 +356,10 @@ form {
 }
 
 .error-text {
-  margin: 0;
-}
-
-.dnms-button {
-  width: 100%;
+  border: 1px solid rgba(244, 95, 95, 0.34);
+  background: rgba(244, 95, 95, 0.09);
+  color: var(--dnms-danger);
+  font-size: 0.88rem;
 }
 
 .spin {
@@ -149,23 +372,61 @@ form {
   }
 }
 
-@media (max-width: 520px) {
+@media (max-width: 420px) {
   .eco-attendance-page {
-    align-items: start;
-    padding: 14px;
+    align-items: center;
+    padding:
+      max(12px, env(safe-area-inset-top))
+      max(12px, env(safe-area-inset-right))
+      max(16px, env(safe-area-inset-bottom))
+      max(12px, env(safe-area-inset-left));
   }
 
-  .attendance-card {
-    gap: 18px;
-    border-radius: 20px;
-    padding: 20px 17px;
+  .attendance-shell {
+    width: 100%;
+    gap: 16px;
+    border-radius: 22px;
+    padding: 19px 16px;
   }
 
   .attendance-logo img {
-    width: 118px;
+    width: 108px;
   }
 
-  .selfie-field {
-    min-height: 170px;
+  .attendance-hero h1 {
+    font-size: clamp(2rem, 12vw, 2.72rem);
+  }
+
+  .selfie-empty {
+    min-height: 128px;
+  }
+
+  .selfie-preview {
+    grid-template-columns: 82px minmax(0, 1fr);
+  }
+
+  .selfie-preview img {
+    width: 82px;
+  }
+}
+
+@media (min-width: 860px) {
+  .attendance-shell {
+    width: min(100%, 760px);
+    grid-template-columns: minmax(0, 0.82fr) minmax(320px, 1fr);
+    align-items: start;
+    gap: 24px;
+  }
+
+  .attendance-logo,
+  .attendance-hero,
+  .lesson-badge,
+  .success-state {
+    grid-column: 1;
+  }
+
+  .attendance-form {
+    grid-column: 2;
+    grid-row: 1 / span 4;
   }
 }

@@ -50,7 +50,8 @@ test('Eco attendance form sends name phone and selfie to backend', async ({ page
     mimeType: 'image/png',
     buffer: Buffer.from(photoDataUrl.split(',')[1], 'base64'),
   });
-  await page.getByRole('button', { name: /enviar presença/i }).click();
+  await page.getByRole('button', { name: /usar foto/i }).click();
+  await page.getByRole('button', { name: /confirmar presença/i }).click();
 
   await expect(page.getByRole('status')).toContainText('Presença enviada');
   expect(posted).toBe(true);

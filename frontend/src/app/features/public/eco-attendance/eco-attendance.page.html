@@ -1,14 +1,22 @@
 <main class="eco-attendance-page">
-  <section class="attendance-card" aria-labelledby="attendance-title">
-    <a class="attendance-logo" routerLink="/">
+  <section class="attendance-shell" aria-labelledby="attendance-title">
+    <a class="attendance-logo" routerLink="/" aria-label="Voltar para a Home">
       <img src="assets/home/wordmark-orange.png" alt="dnms." width="498" height="165" />
     </a>
 
-    <header>
+    <header class="attendance-hero">
       <p>Eco DNMS</p>
       <h1 id="attendance-title">Confirmar presença</h1>
-      <span>{{ lesson()?.title ?? 'Aula' }} - {{ formattedDate() }}</span>
+      <span>Preencha seus dados, adicione uma selfie e confirme sua participação na aula.</span>
     </header>
+
+    <div class="lesson-badge">
+      <svg lucideBadgeCheck aria-hidden="true"></svg>
+      <div>
+        <small>Aula aberta</small>
+        <strong>{{ lesson()?.title ?? 'Aula' }} - {{ formattedDate() }}</strong>
+      </div>
+    </div>
 
     @if (success()) {
       <aside class="success-state" role="status">
@@ -17,32 +25,57 @@
       </aside>
     }
 
-    <form [formGroup]="form" (ngSubmit)="submit()">
-      <label class="field">
-        <span>Nome completo</span>
-        <input formControlName="name" autocomplete="name" />
-      </label>
+    <form class="attendance-form" [formGroup]="form" (ngSubmit)="submit()">
+      <div class="form-field">
+        <label for="eco-name">Nome completo</label>
+        <div class="input-control">
+          <svg lucideUserRound aria-hidden="true"></svg>
+          <input id="eco-name" formControlName="name" autocomplete="name" placeholder="Seu nome" />
+        </div>
+      </div>
 
-      <label class="field">
-        <span>Celular com DDD</span>
-        <input formControlName="phone" autocomplete="tel" inputmode="tel" placeholder="(81) 99999-9999" (input)="formatPhone()" />
-      </label>
+      <div class="form-field">
+        <label for="eco-phone">Celular com DDD</label>
+        <div class="input-control">
+          <svg lucidePhone aria-hidden="true"></svg>
+          <input id="eco-phone" formControlName="phone" autocomplete="tel" inputmode="tel" placeholder="(81) 99999-9999" (input)="formatPhone()" />
+        </div>
+      </div>
 
-      <label class="selfie-field">
-        <input type="file" accept="image/jpeg,image/png,image/webp" capture="user" (change)="onPhotoSelected($event)" />
+      <section class="selfie-card" aria-label="Selfie para validação">
+        <input #photoInput type="file" accept="image/jpeg,image/png,image/webp" capture="user" (change)="onPhotoSelected($event)" />
+
         @if (photoPreview()) {
-          <img [src]="photoPreview()" alt="Prévia da selfie enviada" />
+          <div class="selfie-preview">
+            <img [src]="photoPreview()" alt="Prévia da selfie enviada" />
+            <div class="selfie-preview-copy">
+              <strong>{{ photoAccepted() ? 'Selfie pronta' : 'Confira sua selfie' }}</strong>
+              <span>{{ photoAccepted() ? 'Agora é só confirmar a presença.' : 'Use uma foto nítida do rosto para facilitar a validação.' }}</span>
+            </div>
+          </div>
+
+          <div class="selfie-actions">
+            <button class="soft-action" type="button" (click)="retakePhoto(photoInput)">
+              <svg lucideRefreshCw aria-hidden="true"></svg>
+              Refazer
+            </button>
+            <button class="soft-action primary" type="button" [disabled]="photoAccepted()" (click)="usePhoto()">
+              <svg lucideCheck aria-hidden="true"></svg>
+              {{ photoAccepted() ? 'Foto em uso' : 'Usar foto' }}
+            </button>
+          </div>
         } @else {
-          <span>
+          <button class="selfie-empty" type="button" (click)="photoInput.click()">
             @if (isProcessingPhoto()) {
               <svg class="spin" lucideLoaderCircle aria-hidden="true"></svg>
             } @else {
-              <svg lucideCamera aria-hidden="true"></svg>
+              <svg lucideImagePlus aria-hidden="true"></svg>
             }
-            Tirar selfie
-          </span>
+            <strong>Adicionar selfie</strong>
+            <span>Toque para abrir a câmera ou escolher uma foto do rosto.</span>
+          </button>
         }
-      </label>
+      </section>
 
       <input type="hidden" formControlName="photoDataUrl" />
 
@@ -50,8 +83,13 @@
         <p class="error-text" role="alert">{{ error() }}</p>
       }
 
-      <button class="dnms-button" type="submit" [disabled]="isSaving() || isProcessingPhoto()">
-        {{ isSaving() ? 'Enviando' : 'Enviar presença' }}
+      <button class="confirm-button" type="submit" [disabled]="isSaving() || isProcessingPhoto()">
+        @if (isSaving()) {
+          <svg class="spin" lucideLoaderCircle aria-hidden="true"></svg>
+          Enviando
+        } @else {
+          Confirmar presença
+        }
       </button>
     </form>
   </section>

@@ -1,15 +1,18 @@
 <main class="page-shell login-page">
-  <section class="surface panel">
-    <img src="assets/home/wordmark-orange.png" alt="dnms." width="498" height="165" />
-    <header>
+  <section class="surface auth-card">
+    <a class="auth-logo-link" routerLink="/" aria-label="Voltar para a Home">
+      <img class="auth-logo" src="assets/home/wordmark-orange.png" alt="dnms." width="498" height="165" />
+    </a>
+
+    <header class="auth-heading">
       <svg lucideLogIn aria-hidden="true"></svg>
       <div>
         <p>Área administrativa</p>
-        <h1>Entrar</h1>
+        <h1 id="login-title">Entrar</h1>
       </div>
     </header>
 
-    <form class="form-grid" [formGroup]="form" (ngSubmit)="submit()">
+    <form class="auth-form" [formGroup]="form" (ngSubmit)="submit()">
       <label class="field">
         <span>Email</span>
         <input formControlName="email" autocomplete="email" />
@@ -21,8 +24,10 @@
       @if (error()) {
         <p class="error-text">{{ error() }}</p>
       }
-      <button class="dnms-button" type="submit">Entrar</button>
-      <a class="dnms-button secondary" routerLink="/">Voltar para Home</a>
+      <div class="auth-actions">
+        <button class="dnms-button" type="submit">Entrar</button>
+        <a class="dnms-button secondary" routerLink="/">Voltar para Home</a>
+      </div>
     </form>
   </section>
 </main>

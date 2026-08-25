@@ -1,10 +1,12 @@
 <main class="page-shell admin-page">
   <header class="admin-topbar">
-    <img src="assets/home/wordmark-orange.png" alt="dnms." width="498" height="165" />
+    <a class="admin-brand" routerLink="/admin/dashboard" aria-label="Painel administrativo DNMS">
+      <img src="assets/home/wordmark-orange.png" alt="dnms." width="498" height="165" />
+    </a>
     <nav aria-label="Navegação administrativa">
-      <a routerLink="/admin/dashboard">Painel</a>
-      <a routerLink="/admin/eventos">Eventos</a>
-      <a routerLink="/admin/membros">Membros</a>
+      <a routerLink="/admin/dashboard" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }">Painel</a>
+      <a routerLink="/admin/eventos" routerLinkActive="is-active">Eventos</a>
+      <a routerLink="/admin/membros" routerLinkActive="is-active">Membros</a>
     </nav>
     <button class="dnms-button secondary" type="button" (click)="auth.logout()">Sair</button>
   </header>

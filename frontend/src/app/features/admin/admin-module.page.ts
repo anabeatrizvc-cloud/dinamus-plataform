@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { LucideCalendarDays, LucideMail, LucidePencil, LucidePlus, LucideTicket, LucideTrash2, LucideUsersRound } from '@lucide/angular';
 import { map } from 'rxjs';
 
@@ -15,7 +15,18 @@ const labels: Record<string, string> = {
 
 @Component({
   selector: 'dnms-admin-module-page',
-  imports: [RouterLink, ReactiveFormsModule, LucideTicket, LucidePlus, LucidePencil, LucideTrash2, LucideCalendarDays, LucideUsersRound, LucideMail],
+  imports: [
+    RouterLink,
+    RouterLinkActive,
+    ReactiveFormsModule,
+    LucideTicket,
+    LucidePlus,
+    LucidePencil,
+    LucideTrash2,
+    LucideCalendarDays,
+    LucideUsersRound,
+    LucideMail,
+  ],
   templateUrl: './admin-module.page.html',
   styleUrl: './admin.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -1,12 +1,12 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { RouterLink, RouterLinkActive } from '@angular/router';
 import { LucideArrowRight, LucideHeartHandshake, LucideShieldCheck, LucideTicket, LucideUsersRound } from '@lucide/angular';
 
 import { AuthService } from '../../core/auth/auth.service';
 
 @Component({
   selector: 'dnms-admin-dashboard-page',
-  imports: [RouterLink, LucideUsersRound, LucideTicket, LucideHeartHandshake, LucideShieldCheck, LucideArrowRight],
+  imports: [RouterLink, RouterLinkActive, LucideUsersRound, LucideTicket, LucideHeartHandshake, LucideShieldCheck, LucideArrowRight],
   templateUrl: './admin-dashboard.page.html',
   styleUrl: './admin.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

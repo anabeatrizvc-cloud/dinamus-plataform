@@ -81,8 +81,7 @@ strong {
   transition:
     background 160ms ease,
     border-color 160ms ease,
-    color 160ms ease,
-    transform 160ms ease;
+    color 160ms ease;
 }
 
 .admin-topbar nav a:hover,
@@ -90,10 +89,6 @@ strong {
   border-color: rgba(255, 82, 31, 0.5);
   background: rgba(255, 82, 31, 0.14);
   color: var(--dnms-text);
-}
-
-.admin-topbar nav a:hover {
-  transform: translateY(-1px);
 }
 
 .admin-topbar > .dnms-button {
@@ -483,6 +478,275 @@ strong {
   line-height: 1;
 }
 
+.eco-admin-layout {
+  display: grid;
+  grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.eco-admin-menu {
+  position: sticky;
+  top: 96px;
+  display: grid;
+  gap: 18px;
+  border-radius: 22px;
+  padding: 20px;
+}
+
+.eco-admin-menu header,
+.section-title {
+  display: grid;
+  gap: 6px;
+}
+
+.eco-admin-menu header {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+}
+
+.eco-admin-menu svg {
+  width: 28px;
+  height: 28px;
+  color: var(--dnms-accent);
+}
+
+.eco-admin-menu p,
+.section-title p,
+.eco-attendance-table header p {
+  margin: 0;
+  color: rgba(247, 247, 244, 0.68);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.eco-admin-menu h2,
+.section-title h2,
+.eco-attendance-table header h2 {
+  margin: 0;
+  color: var(--dnms-text);
+  line-height: 1.12;
+}
+
+.eco-admin-menu .dnms-button {
+  width: 100%;
+}
+
+.eco-lessons-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.eco-lesson-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.eco-lesson-card {
+  display: grid;
+  gap: 7px;
+  border-radius: 18px;
+  color: inherit;
+  cursor: pointer;
+  padding: 16px;
+  text-align: left;
+}
+
+.eco-lesson-card.is-selected {
+  border-color: rgba(255, 82, 31, 0.58);
+  background:
+    linear-gradient(135deg, rgba(255, 82, 31, 0.18), transparent 52%),
+    rgba(8, 8, 8, 0.9);
+}
+
+.eco-lesson-card span {
+  color: rgba(247, 247, 244, 0.64);
+  font-size: 0.76rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.eco-lesson-card strong {
+  color: var(--dnms-text);
+  font-size: 1rem;
+}
+
+.eco-attendance-table {
+  display: grid;
+  gap: 10px;
+  border-radius: 22px;
+  padding: 18px;
+}
+
+.eco-attendance-table > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding-bottom: 6px;
+}
+
+.eco-attendance-table > header strong {
+  display: grid;
+  min-width: 44px;
+  min-height: 44px;
+  place-items: center;
+  border: 1px solid rgba(255, 82, 31, 0.38);
+  border-radius: 14px;
+  background: rgba(255, 82, 31, 0.12);
+  color: var(--dnms-text);
+}
+
+.attendance-grid {
+  display: grid;
+  grid-template-columns: minmax(170px, 1.25fr) minmax(132px, 0.9fr) minmax(110px, 0.75fr) minmax(112px, 0.75fr) 132px;
+  gap: 12px;
+  align-items: center;
+}
+
+.header-row {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(247, 247, 244, 0.56);
+  font-size: 0.74rem;
+  font-weight: 900;
+  padding: 0 0 10px;
+  text-transform: uppercase;
+}
+
+.attendance-row {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 12px;
+}
+
+.attendance-row div {
+  display: grid;
+  gap: 4px;
+}
+
+.attendance-row small {
+  display: none;
+  color: rgba(247, 247, 244, 0.54);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.attendance-row strong,
+.attendance-row span {
+  overflow-wrap: anywhere;
+}
+
+.status-chip {
+  display: inline-flex;
+  width: fit-content;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  color: rgba(247, 247, 244, 0.78);
+  font-size: 0.78rem;
+  font-weight: 900;
+  padding: 7px 10px;
+}
+
+.status-chip.validated {
+  border-color: rgba(95, 224, 160, 0.38);
+  background: rgba(95, 224, 160, 0.1);
+  color: var(--dnms-success);
+}
+
+.status-chip.rejected {
+  border-color: rgba(244, 95, 95, 0.38);
+  background: rgba(244, 95, 95, 0.1);
+  color: var(--dnms-danger);
+}
+
+.attendance-row .eco-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.eco-actions button,
+.photo-modal button {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.44);
+  color: var(--dnms-text);
+}
+
+.eco-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.eco-actions svg,
+.photo-modal button svg {
+  width: 17px;
+  height: 17px;
+}
+
+.empty-state.inline {
+  min-height: 150px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 18px 0 4px;
+}
+
+.photo-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.78);
+  padding: 18px;
+}
+
+.photo-modal article {
+  display: grid;
+  width: min(100%, 520px);
+  max-height: min(760px, 92dvh);
+  gap: 14px;
+  overflow: hidden;
+  border-radius: 22px;
+  padding: 16px;
+}
+
+.photo-modal header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.photo-modal p,
+.photo-modal h2 {
+  margin: 0;
+}
+
+.photo-modal p {
+  color: var(--dnms-muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.photo-modal img {
+  width: 100%;
+  max-height: 620px;
+  object-fit: contain;
+  border-radius: 16px;
+  background: #050505;
+}
+
 @media (max-width: 980px) {
   .admin-topbar {
     grid-template-columns: 1fr auto;
@@ -510,6 +774,18 @@ strong {
 
   .member-summary-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .eco-admin-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .eco-admin-menu {
+    position: static;
+  }
+
+  .attendance-grid {
+    grid-template-columns: minmax(150px, 1fr) minmax(124px, 0.8fr) minmax(112px, 0.75fr) minmax(112px, 0.75fr) 126px;
   }
 }
 
@@ -624,6 +900,41 @@ strong {
   .member-summary-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
+  }
+
+  .eco-admin-menu {
+    border-radius: 16px;
+    padding: 15px;
+  }
+
+  .eco-lesson-list {
+    grid-template-columns: 1fr;
+  }
+
+  .eco-attendance-table {
+    border-radius: 16px;
+    padding: 14px;
+  }
+
+  .header-row {
+    display: none;
+  }
+
+  .attendance-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .attendance-row {
+    gap: 10px;
+    padding: 13px;
+  }
+
+  .attendance-row small {
+    display: block;
+  }
+
+  .eco-actions {
+    justify-content: start;
   }
 
   .mini-stat {

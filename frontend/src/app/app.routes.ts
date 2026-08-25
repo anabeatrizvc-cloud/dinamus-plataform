@@ -25,6 +25,16 @@ export const routes: Routes = [
     title: 'GCs | DNMS',
   },
   {
+    path: 'eco',
+    loadComponent: () => import('./features/public/eco/eco.page').then((m) => m.EcoPage),
+    title: 'Eco | DNMS',
+  },
+  {
+    path: 'eco/presenca',
+    loadComponent: () => import('./features/public/eco-attendance/eco-attendance.page').then((m) => m.EcoAttendancePage),
+    title: 'Presença Eco | DNMS',
+  },
+  {
     path: 'oracao',
     redirectTo: '',
     pathMatch: 'full',
@@ -67,6 +77,11 @@ export const routes: Routes = [
         path: 'membros',
         loadComponent: () => import('./features/admin/admin-module.page').then((m) => m.AdminModulePage),
         title: 'Administração | DNMS',
+      },
+      {
+        path: 'eco',
+        loadComponent: () => import('./features/admin/admin-module.page').then((m) => m.AdminModulePage),
+        title: 'Eco | DNMS',
       },
       {
         path: '**',

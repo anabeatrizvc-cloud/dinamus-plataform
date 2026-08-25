@@ -4,6 +4,9 @@ import { Injectable, inject } from '@angular/core';
 import {
   AgendaItem,
   AuthSession,
+  EcoAttendance,
+  EcoAttendancePayload,
+  EcoLesson,
   EventPayload,
   EventSummary,
   FirstVisitPayload,
@@ -36,6 +39,26 @@ export class DnmsApiService {
 
   listAdminEvents() {
     return this.http.get<EventSummary[]>(`${this.baseUrl}/admin/events`);
+  }
+
+  getEcoLesson() {
+    return this.http.get<EcoLesson>(`${this.baseUrl}/eco/lesson`);
+  }
+
+  registerEcoAttendance(payload: EcoAttendancePayload) {
+    return this.http.post<EcoAttendance>(`${this.baseUrl}/eco/attendance`, payload);
+  }
+
+  listEcoLessons() {
+    return this.http.get<EcoLesson[]>(`${this.baseUrl}/admin/eco/lessons`);
+  }
+
+  listEcoAttendances(lessonId: string) {
+    return this.http.get<EcoAttendance[]>(`${this.baseUrl}/admin/eco/lessons/${lessonId}/attendances`);
+  }
+
+  validateEcoAttendance(lessonId: string, attendanceId: string, validated: boolean) {
+    return this.http.put<EcoAttendance>(`${this.baseUrl}/admin/eco/lessons/${lessonId}/attendances/${attendanceId}/validation`, { validated });
   }
 
   createEvent(payload: EventPayload) {

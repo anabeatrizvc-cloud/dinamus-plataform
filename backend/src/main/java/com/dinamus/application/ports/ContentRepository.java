@@ -2,6 +2,8 @@ package com.dinamus.application.ports;
 
 import com.dinamus.domain.model.AgendaItem;
 import com.dinamus.domain.model.EventSummary;
+import com.dinamus.domain.model.EcoAttendance;
+import com.dinamus.domain.model.EcoLesson;
 import com.dinamus.domain.model.FirstVisit;
 import com.dinamus.domain.model.GrowthGroup;
 import com.dinamus.domain.model.PrayerRequest;
@@ -18,6 +20,12 @@ public interface ContentRepository {
     EventSummary saveEvent(EventSummary event);
 
     void deleteEvent(String id);
+
+    List<EcoLesson> listEcoLessons();
+
+    EcoAttendance saveEcoAttendance(EcoAttendance attendance);
+
+    List<EcoAttendance> listEcoAttendances(String lessonId);
 
     List<GrowthGroup> listGrowthGroups();
 

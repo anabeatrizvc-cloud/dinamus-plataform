@@ -1,0 +1,171 @@
+.eco-attendance-page {
+  display: grid;
+  min-height: 100dvh;
+  place-items: center;
+  overflow-x: hidden;
+  padding: clamp(16px, 4vw, 42px);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(255, 82, 31, 0.2), transparent 18rem),
+    radial-gradient(circle at 80% 100%, rgba(255, 255, 255, 0.055), transparent 18rem),
+    #020202;
+}
+
+.attendance-card {
+  display: grid;
+  width: min(100%, 470px);
+  gap: 22px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 24px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.012)),
+    rgba(8, 8, 8, 0.9);
+  box-shadow: var(--dnms-shadow);
+  padding: clamp(22px, 5vw, 34px);
+}
+
+.attendance-logo {
+  display: inline-flex;
+  width: fit-content;
+}
+
+.attendance-logo img {
+  width: 132px;
+  height: auto;
+}
+
+header {
+  display: grid;
+  gap: 7px;
+}
+
+header p,
+header h1 {
+  margin: 0;
+}
+
+header p {
+  color: var(--dnms-accent);
+  font-size: 0.82rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+header h1 {
+  color: var(--dnms-text);
+  font-size: clamp(2.35rem, 9vw, 3.4rem);
+  line-height: 0.98;
+}
+
+header span {
+  color: rgba(247, 247, 244, 0.72);
+}
+
+form {
+  display: grid;
+  gap: 15px;
+}
+
+.field input {
+  min-width: 0;
+}
+
+.selfie-field {
+  display: grid;
+  min-height: 190px;
+  place-items: center;
+  overflow: hidden;
+  border: 1px dashed rgba(255, 82, 31, 0.58);
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, rgba(255, 82, 31, 0.12), transparent 46%),
+    rgba(0, 0, 0, 0.34);
+  cursor: pointer;
+}
+
+.selfie-field input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.selfie-field span {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--dnms-text);
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.selfie-field svg {
+  width: 24px;
+  height: 24px;
+  color: var(--dnms-accent);
+}
+
+.selfie-field img {
+  width: 100%;
+  height: 100%;
+  max-height: 280px;
+  object-fit: cover;
+}
+
+.success-state {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border: 1px solid rgba(95, 224, 160, 0.4);
+  border-radius: 16px;
+  background: rgba(95, 224, 160, 0.1);
+  color: var(--dnms-text);
+  padding: 14px;
+}
+
+.success-state svg {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  color: var(--dnms-success);
+}
+
+.error-text {
+  margin: 0;
+}
+
+.dnms-button {
+  width: 100%;
+}
+
+.spin {
+  animation: spin 900ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 520px) {
+  .eco-attendance-page {
+    align-items: start;
+    padding: 14px;
+  }
+
+  .attendance-card {
+    gap: 18px;
+    border-radius: 20px;
+    padding: 20px 17px;
+  }
+
+  .attendance-logo img {
+    width: 118px;
+  }
+
+  .selfie-field {
+    min-height: 170px;
+  }
+}

@@ -3,6 +3,8 @@ package com.dinamus;
 import com.dinamus.adapters.in.web.AdminController;
 import com.dinamus.adapters.in.web.dto.AuthDtos;
 import com.dinamus.domain.model.AgendaItem;
+import com.dinamus.domain.model.EcoAttendance;
+import com.dinamus.domain.model.EcoLesson;
 import com.dinamus.domain.model.EventSummary;
 import com.dinamus.domain.model.MemberSummary;
 import io.micronaut.core.type.Argument;
@@ -15,6 +17,7 @@ import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
@@ -116,6 +119,64 @@ class PlatformApiTest {
     }
 
     @Test
+    void publicEcoAttendanceCanBeRegisteredAndValidatedByAdmin() {
+        EcoLesson lesson = client.toBlocking().retrieve(HttpRequest.GET("/api/v1/eco/lesson"), EcoLesson.class);
+        assertEquals("eco-2026-08-25", lesson.id());
+        assertEquals("2026-08-25", lesson.lessonDate());
+
+        EcoAttendance created = client.toBlocking().retrieve(
+            HttpRequest.POST("/api/v1/eco/attendance", Map.of(
+                "name", "Aluno Eco",
+                "phone", "(81) 99949-9159",
+                "lessonDate", "2026-08-25",
+                "photoDataUrl", samplePhoto()
+            )),
+            EcoAttendance.class
+        );
+
+        assertEquals("PENDING", created.status());
+        assertEquals("(81) 99949-9159", created.phone());
+
+        AuthDtos.LoginResponse admin = login();
+        List<EcoLesson> lessons = client.toBlocking().retrieve(
+            HttpRequest.GET("/api/v1/admin/eco/lessons").bearerAuth(admin.accessToken()),
+            Argument.listOf(EcoLesson.class)
+        );
+        assertFalse(lessons.isEmpty());
+
+        List<EcoAttendance> attendances = client.toBlocking().retrieve(
+            HttpRequest.GET("/api/v1/admin/eco/lessons/" + lesson.id() + "/attendances").bearerAuth(admin.accessToken()),
+            Argument.listOf(EcoAttendance.class)
+        );
+        assertTrue(attendances.stream().anyMatch(attendance -> attendance.id().equals(created.id())));
+
+        EcoAttendance validated = client.toBlocking().retrieve(
+            HttpRequest.PUT(
+                "/api/v1/admin/eco/lessons/" + lesson.id() + "/attendances/" + created.id() + "/validation",
+                Map.of("validated", true)
+            ).bearerAuth(admin.accessToken()),
+            EcoAttendance.class
+        );
+
+        assertEquals("VALIDATED", validated.status());
+        assertFalse(validated.validatedAt().isBlank());
+    }
+
+    @Test
+    void ecoAttendanceRequiresBrazilianMobilePhone() {
+        HttpClientResponseException exception = assertThrows(HttpClientResponseException.class, () ->
+            client.toBlocking().exchange(HttpRequest.POST("/api/v1/eco/attendance", Map.of(
+                "name", "Aluno Eco",
+                "phone", "8133344444",
+                "lessonDate", "2026-08-25",
+                "photoDataUrl", samplePhoto()
+            )))
+        );
+
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
+    }
+
+    @Test
     void adminDashboardRequiresToken() {
         HttpClientResponseException exception = assertThrows(HttpClientResponseException.class, () ->
             client.toBlocking().exchange(HttpRequest.GET("/api/v1/admin/dashboard"), String.class)
@@ -146,5 +207,9 @@ class PlatformApiTest {
             HttpRequest.POST("/api/v1/auth/login", Map.of("email", email, "password", password)),
             AuthDtos.LoginResponse.class
         );
+    }
+
+    private String samplePhoto() {
+        return "data:image/png;base64," + Base64.getEncoder().encodeToString("selfie-de-teste-com-conteudo-suficiente-para-validar-upload-do-eco".repeat(3).getBytes());
     }
 }

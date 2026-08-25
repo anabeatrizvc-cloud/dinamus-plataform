@@ -7,6 +7,7 @@
       <a routerLink="/admin/dashboard" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }">Painel</a>
       <a routerLink="/admin/eventos" routerLinkActive="is-active">Eventos</a>
       <a routerLink="/admin/membros" routerLinkActive="is-active">Membros</a>
+      <a routerLink="/admin/eco" routerLinkActive="is-active">Eco</a>
     </nav>
     <a class="dnms-button secondary" routerLink="/admin/dashboard">Painel</a>
   </header>
@@ -15,7 +16,15 @@
     <div>
       <p>Administração</p>
       <h1 id="module-title">{{ title() }}</h1>
-      <span>{{ isEventsModule() ? 'Controle inscrições e datas com uma tela objetiva.' : 'Cadastre pessoas, defina permissões e acompanhe convites.' }}</span>
+      <span>
+        {{
+          isEventsModule()
+            ? 'Controle inscrições e datas com uma tela objetiva.'
+            : isEcoModule()
+              ? 'Acompanhe a aula do Eco e valide presenças com segurança.'
+              : 'Cadastre pessoas, defina permissões e acompanhe convites.'
+        }}
+      </span>
     </div>
   </section>
 
@@ -189,5 +198,124 @@
         }
       </section>
     </section>
+  }
+
+  @if (isEcoModule()) {
+    <section class="eco-admin-layout" aria-label="Administração do Eco">
+      <aside class="surface eco-admin-menu">
+        <header>
+          <svg lucideQrCode aria-hidden="true"></svg>
+          <div>
+            <p>Eco</p>
+            <h2>Validações de presença</h2>
+          </div>
+        </header>
+        <a class="dnms-button" routerLink="/eco" target="_blank" rel="noopener">Abrir QR Code público</a>
+      </aside>
+
+      <section class="eco-lessons-panel">
+        <div class="section-title">
+          <p>Aulas disponíveis</p>
+          <h2>Validações de presença</h2>
+        </div>
+
+        <div class="eco-lesson-list">
+          @for (lesson of ecoLessons(); track lesson.id) {
+            <button
+              type="button"
+              class="surface eco-lesson-card"
+              [class.is-selected]="lesson.id === selectedEcoLessonId()"
+              (click)="selectEcoLesson(lesson)"
+            >
+              <span>Aula</span>
+              <strong>{{ ecoLessonLabel(lesson) }}</strong>
+            </button>
+          } @empty {
+            <article class="surface empty-state">
+              <svg lucideQrCode aria-hidden="true"></svg>
+              <h2>Nenhuma aula encontrada</h2>
+              <p>A aula do Eco aparecerá aqui quando estiver disponível.</p>
+            </article>
+          }
+        </div>
+
+        @if (selectedEcoLesson()) {
+          <article class="surface eco-attendance-table">
+            <header>
+              <div>
+                <p>Presenças recebidas</p>
+                <h2>{{ ecoLessonLabel(selectedEcoLesson()!) }}</h2>
+              </div>
+              <strong>{{ ecoAttendances().length }}</strong>
+            </header>
+
+            <div class="attendance-grid header-row" aria-hidden="true">
+              <span>Nome</span>
+              <span>Telefone</span>
+              <span>Envio</span>
+              <span>Status</span>
+              <span>Ações</span>
+            </div>
+
+            @for (attendance of ecoAttendances(); track attendance.id) {
+              <div class="attendance-grid attendance-row">
+                <div>
+                  <small>Nome</small>
+                  <strong>{{ attendance.name }}</strong>
+                </div>
+                <div>
+                  <small>Telefone</small>
+                  <span>{{ attendance.phone }}</span>
+                </div>
+                <div>
+                  <small>Envio</small>
+                  <span>{{ formatDateTime(attendance.createdAt) }}</span>
+                </div>
+                <div>
+                  <small>Status</small>
+                  <span class="status-chip" [class.validated]="attendance.status === 'VALIDATED'" [class.rejected]="attendance.status === 'REJECTED'">
+                    {{ statusLabel(attendance.status) }}
+                  </span>
+                </div>
+                <div class="eco-actions">
+                  <button type="button" aria-label="Ver selfie" (click)="openPhoto(attendance)">
+                    <svg lucideEye aria-hidden="true"></svg>
+                  </button>
+                  <button type="button" aria-label="Validar presença" [disabled]="isSaving()" (click)="validateEcoAttendance(attendance, true)">
+                    <svg lucideCheck aria-hidden="true"></svg>
+                  </button>
+                  <button type="button" aria-label="Não validar presença" [disabled]="isSaving()" (click)="validateEcoAttendance(attendance, false)">
+                    <svg lucideX aria-hidden="true"></svg>
+                  </button>
+                </div>
+              </div>
+            } @empty {
+              <article class="empty-state inline">
+                <svg lucideQrCode aria-hidden="true"></svg>
+                <h2>Nenhuma presença enviada</h2>
+                <p>Quando alguém escanear o QR Code e enviar a selfie, a presença aparecerá aqui.</p>
+              </article>
+            }
+          </article>
+        }
+      </section>
+    </section>
+  }
+
+  @if (selectedPhoto()) {
+    <div class="photo-modal" role="dialog" aria-modal="true" aria-label="Selfie enviada">
+      <article class="surface">
+        <header>
+          <div>
+            <p>Selfie enviada</p>
+            <h2>{{ selectedPhoto()!.name }}</h2>
+          </div>
+          <button type="button" aria-label="Fechar foto" (click)="closePhoto()">
+            <svg lucideX aria-hidden="true"></svg>
+          </button>
+        </header>
+        <img [src]="selectedPhoto()!.photoDataUrl" alt="Selfie enviada por {{ selectedPhoto()!.name }}" />
+      </article>
+    </div>
   }
 </main>

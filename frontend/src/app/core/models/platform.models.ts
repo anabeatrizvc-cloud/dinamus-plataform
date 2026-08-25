@@ -26,6 +26,33 @@ export interface EventPayload {
   registrationUrl: string;
 }
 
+export interface EcoLesson {
+  id: string;
+  title: string;
+  lessonDate: string;
+}
+
+export type EcoAttendanceStatus = 'PENDING' | 'VALIDATED' | 'REJECTED';
+
+export interface EcoAttendance {
+  id: string;
+  lessonId: string;
+  lessonDate: string;
+  name: string;
+  phone: string;
+  photoDataUrl: string;
+  status: EcoAttendanceStatus;
+  createdAt: string;
+  validatedAt: string;
+}
+
+export interface EcoAttendancePayload {
+  name: string;
+  phone: string;
+  lessonDate: string;
+  photoDataUrl: string;
+}
+
 export interface MemberSummary {
   id: string;
   name: string;

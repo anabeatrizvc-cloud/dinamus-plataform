@@ -3,6 +3,8 @@ package com.dinamus.adapters.out.persistence;
 import com.dinamus.application.ports.ContentRepository;
 import com.dinamus.application.ports.PasswordHasher;
 import com.dinamus.domain.model.AgendaItem;
+import com.dinamus.domain.model.EcoAttendance;
+import com.dinamus.domain.model.EcoLesson;
 import com.dinamus.domain.model.EventSummary;
 import com.dinamus.domain.model.FirstVisit;
 import com.dinamus.domain.model.GrowthGroup;
@@ -26,6 +28,9 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
+import static com.dinamus.application.usecases.ManageEcoAttendanceUseCase.ECO_LESSON_DATE;
+import static com.dinamus.application.usecases.ManageEcoAttendanceUseCase.ECO_LESSON_ID;
 
 @Singleton
 @Requires(property = "couchdb.enabled", value = "true")
@@ -68,7 +73,25 @@ public class CouchDbContentRepository implements ContentRepository {
 
     @Override
     public void deleteEvent(String id) {
-        findDocument("event", id).ifPresent(document -> send("DELETE", documentUri("event", id) + "?rev=" + encode(document._rev()), ""));
+        findRevisionDocument("event", id).ifPresent(document -> send("DELETE", documentUri("event", id) + "?rev=" + encode(document._rev()), ""));
+    }
+
+    @Override
+    public List<EcoLesson> listEcoLessons() {
+        return List.of(new EcoLesson(ECO_LESSON_ID, "Aula", ECO_LESSON_DATE));
+    }
+
+    @Override
+    public EcoAttendance saveEcoAttendance(EcoAttendance attendance) {
+        saveDocument("eco-attendance", attendance.id(), attendance);
+        return attendance;
+    }
+
+    @Override
+    public List<EcoAttendance> listEcoAttendances(String lessonId) {
+        return listEcoAttendanceDocuments().orElse(List.of()).stream()
+            .filter(attendance -> attendance.lessonId().equals(lessonId))
+            .toList();
     }
 
     @Override
@@ -101,7 +124,7 @@ public class CouchDbContentRepository implements ContentRepository {
 
     private void saveDocument(String type, String id, Object payload) {
         try {
-            Optional<CouchDocument> existing = findDocument(type, id);
+            Optional<CouchRevisionDocument> existing = findRevisionDocument(type, id);
             Map<String, Object> document = existing
                 .map(found -> Map.of("_id", type + ":" + id, "_rev", found._rev(), "type", type, "payload", payload))
                 .orElseGet(() -> Map.of("_id", type + ":" + id, "type", type, "payload", payload));
@@ -129,13 +152,31 @@ public class CouchDbContentRepository implements ContentRepository {
         }
     }
 
-    private Optional<CouchDocument> findDocument(String type, String id) {
-        return request("GET", documentUri(type, id), "").flatMap(this::readDocument);
+    private Optional<List<EcoAttendance>> listEcoAttendanceDocuments() {
+        try {
+            String uri = databaseUri() + "/_all_docs?include_docs=true&startkey=" + encode("\"eco-attendance:\"") + "&endkey=" + encode("\"eco-attendance:\ufff0\"");
+            Optional<String> response = request("GET", uri, "");
+            if (response.isEmpty()) {
+                return Optional.empty();
+            }
+            CouchEcoAttendanceRows rows = objectMapper.readValue(response.get(), Argument.of(CouchEcoAttendanceRows.class));
+            return Optional.of(rows.rows().stream()
+                .map(CouchEcoAttendanceRow::doc)
+                .filter(document -> document != null && document.payload() != null)
+                .map(CouchEcoAttendanceDocument::payload)
+                .toList());
+        } catch (Exception exception) {
+            return Optional.empty();
+        }
     }
 
-    private Optional<CouchDocument> readDocument(String body) {
+    private Optional<CouchRevisionDocument> findRevisionDocument(String type, String id) {
+        return request("GET", documentUri(type, id), "").flatMap(this::readRevisionDocument);
+    }
+
+    private Optional<CouchRevisionDocument> readRevisionDocument(String body) {
         try {
-            return Optional.of(objectMapper.readValue(body, Argument.of(CouchDocument.class)));
+            return Optional.of(objectMapper.readValue(body, Argument.of(CouchRevisionDocument.class)));
         } catch (Exception exception) {
             return Optional.empty();
         }
@@ -192,5 +233,21 @@ public class CouchDbContentRepository implements ContentRepository {
 
     @Serdeable
     record CouchDocument(String _id, String _rev, String type, EventSummary payload) {
+    }
+
+    @Serdeable
+    record CouchEcoAttendanceRows(List<CouchEcoAttendanceRow> rows) {
+    }
+
+    @Serdeable
+    record CouchEcoAttendanceRow(CouchEcoAttendanceDocument doc) {
+    }
+
+    @Serdeable
+    record CouchEcoAttendanceDocument(String _id, String _rev, String type, EcoAttendance payload) {
+    }
+
+    @Serdeable
+    record CouchRevisionDocument(String _id, String _rev, String type) {
     }
 }

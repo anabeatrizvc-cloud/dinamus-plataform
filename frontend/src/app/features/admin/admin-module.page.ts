@@ -2,15 +2,28 @@ import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, injec
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink, RouterLinkActive } from '@angular/router';
-import { LucideCalendarDays, LucideMail, LucidePencil, LucidePlus, LucideTicket, LucideTrash2, LucideUsersRound } from '@lucide/angular';
+import {
+  LucideCalendarDays,
+  LucideCheck,
+  LucideEye,
+  LucideMail,
+  LucidePencil,
+  LucidePlus,
+  LucideQrCode,
+  LucideTicket,
+  LucideTrash2,
+  LucideUsersRound,
+  LucideX,
+} from '@lucide/angular';
 import { map } from 'rxjs';
 
 import { DnmsApiService } from '../../core/api/dnms-api.service';
-import { EventPayload, EventSummary, MemberPayload, MemberSummary, Role } from '../../core/models/platform.models';
+import { EcoAttendance, EcoLesson, EventPayload, EventSummary, MemberPayload, MemberSummary, Role } from '../../core/models/platform.models';
 
 const labels: Record<string, string> = {
   membros: 'Membros',
   eventos: 'Eventos',
+  eco: 'Eco',
 };
 
 @Component({
@@ -26,6 +39,10 @@ const labels: Record<string, string> = {
     LucideCalendarDays,
     LucideUsersRound,
     LucideMail,
+    LucideQrCode,
+    LucideEye,
+    LucideCheck,
+    LucideX,
   ],
   templateUrl: './admin-module.page.html',
   styleUrl: './admin.page.scss',
@@ -39,18 +56,26 @@ export class AdminModulePage implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly eventsState = signal<EventSummary[]>([]);
   private readonly membersState = signal<MemberSummary[]>([]);
+  private readonly ecoLessonsState = signal<EcoLesson[]>([]);
+  private readonly ecoAttendancesState = signal<EcoAttendance[]>([]);
 
   readonly editingId = signal<string | null>(null);
   readonly isSaving = signal(false);
   readonly feedback = signal('');
+  readonly selectedEcoLessonId = signal<string | null>(null);
+  readonly selectedPhoto = signal<EcoAttendance | null>(null);
   readonly moduleKey = toSignal(this.route.url.pipe(map((segments) => segments[0]?.path ?? '')), {
     initialValue: this.route.snapshot.url[0]?.path ?? '',
   });
   readonly title = computed(() => labels[this.moduleKey()] ?? 'Administração');
   readonly isEventsModule = computed(() => this.moduleKey() === 'eventos');
   readonly isMembersModule = computed(() => this.moduleKey() === 'membros');
+  readonly isEcoModule = computed(() => this.moduleKey() === 'eco');
   readonly events = this.eventsState.asReadonly();
   readonly members = this.membersState.asReadonly();
+  readonly ecoLessons = this.ecoLessonsState.asReadonly();
+  readonly ecoAttendances = this.ecoAttendancesState.asReadonly();
+  readonly selectedEcoLesson = computed(() => this.ecoLessons().find((lesson) => lesson.id === this.selectedEcoLessonId()) ?? null);
   readonly activeMembers = computed(() => this.members().filter((member) => member.active).length);
   readonly pendingInvites = computed(() => this.members().filter((member) => member.invitePending).length);
   readonly adminMembers = computed(() => this.members().filter((member) => member.roles.includes('ADMIN')).length);
@@ -204,6 +229,38 @@ export class AdminModulePage implements OnInit {
     });
   }
 
+  selectEcoLesson(lesson: EcoLesson) {
+    this.selectedEcoLessonId.set(lesson.id);
+    this.feedback.set('');
+    this.api.listEcoAttendances(lesson.id).subscribe({
+      next: (attendances) => this.ecoAttendancesState.set(attendances),
+      error: () => {
+        this.ecoAttendancesState.set([]);
+        this.feedback.set('Não foi possível carregar as presenças do Eco.');
+      },
+    });
+  }
+
+  openPhoto(attendance: EcoAttendance) {
+    this.selectedPhoto.set(attendance);
+  }
+
+  closePhoto() {
+    this.selectedPhoto.set(null);
+  }
+
+  validateEcoAttendance(attendance: EcoAttendance, validated: boolean) {
+    this.isSaving.set(true);
+    this.api.validateEcoAttendance(attendance.lessonId, attendance.id, validated).subscribe({
+      next: (saved) => {
+        this.ecoAttendancesState.update((items) => items.map((item) => (item.id === saved.id ? saved : item)));
+        this.feedback.set(validated ? 'Presença validada.' : 'Presença marcada como não validada.');
+        this.isSaving.set(false);
+      },
+      error: () => this.fail('Não foi possível atualizar a presença.'),
+    });
+  }
+
   inviteLink(member: MemberSummary) {
     if (!member.setupToken) {
       return '';
@@ -220,6 +277,37 @@ export class AdminModulePage implements OnInit {
 
   eventDate(event: EventSummary) {
     return event.endsAt ? `${event.startsAt} até ${event.endsAt}` : event.startsAt;
+  }
+
+  ecoLessonLabel(lesson: EcoLesson) {
+    return `${lesson.title} - ${this.formatDate(lesson.lessonDate)}`;
+  }
+
+  statusLabel(status: EcoAttendance['status']) {
+    if (status === 'VALIDATED') {
+      return 'Validada';
+    }
+    if (status === 'REJECTED') {
+      return 'Não validada';
+    }
+    return 'Pendente';
+  }
+
+  formatDate(value: string) {
+    const [year, month, day] = value.split('-');
+    return `${day}/${month}/${year}`;
+  }
+
+  formatDateTime(value: string) {
+    if (!value) {
+      return '';
+    }
+    return new Intl.DateTimeFormat('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(new Date(value));
   }
 
   private loadEvents() {
@@ -251,7 +339,29 @@ export class AdminModulePage implements OnInit {
       return;
     }
 
+    if (this.isEcoModule()) {
+      this.loadEcoLessons();
+      return;
+    }
+
     void this.router.navigateByUrl('/admin/dashboard');
+  }
+
+  private loadEcoLessons() {
+    this.api.listEcoLessons().subscribe({
+      next: (lessons) => {
+        this.ecoLessonsState.set(lessons);
+        const firstLesson = lessons[0];
+        if (firstLesson) {
+          this.selectEcoLesson(firstLesson);
+        }
+      },
+      error: () => {
+        this.ecoLessonsState.set([]);
+        this.ecoAttendancesState.set([]);
+        this.feedback.set('Não foi possível carregar as aulas do Eco.');
+      },
+    });
   }
 
   private finishEditing() {

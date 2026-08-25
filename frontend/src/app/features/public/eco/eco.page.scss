@@ -1,0 +1,135 @@
+.eco-page {
+  display: grid;
+  min-height: 100dvh;
+  place-items: center;
+  overflow-x: hidden;
+  padding: clamp(18px, 5vw, 48px);
+  background:
+    radial-gradient(circle at 18% 12%, rgba(255, 82, 31, 0.2), transparent 22rem),
+    radial-gradient(circle at 86% 78%, rgba(255, 255, 255, 0.055), transparent 18rem),
+    #020202;
+}
+
+.eco-shell {
+  display: grid;
+  width: min(100%, 1040px);
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 380px);
+  align-items: center;
+  gap: clamp(24px, 6vw, 70px);
+}
+
+.eco-brand {
+  grid-column: 1 / -1;
+  display: inline-flex;
+  width: fit-content;
+}
+
+.eco-brand img {
+  width: clamp(116px, 16vw, 176px);
+  height: auto;
+}
+
+.eco-copy {
+  display: grid;
+  gap: 14px;
+}
+
+.eco-copy p {
+  margin: 0;
+  color: var(--dnms-accent);
+  font-size: 0.88rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.eco-copy h1 {
+  max-width: 8.4em;
+  margin: 0;
+  color: var(--dnms-text);
+  font-size: clamp(3rem, 8vw, 6.4rem);
+  line-height: 0.92;
+}
+
+.eco-copy span {
+  max-width: 35rem;
+  color: rgba(247, 247, 244, 0.76);
+  font-size: clamp(1rem, 2vw, 1.16rem);
+  line-height: 1.55;
+}
+
+.eco-copy strong {
+  width: fit-content;
+  border: 1px solid rgba(255, 82, 31, 0.42);
+  border-radius: 999px;
+  background: rgba(255, 82, 31, 0.13);
+  color: var(--dnms-text);
+  padding: 10px 14px;
+}
+
+.eco-qr-card {
+  display: grid;
+  gap: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 24px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.015)),
+    rgba(8, 8, 8, 0.88);
+  box-shadow: var(--dnms-shadow);
+  padding: clamp(18px, 3vw, 26px);
+}
+
+.eco-qr-card > img,
+.qr-loading {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 18px;
+  background: #ffffff;
+}
+
+.qr-loading {
+  display: grid;
+  place-items: center;
+}
+
+.qr-loading svg {
+  width: 86px;
+  height: 86px;
+  color: #050505;
+}
+
+.eco-qr-card .dnms-button {
+  width: 100%;
+}
+
+.eco-qr-card .dnms-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+.eco-error {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--dnms-danger);
+}
+
+@media (max-width: 760px) {
+  .eco-page {
+    align-items: start;
+    padding: 18px 14px 26px;
+  }
+
+  .eco-shell {
+    grid-template-columns: 1fr;
+    gap: 22px;
+  }
+
+  .eco-copy h1 {
+    font-size: clamp(2.55rem, 15vw, 4.2rem);
+  }
+
+  .eco-qr-card {
+    width: min(100%, 390px);
+    justify-self: center;
+    border-radius: 20px;
+  }
+}

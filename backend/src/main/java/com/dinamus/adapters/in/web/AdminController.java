@@ -1,7 +1,11 @@
 package com.dinamus.adapters.in.web;
 
+import com.dinamus.adapters.in.web.dto.EcoDtos;
 import com.dinamus.adapters.in.web.dto.EventDtos;
+import com.dinamus.application.usecases.ManageEcoAttendanceUseCase;
 import com.dinamus.application.usecases.ManageEventsUseCase;
+import com.dinamus.domain.model.EcoAttendance;
+import com.dinamus.domain.model.EcoLesson;
 import com.dinamus.domain.model.EventSummary;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
@@ -24,9 +28,11 @@ import java.util.List;
 @Secured("ADMIN")
 public class AdminController {
     private final ManageEventsUseCase manageEvents;
+    private final ManageEcoAttendanceUseCase manageEcoAttendance;
 
-    public AdminController(ManageEventsUseCase manageEvents) {
+    public AdminController(ManageEventsUseCase manageEvents, ManageEcoAttendanceUseCase manageEcoAttendance) {
         this.manageEvents = manageEvents;
+        this.manageEcoAttendance = manageEcoAttendance;
     }
 
     @Get("/dashboard")
@@ -58,6 +64,25 @@ public class AdminController {
     public HttpResponse<?> deleteEvent(@PathVariable String id) {
         manageEvents.delete(id);
         return HttpResponse.noContent();
+    }
+
+    @Get("/eco/lessons")
+    public List<EcoLesson> ecoLessons() {
+        return manageEcoAttendance.listLessons();
+    }
+
+    @Get("/eco/lessons/{lessonId}/attendances")
+    public List<EcoAttendance> ecoAttendances(@PathVariable String lessonId) {
+        return manageEcoAttendance.listAttendances(lessonId);
+    }
+
+    @Put("/eco/lessons/{lessonId}/attendances/{attendanceId}/validation")
+    public EcoAttendance validateEcoAttendance(
+        @PathVariable String lessonId,
+        @PathVariable String attendanceId,
+        @Valid @Body EcoDtos.EcoValidationRequest request
+    ) {
+        return manageEcoAttendance.validate(lessonId, attendanceId, request.validated());
     }
 
     @Serdeable

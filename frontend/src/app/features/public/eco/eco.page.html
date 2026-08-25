@@ -1,0 +1,32 @@
+<main class="eco-page">
+  <section class="eco-shell" aria-labelledby="eco-title">
+    <a class="eco-brand" routerLink="/">
+      <img src="assets/home/wordmark-orange.png" alt="dnms." width="498" height="165" />
+    </a>
+
+    <div class="eco-copy">
+      <p>Eco DNMS</p>
+      <h1 id="eco-title">Presença da aula</h1>
+      <span>Aponte a câmera do celular para o QR Code e confirme sua presença com nome, telefone e selfie.</span>
+      <strong>{{ lesson()?.title ?? 'Aula' }} - {{ formattedDate() }}</strong>
+    </div>
+
+    <article class="eco-qr-card">
+      @if (qrCode()) {
+        <img [src]="qrCode()" alt="QR Code para registrar presença no Eco" width="360" height="360" />
+      } @else {
+        <div class="qr-loading">
+          <svg lucideQrCode aria-hidden="true"></svg>
+        </div>
+      }
+      <a class="dnms-button" [href]="attendanceUrl() || '/eco/presenca?data=2026-08-25'">
+        Abrir presença
+        <svg lucideArrowRight aria-hidden="true"></svg>
+      </a>
+    </article>
+
+    @if (error()) {
+      <p class="eco-error" role="alert">{{ error() }}</p>
+    }
+  </section>
+</main>

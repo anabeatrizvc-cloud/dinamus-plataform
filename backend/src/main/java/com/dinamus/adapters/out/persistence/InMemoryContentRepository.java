@@ -3,6 +3,8 @@ package com.dinamus.adapters.out.persistence;
 import com.dinamus.application.ports.ContentRepository;
 import com.dinamus.application.ports.PasswordHasher;
 import com.dinamus.domain.model.AgendaItem;
+import com.dinamus.domain.model.EcoAttendance;
+import com.dinamus.domain.model.EcoLesson;
 import com.dinamus.domain.model.EventSummary;
 import com.dinamus.domain.model.FirstVisit;
 import com.dinamus.domain.model.GrowthGroup;
@@ -16,12 +18,16 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import static com.dinamus.application.usecases.ManageEcoAttendanceUseCase.ECO_LESSON_DATE;
+import static com.dinamus.application.usecases.ManageEcoAttendanceUseCase.ECO_LESSON_ID;
+
 @Singleton
 @Requires(property = "couchdb.enabled", notEquals = "true")
 public class InMemoryContentRepository implements ContentRepository {
     private final List<PrayerRequest> prayerRequests = new CopyOnWriteArrayList<>();
     private final List<FirstVisit> firstVisits = new CopyOnWriteArrayList<>();
     private final List<EventSummary> events = new CopyOnWriteArrayList<>(defaultEvents());
+    private final List<EcoAttendance> ecoAttendances = new CopyOnWriteArrayList<>();
     private final List<UserAccount> users;
 
     public InMemoryContentRepository(PasswordHasher hasher) {
@@ -59,6 +65,25 @@ public class InMemoryContentRepository implements ContentRepository {
     @Override
     public void deleteEvent(String id) {
         events.removeIf(event -> event.id().equals(id));
+    }
+
+    @Override
+    public List<EcoLesson> listEcoLessons() {
+        return List.of(new EcoLesson(ECO_LESSON_ID, "Aula", ECO_LESSON_DATE));
+    }
+
+    @Override
+    public EcoAttendance saveEcoAttendance(EcoAttendance attendance) {
+        ecoAttendances.removeIf(item -> item.id().equals(attendance.id()));
+        ecoAttendances.add(attendance);
+        return attendance;
+    }
+
+    @Override
+    public List<EcoAttendance> listEcoAttendances(String lessonId) {
+        return ecoAttendances.stream()
+            .filter(attendance -> attendance.lessonId().equals(lessonId))
+            .toList();
     }
 
     @Override

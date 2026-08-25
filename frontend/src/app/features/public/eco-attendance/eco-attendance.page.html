@@ -1,0 +1,58 @@
+<main class="eco-attendance-page">
+  <section class="attendance-card" aria-labelledby="attendance-title">
+    <a class="attendance-logo" routerLink="/">
+      <img src="assets/home/wordmark-orange.png" alt="dnms." width="498" height="165" />
+    </a>
+
+    <header>
+      <p>Eco DNMS</p>
+      <h1 id="attendance-title">Confirmar presença</h1>
+      <span>{{ lesson()?.title ?? 'Aula' }} - {{ formattedDate() }}</span>
+    </header>
+
+    @if (success()) {
+      <aside class="success-state" role="status">
+        <svg lucideCheckCircle2 aria-hidden="true"></svg>
+        <strong>{{ success() }}</strong>
+      </aside>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <label class="field">
+        <span>Nome completo</span>
+        <input formControlName="name" autocomplete="name" />
+      </label>
+
+      <label class="field">
+        <span>Celular com DDD</span>
+        <input formControlName="phone" autocomplete="tel" inputmode="tel" placeholder="(81) 99999-9999" (input)="formatPhone()" />
+      </label>
+
+      <label class="selfie-field">
+        <input type="file" accept="image/jpeg,image/png,image/webp" capture="user" (change)="onPhotoSelected($event)" />
+        @if (photoPreview()) {
+          <img [src]="photoPreview()" alt="Prévia da selfie enviada" />
+        } @else {
+          <span>
+            @if (isProcessingPhoto()) {
+              <svg class="spin" lucideLoaderCircle aria-hidden="true"></svg>
+            } @else {
+              <svg lucideCamera aria-hidden="true"></svg>
+            }
+            Tirar selfie
+          </span>
+        }
+      </label>
+
+      <input type="hidden" formControlName="photoDataUrl" />
+
+      @if (error()) {
+        <p class="error-text" role="alert">{{ error() }}</p>
+      }
+
+      <button class="dnms-button" type="submit" [disabled]="isSaving() || isProcessingPhoto()">
+        {{ isSaving() ? 'Enviando' : 'Enviar presença' }}
+      </button>
+    </form>
+  </section>
+</main>

@@ -19,9 +19,7 @@ public class InMemoryIdentityRepository implements IdentityRepository {
 
     public InMemoryIdentityRepository(PasswordHasher hasher) {
         this.members = new CopyOnWriteArrayList<>(List.of(
-            new MemberAccount("admin-local", "Equipe DNMS", "81999990000", "admin@dinamus.local", hasher.hash("dnms-admin"), List.of("ADMIN", "MEMBRO"), true, ""),
-            new MemberAccount("professor-demo", "Prof. Rafael", "81999991111", "professor@dinamus.local", hasher.hash("dnms-prof"), List.of("PROFESSOR", "MEMBRO"), true, ""),
-            new MemberAccount("aluno-demo", "Ana Beatriz", "81999992222", "aluno@dinamus.local", hasher.hash("dnms-aluno"), List.of("MEMBRO"), true, "")
+            new MemberAccount("admin-local", "Equipe DNMS", "81999990000", "admin@dinamus.local", hasher.hash("dnms-admin"), List.of("ADMIN", "MEMBRO"), true, "")
         ));
     }
 

@@ -148,8 +148,6 @@ write_env_file() {
   ensure_env_value "MAIL_FROM" "no-reply@$DOMAIN"
   ensure_env_value "MAIL_SMTP_STARTTLS" "true"
   ensure_env_value "DNMS_PROXY_PORT" "$APP_PORT"
-  ensure_env_value "APP_STORAGE_PATH" "/app/storage"
-  ensure_env_value "APP_MAX_UPLOAD_BYTES" "10485760"
 
   chmod 600 "$ENV_FILE"
 }
@@ -230,10 +228,6 @@ services:
       MAIL_SMTP_PASSWORD: ${MAIL_SMTP_PASSWORD}
       MAIL_FROM: ${MAIL_FROM}
       MAIL_SMTP_STARTTLS: ${MAIL_SMTP_STARTTLS}
-      APP_STORAGE_PATH: ${APP_STORAGE_PATH}
-      APP_MAX_UPLOAD_BYTES: ${APP_MAX_UPLOAD_BYTES}
-    volumes:
-      - app-uploads:/app/storage
     depends_on:
       couchdb:
         condition: service_healthy
@@ -276,7 +270,6 @@ services:
 
 volumes:
   couchdb-data:
-  app-uploads:
 YAML
 }
 
@@ -345,8 +338,8 @@ server {
   add_header X-Content-Type-Options nosniff always;
   add_header X-Frame-Options DENY always;
   add_header Referrer-Policy strict-origin-when-cross-origin always;
-  add_header Permissions-Policy "camera=(self), microphone=(), geolocation=()" always;
-  add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; frame-src https://www.youtube.com https://www.youtube-nocookie.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none';" always;
+  add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+  add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none';" always;
 
   location / {
     limit_req zone=dnms_rate burst=40 nodelay;

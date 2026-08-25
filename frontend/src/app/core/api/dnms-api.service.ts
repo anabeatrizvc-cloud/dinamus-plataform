@@ -3,28 +3,14 @@ import { Injectable, inject } from '@angular/core';
 
 import {
   AgendaItem,
-  ActivitySummary,
   AuthSession,
-  AttendanceEntry,
-  AttendanceReportRow,
-  ClassroomDashboard,
-  CoursePayload,
-  CourseSummary,
-  DisciplinePayload,
-  DisciplineSummary,
-  DisciplineWorkspace,
   EventPayload,
   EventSummary,
-  EvaluationSummary,
   FirstVisitPayload,
-  GradeEntry,
   GrowthGroup,
-  LessonSummary,
-  MaterialSummary,
   MemberPayload,
   MemberSummary,
   PrayerRequestPayload,
-  RecordedLesson,
 } from '../models/platform.models';
 
 @Injectable({ providedIn: 'root' })
@@ -82,86 +68,6 @@ export class DnmsApiService {
 
   deleteMember(id: string) {
     return this.http.delete<void>(`${this.baseUrl}/admin/members/${id}`);
-  }
-
-  listAdminCourses() {
-    return this.http.get<CourseSummary[]>(`${this.baseUrl}/admin/academic/courses`);
-  }
-
-  listAdminDisciplines() {
-    return this.http.get<DisciplineSummary[]>(`${this.baseUrl}/admin/academic/disciplines`);
-  }
-
-  attendanceReport(disciplineId: string) {
-    return this.http.get<AttendanceReportRow[]>(`${this.baseUrl}/admin/academic/reports/attendance`, { params: { disciplineId } });
-  }
-
-  createCourse(payload: CoursePayload) {
-    return this.http.post<CourseSummary>(`${this.baseUrl}/admin/academic/courses`, payload);
-  }
-
-  createDiscipline(payload: DisciplinePayload) {
-    return this.http.post<DisciplineSummary>(`${this.baseUrl}/admin/academic/disciplines`, payload);
-  }
-
-  enrollStudent(disciplineId: string, studentId: string) {
-    return this.http.post(`${this.baseUrl}/admin/academic/enrollments`, { disciplineId, studentId });
-  }
-
-  classroomDashboard() {
-    return this.http.get<ClassroomDashboard>(`${this.baseUrl}/classroom`);
-  }
-
-  disciplineWorkspace(disciplineId: string) {
-    return this.http.get<DisciplineWorkspace>(`${this.baseUrl}/classroom/disciplines/${disciplineId}`);
-  }
-
-  scanAttendance(token: string) {
-    return this.http.post<AttendanceEntry>(`${this.baseUrl}/classroom/attendance/scan`, { token });
-  }
-
-  createLesson(disciplineId: string, title: string, lessonDate: string) {
-    return this.http.post<LessonSummary>(`${this.baseUrl}/classroom/teacher/lessons`, { disciplineId, title, lessonDate });
-  }
-
-  addMaterial(disciplineId: string, lessonId: string, title: string, url: string) {
-    return this.http.post<MaterialSummary>(`${this.baseUrl}/classroom/teacher/materials`, { disciplineId, lessonId, title, url });
-  }
-
-  addRecording(disciplineId: string, lessonId: string, title: string, youtubeUrl: string, visibleToStudents: boolean) {
-    return this.http.post<RecordedLesson>(`${this.baseUrl}/classroom/teacher/recorded-lessons`, { disciplineId, lessonId, title, youtubeUrl, visibleToStudents });
-  }
-
-  addActivity(disciplineId: string, lessonId: string, title: string, description: string, dueAt: string, points: number) {
-    return this.http.post<ActivitySummary>(`${this.baseUrl}/classroom/teacher/activities`, { disciplineId, lessonId, title, description, dueAt, points });
-  }
-
-  addEvaluation(disciplineId: string, title: string, weight: number, maxScore: number) {
-    return this.http.post<EvaluationSummary>(`${this.baseUrl}/classroom/teacher/evaluations`, { disciplineId, title, weight, maxScore });
-  }
-
-  saveGrade(evaluationId: string, studentId: string, score: number) {
-    return this.http.post<GradeEntry>(`${this.baseUrl}/classroom/teacher/grades`, { evaluationId, studentId, score });
-  }
-
-  generateAttendanceToken(lessonId: string) {
-    return this.http.post<LessonSummary>(`${this.baseUrl}/classroom/teacher/lessons/${lessonId}/attendance-token`, {});
-  }
-
-  validateAttendance(attendanceId: string, present: boolean) {
-    return this.http.post<AttendanceEntry>(`${this.baseUrl}/classroom/teacher/attendance/${attendanceId}/validate`, { present });
-  }
-
-  invalidateAttendance(attendanceId: string) {
-    return this.http.post<AttendanceEntry>(`${this.baseUrl}/classroom/teacher/attendance/${attendanceId}/invalidate`, {});
-  }
-
-  justifyAttendance(attendanceId: string) {
-    return this.http.post<AttendanceEntry>(`${this.baseUrl}/classroom/teacher/attendance/${attendanceId}/justify`, {});
-  }
-
-  validateAllAttendance(lessonId: string) {
-    return this.http.post<AttendanceEntry[]>(`${this.baseUrl}/classroom/teacher/lessons/${lessonId}/attendance/validate-all`, {});
   }
 
   listGrowthGroups() {

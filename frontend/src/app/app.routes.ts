@@ -45,12 +45,6 @@ export const routes: Routes = [
     title: 'Criar senha | DNMS',
   },
   {
-    path: 'cursos',
-    canActivate: [authGuard],
-    loadComponent: () => import('./features/classroom/classroom.page').then((m) => m.ClassroomPage),
-    title: 'Cursos | DNMS',
-  },
-  {
     path: 'admin',
     canActivate: [authGuard, adminGuard],
     children: [
@@ -65,9 +59,18 @@ export const routes: Routes = [
         title: 'Dashboard | DNMS',
       },
       {
-        path: ':module',
+        path: 'eventos',
+        loadComponent: () => import('./features/admin/admin-module.page').then((m) => m.AdminModulePage),
+        title: 'Eventos | DNMS',
+      },
+      {
+        path: 'membros',
         loadComponent: () => import('./features/admin/admin-module.page').then((m) => m.AdminModulePage),
         title: 'Administração | DNMS',
+      },
+      {
+        path: '**',
+        redirectTo: 'dashboard',
       },
     ],
   },

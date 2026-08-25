@@ -31,7 +31,7 @@ export class LoginPage {
 
     const { email, password } = this.form.getRawValue();
     this.auth.login(email, password).subscribe({
-      next: (session) => void this.router.navigateByUrl(session.user.roles.includes('ADMIN') ? '/admin/dashboard' : '/cursos'),
+      next: (session) => void this.router.navigateByUrl(session.user.roles.includes('ADMIN') ? '/admin/dashboard' : '/'),
       error: () => this.error.set('Nao foi possivel entrar com essas credenciais.'),
     });
   }

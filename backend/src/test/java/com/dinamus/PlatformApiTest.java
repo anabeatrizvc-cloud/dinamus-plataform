@@ -2,17 +2,9 @@ package com.dinamus;
 
 import com.dinamus.adapters.in.web.AdminController;
 import com.dinamus.adapters.in.web.dto.AuthDtos;
-import com.dinamus.domain.model.AttendanceEntry;
-import com.dinamus.domain.model.AttendanceSessionProjection;
 import com.dinamus.domain.model.AgendaItem;
-import com.dinamus.domain.model.ClassroomDashboard;
-import com.dinamus.domain.model.CourseSummary;
-import com.dinamus.domain.model.DisciplineSummary;
-import com.dinamus.domain.model.EnrollmentSummary;
 import com.dinamus.domain.model.EventSummary;
-import com.dinamus.domain.model.LessonSummary;
 import com.dinamus.domain.model.MemberSummary;
-import com.dinamus.domain.model.RecordedLesson;
 import io.micronaut.core.type.Argument;
 import io.micronaut.http.HttpRequest;
 import io.micronaut.http.HttpStatus;
@@ -95,100 +87,6 @@ class PlatformApiTest {
     }
 
     @Test
-    void professorGeneratesQrAndStudentMarksAttendance() {
-        AuthDtos.LoginResponse professor = login("professor@dinamus.local", "dnms-prof");
-        AuthDtos.LoginResponse student = login("aluno@dinamus.local", "dnms-aluno");
-
-        ClassroomDashboard professorDashboard = client.toBlocking().retrieve(
-            HttpRequest.GET("/api/v1/classroom").bearerAuth(professor.accessToken()),
-            ClassroomDashboard.class
-        );
-
-        String disciplineId = professorDashboard.teachingDisciplines().getFirst().id();
-        LessonSummary lesson = client.toBlocking().retrieve(
-            HttpRequest.POST("/api/v1/classroom/teacher/lessons", Map.of(
-                "disciplineId", disciplineId,
-                "title", "Aula com QR",
-                "lessonDate", "2026-09-01"
-            )).bearerAuth(professor.accessToken()),
-            LessonSummary.class
-        );
-
-        LessonSummary withToken = client.toBlocking().retrieve(
-            HttpRequest.POST("/api/v1/classroom/teacher/lessons/" + lesson.id() + "/attendance-token", Map.of()).bearerAuth(professor.accessToken()),
-            LessonSummary.class
-        );
-
-        AttendanceSessionProjection projection = client.toBlocking().retrieve(
-            HttpRequest.GET("/api/v1/attendance/public/sessions/" + withToken.attendanceToken()),
-            AttendanceSessionProjection.class
-        );
-
-        assertEquals("Aula com QR", projection.lessonTitle());
-
-        AttendanceEntry pending = client.toBlocking().retrieve(
-            HttpRequest.POST("/api/v1/classroom/attendance/scan", Map.of("token", withToken.attendanceToken())).bearerAuth(student.accessToken()),
-            AttendanceEntry.class
-        );
-
-        assertEquals("PENDING_VALIDATION", pending.status());
-
-        AttendanceEntry duplicate = client.toBlocking().retrieve(
-            HttpRequest.POST("/api/v1/classroom/attendance/scan", Map.of("token", withToken.attendanceToken())).bearerAuth(student.accessToken()),
-            AttendanceEntry.class
-        );
-
-        assertEquals(pending.id(), duplicate.id());
-
-        AttendanceEntry validated = client.toBlocking().retrieve(
-            HttpRequest.POST("/api/v1/classroom/teacher/attendance/" + pending.id() + "/validate", Map.of("present", true)).bearerAuth(professor.accessToken()),
-            AttendanceEntry.class
-        );
-
-        assertEquals("PRESENT", validated.status());
-    }
-
-    @Test
-    void professorCanPublishRecordingAndUnauthorizedStudentCannotAccessDiscipline() {
-        AuthDtos.LoginResponse professor = login("professor@dinamus.local", "dnms-prof");
-        AuthDtos.LoginResponse outsider = createMemberAndSetup("Aluno Sem Matricula", "81999994444", "sem-matricula@dinamus.local");
-
-        ClassroomDashboard dashboard = client.toBlocking().retrieve(
-            HttpRequest.GET("/api/v1/classroom").bearerAuth(professor.accessToken()),
-            ClassroomDashboard.class
-        );
-        String disciplineId = dashboard.teachingDisciplines().getFirst().id();
-        LessonSummary lesson = client.toBlocking().retrieve(
-            HttpRequest.POST("/api/v1/classroom/teacher/lessons", Map.of(
-                "disciplineId", disciplineId,
-                "title", "Aula gravada",
-                "lessonDate", "2026-09-08"
-            )).bearerAuth(professor.accessToken()),
-            LessonSummary.class
-        );
-
-        RecordedLesson recording = client.toBlocking().retrieve(
-            HttpRequest.POST("/api/v1/classroom/teacher/recorded-lessons", Map.of(
-                "disciplineId", disciplineId,
-                "lessonId", lesson.id(),
-                "title", "Gravacao da aula",
-                "youtubeUrl", "https://youtu.be/dQw4w9WgXcQ",
-                "visibleToStudents", true
-            )).bearerAuth(professor.accessToken()),
-            RecordedLesson.class
-        );
-
-        assertEquals("YOUTUBE", recording.provider());
-        assertEquals("dQw4w9WgXcQ", recording.providerVideoId());
-
-        HttpClientResponseException exception = assertThrows(HttpClientResponseException.class, () ->
-            client.toBlocking().exchange(HttpRequest.GET("/api/v1/classroom/disciplines/" + disciplineId).bearerAuth(outsider.accessToken()), String.class)
-        );
-
-        assertEquals(HttpStatus.FORBIDDEN, exception.getStatus());
-    }
-
-    @Test
     void adminCanCreateMemberInviteAndSetupPassword() {
         AuthDtos.LoginResponse admin = login();
 
@@ -215,46 +113,6 @@ class PlatformApiTest {
 
         assertEquals("convidado@dinamus.local", session.user().email());
         assertTrue(session.user().roles().contains("MEMBRO"));
-    }
-
-    @Test
-    void adminCanCreateCourseDisciplineAndEnrollment() {
-        AuthDtos.LoginResponse admin = login();
-
-        CourseSummary course = client.toBlocking().retrieve(
-            HttpRequest.POST("/api/v1/admin/academic/courses", Map.of(
-                "title", "Escola de Servico",
-                "description", "Formacao para voluntarios",
-                "startsAt", "2026-09-05",
-                "endsAt", "",
-                "status", "OPEN"
-            )).bearerAuth(admin.accessToken()),
-            CourseSummary.class
-        );
-
-        DisciplineSummary discipline = client.toBlocking().retrieve(
-            HttpRequest.POST("/api/v1/admin/academic/disciplines", Map.of(
-                "courseId", course.id(),
-                "title", "Cuidado com pessoas",
-                "description", "Rotina de acompanhamento",
-                "teacherIds", List.of("professor-demo"),
-                "maxAbsences", 2,
-                "usesGrades", false
-            )).bearerAuth(admin.accessToken()),
-            DisciplineSummary.class
-        );
-
-        EnrollmentSummary enrollment = client.toBlocking().retrieve(
-            HttpRequest.POST("/api/v1/admin/academic/enrollments", Map.of(
-                "disciplineId", discipline.id(),
-                "studentId", "aluno-demo"
-            )).bearerAuth(admin.accessToken()),
-            EnrollmentSummary.class
-        );
-
-        assertEquals("Escola de Servico", course.title());
-        assertEquals("Cuidado com pessoas", discipline.title());
-        assertEquals(discipline.id(), enrollment.disciplineId());
     }
 
     @Test
@@ -286,27 +144,6 @@ class PlatformApiTest {
     private AuthDtos.LoginResponse login(String email, String password) {
         return client.toBlocking().retrieve(
             HttpRequest.POST("/api/v1/auth/login", Map.of("email", email, "password", password)),
-            AuthDtos.LoginResponse.class
-        );
-    }
-
-    private AuthDtos.LoginResponse createMemberAndSetup(String name, String phone, String email) {
-        AuthDtos.LoginResponse admin = login();
-        MemberSummary created = client.toBlocking().retrieve(
-            HttpRequest.POST("/api/v1/admin/members", Map.of(
-                "name", name,
-                "phone", phone,
-                "email", email,
-                "roles", List.of("MEMBRO"),
-                "active", true
-            )).bearerAuth(admin.accessToken()),
-            MemberSummary.class
-        );
-        return client.toBlocking().retrieve(
-            HttpRequest.POST("/api/v1/auth/setup-password", Map.of(
-                "token", created.setupToken(),
-                "password", "senha-aluno"
-            )),
             AuthDtos.LoginResponse.class
         );
     }

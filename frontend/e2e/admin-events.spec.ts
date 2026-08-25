@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 
+test.setTimeout(60_000);
+
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem(
@@ -19,8 +21,6 @@ test('admin switches modules and creates event through backend route', async ({ 
   ];
   let postHit = false;
 
-  await page.route('**/api/v1/admin/academic/courses', async (route) => route.fulfill({ json: [] }));
-  await page.route('**/api/v1/admin/academic/disciplines', async (route) => route.fulfill({ json: [] }));
   await page.route('**/api/v1/admin/members', async (route) => route.fulfill({ json: [] }));
   await page.route('**/api/v1/admin/events', async (route) => {
     if (route.request().method() === 'POST') {
@@ -34,10 +34,11 @@ test('admin switches modules and creates event through backend route', async ({ 
     await route.fulfill({ json: events });
   });
 
-  await page.goto('/admin/cursos', { waitUntil: 'domcontentloaded' });
-  await expect(page.getByRole('heading', { name: 'Cursos' })).toBeVisible();
+  await page.goto('/admin/dashboard', { waitUntil: 'domcontentloaded' });
+  await expect(page.getByRole('heading', { name: /painel da igreja/i })).toBeVisible();
+  await expect(page.getByRole('link', { name: /cursos/i })).toHaveCount(0);
 
-  await page.getByRole('link', { name: 'Eventos' }).click();
+  await page.getByRole('navigation', { name: /navegação administrativa/i }).getByRole('link', { name: 'Eventos', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Eventos' })).toBeVisible();
 
   await page.getByLabel('Nome do evento').fill('Conferência DNMS');

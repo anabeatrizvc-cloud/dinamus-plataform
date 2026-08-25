@@ -105,7 +105,7 @@ public class ManageMembersUseCase {
         normalized.add("MEMBRO");
         for (String role : roles == null ? List.<String>of() : roles) {
             String value = normalize(role).toUpperCase(Locale.ROOT);
-            if (List.of("ADMIN", "PROFESSOR", "MEMBRO").contains(value)) {
+            if (List.of("ADMIN", "MEMBRO").contains(value)) {
                 normalized.add(value);
             }
         }

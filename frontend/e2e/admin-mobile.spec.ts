@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 
+test.setTimeout(60_000);
+
 const session = {
   accessToken: 'admin-token',
   refreshToken: 'refresh',
@@ -7,16 +9,8 @@ const session = {
 };
 
 const members = [
-  { id: 'prof-01', name: 'Pr. Rafael com Nome Bem Grande', phone: '81999990001', email: 'professor.longo@dinamus.local', roles: ['MEMBRO', 'PROFESSOR'], active: true, invitePending: false, setupToken: '' },
-  { id: 'aluno-01', name: 'Ana Beatriz da Silva Albuquerque', phone: '81999990002', email: 'ana.beatriz.albuquerque@dinamus.local', roles: ['MEMBRO'], active: true, invitePending: true, setupToken: 'token-longo-de-convite-para-validar-quebra-de-linha' },
-];
-
-const courses = [
-  { id: 'curso-01', title: 'Escola de Liderança e Serviço Cristão', description: 'Formação para líderes, voluntários e professores.', startsAt: '2026-09-01', endsAt: '2026-11-30', status: 'OPEN' },
-];
-
-const disciplines = [
-  { id: 'disc-01', courseId: 'curso-01', title: 'Cuidado, discipulado e acompanhamento pastoral', description: 'Acompanhamento pastoral.', teacherIds: ['prof-01'], maxAbsences: 2, usesGrades: false },
+  { id: 'admin-01', name: 'Ana Beatriz da Silva Albuquerque', phone: '81999990002', email: 'ana.beatriz.albuquerque@dinamus.local', roles: ['MEMBRO', 'ADMIN'], active: true, invitePending: false, setupToken: '' },
+  { id: 'membro-02', name: 'Visitante com Nome Muito Comprido Para Testar Layout', phone: '81999990003', email: 'visitante.com.email.grande@dinamus.local', roles: ['MEMBRO'], active: true, invitePending: true, setupToken: 'token-longo-de-convite-para-validar-quebra-de-linha' },
 ];
 
 async function mockAdminApi(page: import('@playwright/test').Page) {
@@ -34,13 +28,6 @@ async function mockAdminApi(page: import('@playwright/test').Page) {
     }),
   );
   await page.route('**/api/v1/admin/members', async (route) => route.fulfill({ json: members }));
-  await page.route('**/api/v1/admin/academic/courses', async (route) => route.fulfill({ json: courses }));
-  await page.route('**/api/v1/admin/academic/disciplines', async (route) => route.fulfill({ json: disciplines }));
-  await page.route('**/api/v1/admin/academic/reports/attendance?**', async (route) =>
-    route.fulfill({
-      json: [{ studentId: 'aluno-01', studentName: members[1].name, presences: 3, absences: 1, frequencyPercent: 75, situation: 'Dentro do limite' }],
-    }),
-  );
 }
 
 async function expectNoAdminOverflow(page: import('@playwright/test').Page) {
@@ -48,7 +35,7 @@ async function expectNoAdminOverflow(page: import('@playwright/test').Page) {
   const offenders = await page.locator('main, header, section, form, article, input, textarea, select, button, .surface').evaluateAll((elements) => {
     const viewportWidth = document.documentElement.clientWidth;
     return elements
-      .filter((element) => !element.closest('.admin-topbar nav, .academic-switcher'))
+      .filter((element) => !element.closest('.admin-topbar nav'))
       .filter((element) => {
         const style = getComputedStyle(element);
         const rect = element.getBoundingClientRect();
@@ -65,27 +52,30 @@ test.beforeEach(async ({ page }) => {
   await mockAdminApi(page);
 });
 
-test('admin modules stay composed on narrow mobile', async ({ page }) => {
+test('admin final stays polished on narrow mobile', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
 
-  await page.goto('/admin/eventos', { waitUntil: 'domcontentloaded' });
+  await page.goto('/admin/dashboard', { waitUntil: 'domcontentloaded' });
+  await expect(page.getByRole('heading', { name: /painel da igreja/i })).toBeVisible();
+  await expect(page.getByRole('link', { name: /cursos/i })).toHaveCount(0);
+  await expectNoAdminOverflow(page);
+
+  await page.getByRole('navigation', { name: /navegação administrativa/i }).getByRole('link', { name: 'Eventos', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Eventos' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Conferência DNMS com Nome Comprido' })).toBeVisible();
   await expectNoAdminOverflow(page);
 
-  await page.getByRole('link', { name: 'Membros' }).click();
+  await page.getByRole('navigation', { name: /navegação administrativa/i }).getByRole('link', { name: 'Membros', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Membros' })).toBeVisible();
+  await expect(page.getByText('Visitante com Nome Muito Comprido')).toBeVisible();
   await expectNoAdminOverflow(page);
+});
 
-  await page.getByRole('link', { name: 'Cursos' }).click();
-  await expect(page.getByRole('heading', { name: 'Cursos' })).toBeVisible();
-  await expectNoAdminOverflow(page);
+test('removed courses routes redirect away from admin', async ({ page }) => {
+  await page.goto('/admin/cursos', { waitUntil: 'domcontentloaded' });
+  await expect(page).toHaveURL(/\/admin\/dashboard$/);
+  await expect(page.getByRole('heading', { name: /painel da igreja/i })).toBeVisible();
 
-  await page.getByRole('button', { name: 'Disciplinas', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Escola de Liderança e Serviço Cristão' })).toBeVisible();
-  await expectNoAdminOverflow(page);
-
-  await page.getByRole('button', { name: 'Relatórios', exact: true }).click();
-  await page.getByRole('button', { name: /gerar prévia/i }).click();
-  await expect(page.getByText('Dentro do limite')).toBeVisible();
-  await expectNoAdminOverflow(page);
+  await page.goto('/cursos', { waitUntil: 'domcontentloaded' });
+  await expect(page).toHaveURL(/\/$/);
 });

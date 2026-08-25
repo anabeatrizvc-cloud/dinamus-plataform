@@ -30,7 +30,7 @@ export class SetupPasswordPage {
     }
     const value = this.form.getRawValue();
     this.auth.setupPassword(value.token, value.password).subscribe({
-      next: () => void this.router.navigateByUrl('/cursos'),
+      next: (session) => void this.router.navigateByUrl(session.user.roles.includes('ADMIN') ? '/admin/dashboard' : '/'),
     });
   }
 }

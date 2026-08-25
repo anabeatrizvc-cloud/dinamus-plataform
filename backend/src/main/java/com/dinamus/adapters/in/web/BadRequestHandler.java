@@ -31,12 +31,6 @@ public class BadRequestHandler implements ExceptionHandler<IllegalArgumentExcept
         if (normalized.contains("already") || normalized.contains("ja esta")) {
             return "DUPLICATE_RESOURCE";
         }
-        if (normalized.contains("expired") || normalized.contains("encerrada")) {
-            return "ATTENDANCE_SESSION_EXPIRED";
-        }
-        if (normalized.contains("invalid attendance token") || normalized.contains("qr")) {
-            return "INVALID_ATTENDANCE_TOKEN";
-        }
         return "VALIDATION_ERROR";
     }
 }

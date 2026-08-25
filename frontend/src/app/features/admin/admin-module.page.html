@@ -5,16 +5,15 @@
       <a routerLink="/admin/dashboard">Painel</a>
       <a routerLink="/admin/eventos">Eventos</a>
       <a routerLink="/admin/membros">Membros</a>
-      <a routerLink="/admin/cursos">Cursos</a>
     </nav>
-    <a class="dnms-button secondary" routerLink="/admin/dashboard">Dashboard</a>
+    <a class="dnms-button secondary" routerLink="/admin/dashboard">Painel</a>
   </header>
 
   <section class="admin-hero compact" aria-labelledby="module-title">
     <div>
       <p>Administração</p>
       <h1 id="module-title">{{ title() }}</h1>
-      <span>Organize a operação com clareza, sem transformar cuidado em planilha.</span>
+      <span>{{ isEventsModule() ? 'Controle inscrições e datas com uma tela objetiva.' : 'Cadastre pessoas, defina permissões e acompanhe convites.' }}</span>
     </div>
   </section>
 
@@ -23,13 +22,13 @@
   }
 
   @if (isEventsModule()) {
-    <section class="events-workspace" aria-label="Administração dos eventos">
-      <form class="surface event-editor" [formGroup]="eventForm" (ngSubmit)="saveEvent()">
+    <section class="admin-workspace" aria-label="Administração dos eventos">
+      <form class="surface admin-editor" [formGroup]="eventForm" (ngSubmit)="saveEvent()">
         <header>
           <svg lucideTicket aria-hidden="true"></svg>
           <div>
             <p>{{ editingId() ? 'Editando evento' : 'Novo evento' }}</p>
-            <h2>{{ editingId() ? 'Atualize os detalhes' : 'Crie uma inscrição' }}</h2>
+            <h2>{{ editingId() ? 'Atualizar inscrição' : 'Criar inscrição' }}</h2>
           </div>
         </header>
 
@@ -51,28 +50,23 @@
 
         <label class="field">
           <span>Link de inscrição</span>
-          <input formControlName="registrationUrl" autocomplete="url" />
+          <input formControlName="registrationUrl" autocomplete="url" inputmode="url" />
         </label>
 
         <button class="dnms-button" type="submit" [disabled]="isSaving()">
           <svg lucidePlus aria-hidden="true"></svg>
-          {{ isSaving() ? 'Salvando' : editingId() ? 'Salvar alterações' : 'Criar evento' }}
+          {{ isSaving() ? 'Salvando' : editingId() ? 'Salvar evento' : 'Criar evento' }}
         </button>
       </form>
 
-      <section class="event-admin-list" aria-label="Eventos cadastrados">
+      <section class="admin-list" aria-label="Eventos cadastrados">
         @for (event of events(); track event.id) {
-          <article class="surface event-admin-card">
-            <div class="date-pill">
+          <article class="surface admin-list-card">
+            <div class="status-pill">
               <svg lucideCalendarDays aria-hidden="true"></svg>
-              <span>
-                {{ event.startsAt }}
-                @if (event.endsAt) {
-                  <small>até {{ event.endsAt }}</small>
-                }
-              </span>
+              <span>{{ eventDate(event) }}</span>
             </div>
-            <div class="event-copy">
+            <div class="admin-list-copy">
               <h2>{{ event.name }}</h2>
               <a [href]="event.registrationUrl" target="_blank" rel="noopener">{{ event.registrationUrl }}</a>
             </div>
@@ -86,18 +80,38 @@
             </div>
           </article>
         } @empty {
-          <article class="surface event-admin-card">
-            <div class="event-copy">
-              <h2>Nenhum evento cadastrado</h2>
-              <a>Crie o primeiro evento para exibir na página pública.</a>
-            </div>
+          <article class="surface empty-state">
+            <svg lucideTicket aria-hidden="true"></svg>
+            <h2>Nenhum evento cadastrado</h2>
+            <p>Quando houver inscrições abertas, elas aparecerão aqui.</p>
           </article>
         }
       </section>
     </section>
-  } @else if (isMembersModule()) {
-    <section class="events-workspace" aria-label="Administração dos membros">
-      <form class="surface event-editor" [formGroup]="memberForm" (ngSubmit)="saveMember()">
+  }
+
+  @if (isMembersModule()) {
+    <section class="member-summary-grid" aria-label="Resumo de membros">
+      <article class="surface mini-stat">
+        <strong>{{ members().length }}</strong>
+        <span>membros</span>
+      </article>
+      <article class="surface mini-stat">
+        <strong>{{ activeMembers() }}</strong>
+        <span>ativos</span>
+      </article>
+      <article class="surface mini-stat">
+        <strong>{{ pendingInvites() }}</strong>
+        <span>convites</span>
+      </article>
+      <article class="surface mini-stat">
+        <strong>{{ adminMembers() }}</strong>
+        <span>admins</span>
+      </article>
+    </section>
+
+    <section class="admin-workspace" aria-label="Administração dos membros">
+      <form class="surface admin-editor" [formGroup]="memberForm" (ngSubmit)="saveMember()">
         <header>
           <svg lucideUsersRound aria-hidden="true"></svg>
           <div>
@@ -114,41 +128,37 @@
         <div class="form-row">
           <label class="field">
             <span>Telefone</span>
-            <input formControlName="phone" autocomplete="tel" />
+            <input formControlName="phone" autocomplete="tel" inputmode="tel" />
           </label>
           <label class="field">
             <span>E-mail opcional</span>
-            <input formControlName="email" autocomplete="email" />
+            <input formControlName="email" autocomplete="email" inputmode="email" />
           </label>
         </div>
 
         <div class="role-row" aria-label="Funções do membro">
           <label><input type="checkbox" formControlName="admin" /> Administrador</label>
-          <label><input type="checkbox" formControlName="professor" /> Professor</label>
           <label><input type="checkbox" formControlName="active" /> Ativo</label>
         </div>
 
         <button class="dnms-button" type="submit" [disabled]="isSaving()">
           <svg lucidePlus aria-hidden="true"></svg>
-          {{ editingId() ? 'Salvar membro' : 'Cadastrar membro' }}
+          {{ isSaving() ? 'Salvando' : editingId() ? 'Salvar membro' : 'Cadastrar membro' }}
         </button>
       </form>
 
-      <section class="event-admin-list" aria-label="Membros cadastrados">
+      <section class="admin-list" aria-label="Membros cadastrados">
         @for (member of members(); track member.id) {
-          <article class="surface event-admin-card">
-            <div class="date-pill member-pill">
+          <article class="surface admin-list-card member-card">
+            <div class="status-pill member-pill">
               <svg lucideUsersRound aria-hidden="true"></svg>
-              <span>
-                {{ member.roles.join(' · ') }}
-                <small>{{ member.active ? 'Acesso ativo' : 'Aguardando senha' }}</small>
-              </span>
+              <span>{{ roleLabel(member) }}</span>
             </div>
-            <div class="event-copy">
+            <div class="admin-list-copy">
               <h2>{{ member.name }}</h2>
-              <a>{{ member.phone }}</a>
+              <span>{{ member.phone }}</span>
               @if (member.email) {
-                <a>{{ member.email }}</a>
+                <span>{{ member.email }}</span>
               }
               @if (member.invitePending) {
                 <small class="setup-token">Convite: {{ inviteLink(member) }}</small>
@@ -157,7 +167,7 @@
             <div class="event-actions">
               @if (member.email && member.invitePending) {
                 <button type="button" aria-label="Reenviar convite" (click)="resendInvite(member)">
-                  <svg lucidePlus aria-hidden="true"></svg>
+                  <svg lucideMail aria-hidden="true"></svg>
                 </button>
               }
               <button type="button" aria-label="Editar membro" (click)="editMember(member)">
@@ -168,243 +178,14 @@
               </button>
             </div>
           </article>
+        } @empty {
+          <article class="surface empty-state">
+            <svg lucideUsersRound aria-hidden="true"></svg>
+            <h2>Nenhum membro cadastrado</h2>
+            <p>Cadastre a primeira pessoa para liberar acesso administrativo quando necessário.</p>
+          </article>
         }
       </section>
-    </section>
-  } @else if (isCoursesModule()) {
-    <section class="academic-workspace" aria-label="Administração dos cursos">
-      <nav class="surface academic-switcher" aria-label="Fluxo acadêmico">
-        <button type="button" [class.active]="academicView() === 'courses'" (click)="setAcademicView('courses')">Cursos</button>
-        <button type="button" [class.active]="academicView() === 'disciplines'" (click)="setAcademicView('disciplines')">Disciplinas</button>
-        <button type="button" [class.active]="academicView() === 'enrollments'" (click)="setAcademicView('enrollments')">Matrículas</button>
-        <button type="button" [class.active]="academicView() === 'reports'" (click)="setAcademicView('reports')">Relatórios</button>
-      </nav>
-
-      @if (academicView() === 'courses') {
-        <section class="academic-dashboard">
-          <form class="surface academic-form" [formGroup]="courseForm" (ngSubmit)="saveCourse()">
-            <header>
-              <svg lucideBookOpen aria-hidden="true"></svg>
-              <div>
-                <p>Etapa 1 de 3 · Nova jornada</p>
-                <h2>Criar curso</h2>
-              </div>
-            </header>
-            <label class="field">
-              <span>Nome do curso</span>
-              <input formControlName="title" placeholder="Ex: Fundamentos da fé" />
-            </label>
-            <label class="field">
-              <span>Descrição</span>
-              <textarea formControlName="description" placeholder="Resumo curto para orientar alunos e professores"></textarea>
-            </label>
-            <div class="form-row">
-              <label class="field">
-                <span>Início</span>
-                <input type="date" formControlName="startsAt" />
-              </label>
-              <label class="field">
-                <span>Término opcional</span>
-                <input type="date" formControlName="endsAt" />
-              </label>
-            </div>
-            <button class="dnms-button" type="submit" [disabled]="isSaving()">
-              <svg lucidePlus aria-hidden="true"></svg>
-              Criar curso
-            </button>
-          </form>
-
-          <section class="course-board" aria-label="Cursos cadastrados">
-            @for (course of courses(); track course.id) {
-              <article class="surface course-card" [class.selected]="selectedCourseId() === course.id">
-                <header>
-                  <span>{{ course.status === 'OPEN' ? 'Aberto' : course.status }}</span>
-                  <small>{{ coursePeriod(course) }}</small>
-                </header>
-                <h2>{{ course.title }}</h2>
-                <p>{{ course.description || 'Sem descrição cadastrada.' }}</p>
-                <div class="course-metrics">
-                  <strong>{{ courseDisciplines(course.id).length }}</strong>
-                  <span>disciplinas</span>
-                </div>
-                <button class="dnms-button secondary" type="button" (click)="selectCourse(course)">Gerenciar disciplinas</button>
-              </article>
-            } @empty {
-              <article class="surface empty-academic">
-                <svg lucideBookOpen aria-hidden="true"></svg>
-                <h2>Nenhum curso cadastrado</h2>
-                <p>Crie o primeiro curso para liberar disciplinas, matrículas e sala de aula.</p>
-              </article>
-            }
-          </section>
-        </section>
-      }
-
-      @if (academicView() === 'disciplines') {
-        <section class="academic-dashboard">
-          <form class="surface academic-form" [formGroup]="disciplineForm" (ngSubmit)="saveDiscipline()">
-            <header>
-              <svg lucideCalendarDays aria-hidden="true"></svg>
-              <div>
-                <p>Etapa 2 de 3 · Disciplina</p>
-                <h2>{{ selectedCourse()?.title || 'Aulas e regras' }}</h2>
-              </div>
-            </header>
-            <label class="field">
-              <span>Curso</span>
-              <select formControlName="courseId">
-                <option value="">Selecione</option>
-                @for (course of courses(); track course.id) {
-                  <option [value]="course.id">{{ course.title }}</option>
-                }
-              </select>
-            </label>
-            <label class="field">
-              <span>Nome da disciplina</span>
-              <input formControlName="title" placeholder="Ex: Doutrina e vida cristã" />
-            </label>
-            <label class="field">
-              <span>Descrição</span>
-              <textarea formControlName="description" placeholder="O que será trabalhado nesta disciplina"></textarea>
-            </label>
-            <label class="field">
-              <span>Professor</span>
-              <select formControlName="teacherId">
-                <option value="">Selecione o professor</option>
-                @for (professor of professors(); track professor.id) {
-                  <option [value]="professor.id">{{ professor.name }}</option>
-                }
-              </select>
-            </label>
-            <div class="form-row">
-              <label class="field">
-                <span>Faltas permitidas</span>
-                <input type="number" min="0" formControlName="maxAbsences" />
-              </label>
-              <label class="field">
-                <span>Avaliação</span>
-                <select formControlName="usesGrades">
-                  <option [ngValue]="true">Com notas</option>
-                  <option [ngValue]="false">Somente presença</option>
-                </select>
-              </label>
-            </div>
-            <button class="dnms-button" type="submit" [disabled]="isSaving()">Criar disciplina</button>
-          </form>
-
-          <section class="course-board" aria-label="Disciplinas cadastradas">
-            @for (course of courses(); track course.id) {
-              <article class="surface course-detail-card">
-                <header>
-                  <span>Curso</span>
-                  <h2>{{ course.title }}</h2>
-                </header>
-                <div class="discipline-stack">
-                  @for (discipline of courseDisciplines(course.id); track discipline.id) {
-                    <div class="discipline-card">
-                      <strong>{{ discipline.title }}</strong>
-                      <span>{{ teacherNames(discipline.teacherIds) }}</span>
-                      <small>{{ discipline.maxAbsences }} faltas permitidas · {{ discipline.usesGrades ? 'com notas' : 'somente presença' }}</small>
-                    </div>
-                  } @empty {
-                    <p>Nenhuma disciplina cadastrada neste curso.</p>
-                  }
-                </div>
-              </article>
-            } @empty {
-              <article class="surface empty-academic">
-                <h2>Crie um curso primeiro</h2>
-                <p>As disciplinas precisam estar ligadas a uma jornada.</p>
-              </article>
-            }
-          </section>
-        </section>
-      }
-
-      @if (academicView() === 'enrollments') {
-        <section class="academic-dashboard compact-flow">
-          <form class="surface academic-form enrollment-flow" [formGroup]="enrollmentForm" (ngSubmit)="enrollStudent()">
-            <header>
-              <svg lucideUsersRound aria-hidden="true"></svg>
-              <div>
-                <p>Etapa 3 de 3 · Matrícula</p>
-                <h2>Adicionar aluno à disciplina</h2>
-              </div>
-            </header>
-            <label class="field">
-              <span>Disciplina</span>
-              <select formControlName="disciplineId">
-                <option value="">Selecione a disciplina</option>
-                @for (discipline of disciplines(); track discipline.id) {
-                  <option [value]="discipline.id">{{ courseTitle(discipline.courseId) }} — {{ discipline.title }}</option>
-                }
-              </select>
-            </label>
-            <label class="field">
-              <span>Aluno</span>
-              <select formControlName="studentId">
-                <option value="">Selecione o aluno</option>
-                @for (student of students(); track student.id) {
-                  <option [value]="student.id">{{ student.name }}</option>
-                }
-              </select>
-            </label>
-            <button class="dnms-button" type="submit" [disabled]="isSaving()">Matricular aluno</button>
-          </form>
-        </section>
-      }
-
-      @if (academicView() === 'reports') {
-        <section class="academic-dashboard compact-flow">
-          <form class="surface academic-form enrollment-flow" [formGroup]="reportForm" (ngSubmit)="loadAttendanceReport()">
-            <header>
-              <svg lucideCalendarDays aria-hidden="true"></svg>
-              <div>
-                <p>Frequência</p>
-                <h2>Relatório da disciplina</h2>
-              </div>
-            </header>
-            <label class="field">
-              <span>Disciplina</span>
-              <select formControlName="disciplineId">
-                <option value="">Selecione a disciplina</option>
-                @for (discipline of disciplines(); track discipline.id) {
-                  <option [value]="discipline.id">{{ courseTitle(discipline.courseId) }} — {{ discipline.title }}</option>
-                }
-              </select>
-            </label>
-            <button class="dnms-button" type="submit" [disabled]="isSaving()">Gerar prévia</button>
-          </form>
-
-          <section class="event-admin-list report-list" aria-label="Relatório de frequência">
-            @for (row of reportRows(); track row.studentId) {
-              <article class="surface event-admin-card">
-                <div class="date-pill member-pill">
-                  <svg lucideUsersRound aria-hidden="true"></svg>
-                  <span>{{ row.frequencyPercent }}%<small>{{ row.situation }}</small></span>
-                </div>
-                <div class="event-copy">
-                  <h2>{{ row.studentName }}</h2>
-                  <a>{{ row.presences }} presenças · {{ row.absences }} faltas</a>
-                </div>
-              </article>
-            } @empty {
-              <article class="surface event-admin-card">
-                <div class="event-copy">
-                  <h2>Sem relatório carregado</h2>
-                  <a>Escolha uma disciplina para ver a prévia antes de exportar.</a>
-                </div>
-              </article>
-            }
-          </section>
-        </section>
-      }
-    </section>
-  } @else {
-    <section class="surface workbench">
-      <strong>{{ title() }}</strong>
-      <p>Este módulo já está reservado na arquitetura da plataforma e seguirá a mesma experiência visual do painel.</p>
-      <button class="dnms-button" type="button">Preparar fluxo</button>
     </section>
   }
 </main>

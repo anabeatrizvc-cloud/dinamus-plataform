@@ -25,9 +25,11 @@ test('login page keeps a polished form layout on mobile', async ({ page }) => {
 
   await expect(page.getByRole('heading', { name: 'Entrar' })).toBeVisible();
   await expect(page.getByLabel('Email')).toBeVisible();
-  await expect(page.getByLabel('Senha')).toBeVisible();
+  await expect(page.getByLabel('Senha', { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Entrar' })).toBeVisible();
-  await expect(page.getByRole('link', { name: /voltar para home/i })).toBeVisible();
+  await page.getByRole('button', { name: /mostrar senha/i }).click();
+  await expect(page.getByLabel('Senha', { exact: true })).toHaveAttribute('type', 'text');
+  await expect(page.getByRole('link', { name: /voltar para o site/i })).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });
 

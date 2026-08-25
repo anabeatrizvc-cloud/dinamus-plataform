@@ -1,33 +1,70 @@
-<main class="page-shell login-page">
-  <section class="surface auth-card">
+<main class="login-page">
+  <section class="auth-card" aria-labelledby="login-title">
     <a class="auth-logo-link" routerLink="/" aria-label="Voltar para a Home">
       <img class="auth-logo" src="assets/home/wordmark-orange.png" alt="dnms." width="498" height="165" />
     </a>
 
     <header class="auth-heading">
-      <svg lucideLogIn aria-hidden="true"></svg>
+      <span class="auth-icon">
+        <svg lucideLogIn aria-hidden="true"></svg>
+      </span>
       <div>
         <p>Área administrativa</p>
         <h1 id="login-title">Entrar</h1>
+        <span>Acesse o painel com segurança para cuidar da plataforma.</span>
       </div>
     </header>
 
     <form class="auth-form" [formGroup]="form" (ngSubmit)="submit()">
-      <label class="field">
-        <span>Email</span>
-        <input formControlName="email" autocomplete="email" />
-      </label>
-      <label class="field">
-        <span>Senha</span>
-        <input type="password" formControlName="password" autocomplete="current-password" />
-      </label>
-      @if (error()) {
-        <p class="error-text">{{ error() }}</p>
-      }
-      <div class="auth-actions">
-        <button class="dnms-button" type="submit">Entrar</button>
-        <a class="dnms-button secondary" routerLink="/">Voltar para Home</a>
+      <div class="field">
+        <label for="login-email">Email</label>
+        <span class="input-shell">
+          <svg lucideMail aria-hidden="true"></svg>
+          <input
+            id="login-email"
+            formControlName="email"
+            autocomplete="email"
+            inputmode="email"
+            [attr.aria-invalid]="form.controls.email.invalid && form.controls.email.touched"
+          />
+        </span>
       </div>
+
+      <div class="field">
+        <label for="login-password">Senha</label>
+        <span class="input-shell">
+          <svg lucideLockKeyhole aria-hidden="true"></svg>
+          <input
+            id="login-password"
+            [type]="showPassword() ? 'text' : 'password'"
+            formControlName="password"
+            autocomplete="current-password"
+            [attr.aria-invalid]="form.controls.password.invalid && form.controls.password.touched"
+          />
+          <button class="password-toggle" type="button" [attr.aria-label]="showPassword() ? 'Ocultar senha' : 'Mostrar senha'" (click)="togglePassword()">
+            @if (showPassword()) {
+              <svg lucideEyeOff aria-hidden="true"></svg>
+            } @else {
+              <svg lucideEye aria-hidden="true"></svg>
+            }
+          </button>
+        </span>
+      </div>
+
+      @if (error()) {
+        <p class="error-text" role="alert">{{ error() }}</p>
+      }
+
+      <button class="auth-submit" type="submit" [disabled]="isSubmitting()">
+        @if (isSubmitting()) {
+          <svg class="spin" lucideLoaderCircle aria-hidden="true"></svg>
+          Entrando
+        } @else {
+          Entrar
+        }
+      </button>
+
+      <a class="auth-back-link" routerLink="/">Voltar para o site</a>
     </form>
   </section>
 </main>

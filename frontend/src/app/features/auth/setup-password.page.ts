@@ -1,13 +1,13 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { LucideKeyRound } from '@lucide/angular';
+import { LucideKeyRound, LucideLockKeyhole, LucideTicket } from '@lucide/angular';
 
 import { AuthService } from '../../core/auth/auth.service';
 
 @Component({
   selector: 'dnms-setup-password-page',
-  imports: [ReactiveFormsModule, RouterLink, LucideKeyRound],
+  imports: [ReactiveFormsModule, RouterLink, LucideKeyRound, LucideTicket, LucideLockKeyhole],
   templateUrl: './setup-password.page.html',
   styleUrl: './login.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

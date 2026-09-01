@@ -17,6 +17,7 @@ import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.Post;
+import io.micronaut.http.annotation.QueryValue;
 import io.micronaut.security.annotation.Secured;
 import io.micronaut.security.rules.SecurityRule;
 import io.micronaut.validation.Validated;
@@ -60,6 +61,13 @@ public class PublicContentController {
     @Get("/eco/lesson")
     public EcoLesson ecoLesson() {
         return manageEcoAttendance.publicLesson();
+    }
+
+    @Get("/eco/students/lookup")
+    public HttpResponse<EcoDtos.EcoStudentSuggestionResponse> ecoStudentLookup(@QueryValue String phone) {
+        return manageEcoAttendance.findStudentByPhone(phone)
+            .map(student -> HttpResponse.ok(new EcoDtos.EcoStudentSuggestionResponse(student.name(), student.phone())))
+            .orElseGet(HttpResponse::noContent);
     }
 
     @Post("/eco/attendance")

@@ -210,7 +210,12 @@
             <h2>Validações de presença</h2>
           </div>
         </header>
+        <p class="eco-admin-note">Gerencie as aulas, valide presenças e baixe planilhas sem carregar as fotos nos relatórios.</p>
         <a class="dnms-button" routerLink="/eco" target="_blank" rel="noopener">Abrir QR Code público</a>
+        <button class="dnms-button secondary" type="button" (click)="downloadEcoSummaryCsv()">
+          <svg lucideDownload aria-hidden="true"></svg>
+          Planilha geral
+        </button>
       </aside>
 
       <section class="eco-lessons-panel">
@@ -226,9 +231,18 @@
               class="surface eco-lesson-card"
               [class.is-selected]="lesson.id === selectedEcoLessonId()"
               (click)="selectEcoLesson(lesson)"
+              [attr.aria-expanded]="lesson.id === selectedEcoLessonId()"
             >
-              <span>Aula</span>
+              <span>{{ lesson.id === selectedEcoLessonId() ? 'Aula aberta' : 'Aula' }}</span>
               <strong>{{ ecoLessonLabel(lesson) }}</strong>
+              <small>
+                @if (attendanceCount(lesson) !== null) {
+                  {{ attendanceCount(lesson) }} presença(s) carregada(s)
+                } @else {
+                  Clique para visualizar
+                }
+              </small>
+              <svg lucideChevronDown aria-hidden="true"></svg>
             </button>
           } @empty {
             <article class="surface empty-state">
@@ -240,15 +254,35 @@
         </div>
 
         @if (selectedEcoLesson()) {
-          <article class="surface eco-attendance-table">
-            <header>
+          <article class="surface eco-lesson-operating">
+            <header class="eco-operation-header">
               <div>
-                <p>Presenças recebidas</p>
+                <p>Aula selecionada</p>
                 <h2>{{ ecoLessonLabel(selectedEcoLesson()!) }}</h2>
               </div>
-              <strong>{{ ecoAttendances().length }}</strong>
+              <div class="eco-operation-stats">
+                <span><strong>{{ ecoAttendances().length }}</strong> recebidas</span>
+                <span><strong>{{ pendingCount() }}</strong> pendentes</span>
+                <span><strong>{{ validatedCount() }}</strong> validadas</span>
+              </div>
             </header>
 
+            <div class="eco-operation-actions" aria-label="Ações da aula">
+              <button class="dnms-button" type="button" [disabled]="isSaving() || !ecoAttendances().length" (click)="validateAllEcoAttendances()">
+                <svg lucideShieldCheck aria-hidden="true"></svg>
+                Validar tudo
+              </button>
+              <button class="dnms-button secondary" type="button" [disabled]="isSaving() || !ecoAttendances().length" (click)="downloadLessonCsv()">
+                <svg lucideDownload aria-hidden="true"></svg>
+                Baixar aula
+              </button>
+              <button class="dnms-button secondary" type="button" [disabled]="isSaving() || !ecoAttendances().length" (click)="purgeEcoPhotos()">
+                <svg lucideImageOff aria-hidden="true"></svg>
+                Limpar fotos
+              </button>
+            </div>
+
+            <section class="eco-attendance-table" aria-label="Presenças recebidas">
             <div class="attendance-grid header-row" aria-hidden="true">
               <span>Nome</span>
               <span>Telefone</span>
@@ -278,8 +312,12 @@
                   </span>
                 </div>
                 <div class="eco-actions">
-                  <button type="button" aria-label="Ver selfie" (click)="openPhoto(attendance)">
-                    <svg lucideEye aria-hidden="true"></svg>
+                  <button type="button" aria-label="Ver selfie" [disabled]="!hasPhoto(attendance)" (click)="openPhoto(attendance)">
+                    @if (hasPhoto(attendance)) {
+                      <svg lucideEye aria-hidden="true"></svg>
+                    } @else {
+                      <svg lucideImageOff aria-hidden="true"></svg>
+                    }
                   </button>
                   <button type="button" aria-label="Validar presença" [disabled]="isSaving()" (click)="validateEcoAttendance(attendance, true)">
                     <svg lucideCheck aria-hidden="true"></svg>
@@ -296,6 +334,7 @@
                 <p>Quando alguém escanear o QR Code e enviar a selfie, a presença aparecerá aqui.</p>
               </article>
             }
+            </section>
           </article>
         }
       </section>

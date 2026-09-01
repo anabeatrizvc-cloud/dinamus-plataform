@@ -6,17 +6,29 @@ import com.dinamus.domain.model.EcoLesson;
 import jakarta.inject.Singleton;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Singleton
 public class ManageEcoAttendanceUseCase {
-    public static final String ECO_LESSON_DATE = "2026-08-25";
-    public static final String ECO_LESSON_ID = "eco-2026-08-25";
+    public static final String PREVIOUS_ECO_LESSON_DATE = "2026-08-25";
+    public static final String PREVIOUS_ECO_LESSON_ID = "eco-2026-08-25";
+    public static final String ECO_LESSON_DATE = "2026-09-01";
+    public static final String ECO_LESSON_ID = "eco-2026-09-01";
+    public static final List<EcoLesson> ECO_LESSONS = List.of(
+        new EcoLesson(ECO_LESSON_ID, "Aula", ECO_LESSON_DATE),
+        new EcoLesson(PREVIOUS_ECO_LESSON_ID, "Aula", PREVIOUS_ECO_LESSON_DATE)
+    );
+
     private static final Pattern PHOTO_PATTERN = Pattern.compile("^data:image/(jpeg|jpg|png|webp);base64,[A-Za-z0-9+/=\\r\\n]+$");
 
     private final ContentRepository repository;
@@ -26,7 +38,7 @@ public class ManageEcoAttendanceUseCase {
     }
 
     public EcoLesson publicLesson() {
-        return new EcoLesson(ECO_LESSON_ID, "Aula", ECO_LESSON_DATE);
+        return ECO_LESSONS.getFirst();
     }
 
     public List<EcoLesson> listLessons() {
@@ -40,23 +52,34 @@ public class ManageEcoAttendanceUseCase {
             .toList();
     }
 
+    public Optional<StudentSuggestion> findStudentByPhone(String phone) {
+        String normalizedPhone = normalizePhone(phone);
+        return allAttendances().stream()
+            .filter(attendance -> normalizedPhone.equals(attendance.phone()))
+            .sorted(Comparator.comparing(EcoAttendance::createdAt, Comparator.nullsLast(String::compareTo)).reversed())
+            .findFirst()
+            .map(attendance -> new StudentSuggestion(attendance.name(), attendance.phone()));
+    }
+
     public EcoAttendance register(String name, String phone, String lessonDate, String photoDataUrl) {
-        if (!ECO_LESSON_DATE.equals(lessonDate)) {
+        EcoLesson lesson = lessonByDate(lessonDate)
+            .orElseThrow(() -> new IllegalArgumentException("A aula informada não está aberta para presença."));
+        if (!lesson.id().equals(publicLesson().id())) {
             throw new IllegalArgumentException("A aula informada não está aberta para presença.");
         }
 
         String normalizedPhone = normalizePhone(phone);
         validatePhoto(photoDataUrl);
         String now = Instant.now().toString();
-        EcoAttendance existing = repository.listEcoAttendances(ECO_LESSON_ID).stream()
+        EcoAttendance existing = repository.listEcoAttendances(lesson.id()).stream()
             .filter(attendance -> attendance.phone().equals(normalizedPhone))
             .findFirst()
             .orElse(null);
 
         EcoAttendance attendance = new EcoAttendance(
             existing == null ? UUID.randomUUID().toString() : existing.id(),
-            ECO_LESSON_ID,
-            ECO_LESSON_DATE,
+            lesson.id(),
+            lesson.lessonDate(),
             normalizeName(name),
             normalizedPhone,
             photoDataUrl.replaceAll("\\s+", ""),
@@ -80,7 +103,7 @@ public class ManageEcoAttendanceUseCase {
             current.lessonDate(),
             current.name(),
             current.phone(),
-            current.photoDataUrl(),
+            "",
             validated ? "VALIDATED" : "REJECTED",
             current.createdAt(),
             Instant.now().toString()
@@ -88,10 +111,113 @@ public class ManageEcoAttendanceUseCase {
         return repository.saveEcoAttendance(updated);
     }
 
-    private void ensureKnownLesson(String lessonId) {
-        if (!ECO_LESSON_ID.equals(lessonId)) {
-            throw new IllegalArgumentException("Aula do Eco não encontrada.");
+    public List<EcoAttendance> validateAll(String lessonId) {
+        ensureKnownLesson(lessonId);
+        String now = Instant.now().toString();
+        return repository.listEcoAttendances(lessonId).stream()
+            .map(attendance -> {
+                EcoAttendance updated = new EcoAttendance(
+                    attendance.id(),
+                    attendance.lessonId(),
+                    attendance.lessonDate(),
+                    attendance.name(),
+                    attendance.phone(),
+                    "",
+                    "VALIDATED",
+                    attendance.createdAt(),
+                    now
+                );
+                return repository.saveEcoAttendance(updated);
+            })
+            .sorted(Comparator.comparing(EcoAttendance::createdAt, Comparator.nullsLast(String::compareTo)).reversed())
+            .toList();
+    }
+
+    public int purgeReviewedPhotos(String lessonId) {
+        ensureKnownLesson(lessonId);
+        int updated = 0;
+        for (EcoAttendance attendance : repository.listEcoAttendances(lessonId)) {
+            boolean reviewed = "VALIDATED".equals(attendance.status()) || "REJECTED".equals(attendance.status());
+            if (reviewed && attendance.photoDataUrl() != null && !attendance.photoDataUrl().isBlank()) {
+                repository.saveEcoAttendance(new EcoAttendance(
+                    attendance.id(),
+                    attendance.lessonId(),
+                    attendance.lessonDate(),
+                    attendance.name(),
+                    attendance.phone(),
+                    "",
+                    attendance.status(),
+                    attendance.createdAt(),
+                    attendance.validatedAt()
+                ));
+                updated++;
+            }
         }
+        return updated;
+    }
+
+    public String lessonAttendanceCsv(String lessonId) {
+        EcoLesson lesson = ensureKnownLesson(lessonId);
+        List<String> lines = new ArrayList<>();
+        lines.add(csvLine(List.of("Aula", "Data", "Nome", "Telefone", "Status", "Enviado em", "Validado em")));
+        listAttendances(lessonId).forEach(attendance -> lines.add(csvLine(List.of(
+            lesson.title(),
+            formatDateForCsv(lesson.lessonDate()),
+            attendance.name(),
+            attendance.phone(),
+            statusLabel(attendance.status()),
+            attendance.createdAt(),
+            attendance.validatedAt()
+        ))));
+        return "\uFEFF" + String.join("\n", lines) + "\n";
+    }
+
+    public String studentSummaryCsv() {
+        Map<String, StudentSummary> summaries = new LinkedHashMap<>();
+        allAttendances().stream()
+            .sorted(Comparator.comparing(EcoAttendance::name, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)))
+            .forEach(attendance -> {
+                String key = attendance.phone();
+                StudentSummary summary = summaries.computeIfAbsent(key, ignored -> new StudentSummary(attendance.name(), attendance.phone()));
+                summary.name = attendance.name();
+                if ("VALIDATED".equals(attendance.status())) {
+                    summary.validatedLessons.put(attendance.lessonId(), true);
+                }
+            });
+
+        List<String> lines = new ArrayList<>();
+        lines.add(csvLine(List.of("Nome", "Telefone", "Total de aulas", "Presencas", "Faltas")));
+        summaries.values().forEach(summary -> {
+            int totalLessons = ECO_LESSONS.size();
+            int attended = summary.validatedLessons.size();
+            lines.add(csvLine(List.of(
+                summary.name,
+                summary.phone,
+                String.valueOf(totalLessons),
+                String.valueOf(attended),
+                String.valueOf(Math.max(0, totalLessons - attended))
+            )));
+        });
+        return "\uFEFF" + String.join("\n", lines) + "\n";
+    }
+
+    private EcoLesson ensureKnownLesson(String lessonId) {
+        return ECO_LESSONS.stream()
+            .filter(lesson -> lesson.id().equals(lessonId))
+            .findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("Aula do Eco não encontrada."));
+    }
+
+    private Optional<EcoLesson> lessonByDate(String lessonDate) {
+        return ECO_LESSONS.stream()
+            .filter(lesson -> lesson.lessonDate().equals(lessonDate))
+            .findFirst();
+    }
+
+    private List<EcoAttendance> allAttendances() {
+        return ECO_LESSONS.stream()
+            .flatMap(lesson -> repository.listEcoAttendances(lesson.id()).stream())
+            .collect(Collectors.toList());
     }
 
     private String normalizeName(String value) {
@@ -126,6 +252,43 @@ public class ManageEcoAttendanceUseCase {
             }
         } catch (IllegalArgumentException exception) {
             throw new IllegalArgumentException("A selfie enviada não é válida.");
+        }
+    }
+
+    private String csvLine(List<String> values) {
+        return values.stream()
+            .map(value -> value == null ? "" : value)
+            .map(value -> "\"" + value.replace("\"", "\"\"") + "\"")
+            .collect(Collectors.joining(","));
+    }
+
+    private String formatDateForCsv(String value) {
+        String[] parts = value.split("-");
+        if (parts.length != 3) {
+            return value;
+        }
+        return "%s/%s/%s".formatted(parts[2], parts[1], parts[0]);
+    }
+
+    private String statusLabel(String status) {
+        return switch (status) {
+            case "VALIDATED" -> "Validada";
+            case "REJECTED" -> "Nao validada";
+            default -> "Pendente";
+        };
+    }
+
+    public record StudentSuggestion(String name, String phone) {
+    }
+
+    private static final class StudentSummary {
+        private String name;
+        private final String phone;
+        private final Map<String, Boolean> validatedLessons = new LinkedHashMap<>();
+
+        private StudentSummary(String name, String phone) {
+            this.name = name;
+            this.phone = phone;
         }
     }
 }

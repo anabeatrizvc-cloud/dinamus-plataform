@@ -7,6 +7,7 @@ import {
   EcoAttendance,
   EcoAttendancePayload,
   EcoLesson,
+  EcoStudentSuggestion,
   EventPayload,
   EventSummary,
   FirstVisitPayload,
@@ -49,6 +50,10 @@ export class DnmsApiService {
     return this.http.post<EcoAttendance>(`${this.baseUrl}/eco/attendance`, payload);
   }
 
+  lookupEcoStudent(phone: string) {
+    return this.http.get<EcoStudentSuggestion | null>(`${this.baseUrl}/eco/students/lookup`, { params: { phone } });
+  }
+
   listEcoLessons() {
     return this.http.get<EcoLesson[]>(`${this.baseUrl}/admin/eco/lessons`);
   }
@@ -59,6 +64,22 @@ export class DnmsApiService {
 
   validateEcoAttendance(lessonId: string, attendanceId: string, validated: boolean) {
     return this.http.put<EcoAttendance>(`${this.baseUrl}/admin/eco/lessons/${lessonId}/attendances/${attendanceId}/validation`, { validated });
+  }
+
+  validateAllEcoAttendances(lessonId: string) {
+    return this.http.post<EcoAttendance[]>(`${this.baseUrl}/admin/eco/lessons/${lessonId}/attendances/validate-all`, {});
+  }
+
+  purgeEcoReviewedPhotos(lessonId: string) {
+    return this.http.post<{ updated: number }>(`${this.baseUrl}/admin/eco/lessons/${lessonId}/attendances/purge-photos`, {});
+  }
+
+  downloadEcoLessonCsv(lessonId: string) {
+    return this.http.get(`${this.baseUrl}/admin/eco/lessons/${lessonId}/attendances.csv`, { responseType: 'blob' });
+  }
+
+  downloadEcoStudentsSummaryCsv() {
+    return this.http.get(`${this.baseUrl}/admin/eco/students-summary.csv`, { responseType: 'blob' });
   }
 
   createEvent(payload: EventPayload) {

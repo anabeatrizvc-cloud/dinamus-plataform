@@ -29,8 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static com.dinamus.application.usecases.ManageEcoAttendanceUseCase.ECO_LESSON_DATE;
-import static com.dinamus.application.usecases.ManageEcoAttendanceUseCase.ECO_LESSON_ID;
+import static com.dinamus.application.usecases.ManageEcoAttendanceUseCase.ECO_LESSONS;
 
 @Singleton
 @Requires(property = "couchdb.enabled", value = "true")
@@ -78,7 +77,7 @@ public class CouchDbContentRepository implements ContentRepository {
 
     @Override
     public List<EcoLesson> listEcoLessons() {
-        return List.of(new EcoLesson(ECO_LESSON_ID, "Aula", ECO_LESSON_DATE));
+        return ECO_LESSONS;
     }
 
     @Override

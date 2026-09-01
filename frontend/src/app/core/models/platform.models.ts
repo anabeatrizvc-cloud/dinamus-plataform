@@ -53,6 +53,11 @@ export interface EcoAttendancePayload {
   photoDataUrl: string;
 }
 
+export interface EcoStudentSuggestion {
+  name: string;
+  phone: string;
+}
+
 export interface MemberSummary {
   id: string;
   name: string;

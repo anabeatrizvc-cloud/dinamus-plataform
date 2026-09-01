@@ -4,12 +4,16 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import {
   LucideCalendarDays,
+  LucideChevronDown,
   LucideCheck,
+  LucideDownload,
   LucideEye,
+  LucideImageOff,
   LucideMail,
   LucidePencil,
   LucidePlus,
   LucideQrCode,
+  LucideShieldCheck,
   LucideTicket,
   LucideTrash2,
   LucideUsersRound,
@@ -37,12 +41,16 @@ const labels: Record<string, string> = {
     LucidePencil,
     LucideTrash2,
     LucideCalendarDays,
+    LucideChevronDown,
     LucideUsersRound,
     LucideMail,
     LucideQrCode,
     LucideEye,
     LucideCheck,
     LucideX,
+    LucideDownload,
+    LucideImageOff,
+    LucideShieldCheck,
   ],
   templateUrl: './admin-module.page.html',
   styleUrl: './admin.page.scss',
@@ -242,6 +250,10 @@ export class AdminModulePage implements OnInit {
   }
 
   openPhoto(attendance: EcoAttendance) {
+    if (!this.hasPhoto(attendance)) {
+      this.feedback.set('A foto desta presença já foi removida após revisão.');
+      return;
+    }
     this.selectedPhoto.set(attendance);
   }
 
@@ -254,10 +266,67 @@ export class AdminModulePage implements OnInit {
     this.api.validateEcoAttendance(attendance.lessonId, attendance.id, validated).subscribe({
       next: (saved) => {
         this.ecoAttendancesState.update((items) => items.map((item) => (item.id === saved.id ? saved : item)));
+        if (this.selectedPhoto()?.id === saved.id) {
+          this.closePhoto();
+        }
         this.feedback.set(validated ? 'Presença validada.' : 'Presença marcada como não validada.');
         this.isSaving.set(false);
       },
       error: () => this.fail('Não foi possível atualizar a presença.'),
+    });
+  }
+
+  validateAllEcoAttendances() {
+    const lesson = this.selectedEcoLesson();
+    if (!lesson) {
+      return;
+    }
+
+    this.isSaving.set(true);
+    this.api.validateAllEcoAttendances(lesson.id).subscribe({
+      next: (attendances) => {
+        this.ecoAttendancesState.set(attendances);
+        this.closePhoto();
+        this.isSaving.set(false);
+        this.feedback.set('Todas as presenças da aula foram validadas e as fotos foram removidas dos registros.');
+      },
+      error: () => this.fail('Não foi possível validar todas as presenças.'),
+    });
+  }
+
+  purgeEcoPhotos() {
+    const lesson = this.selectedEcoLesson();
+    if (!lesson) {
+      return;
+    }
+
+    this.isSaving.set(true);
+    this.api.purgeEcoReviewedPhotos(lesson.id).subscribe({
+      next: (result) => {
+        this.isSaving.set(false);
+        this.closePhoto();
+        this.selectEcoLesson(lesson);
+        this.feedback.set(result.updated ? `${result.updated} foto(s) revisada(s) foram removidas.` : 'Não havia fotos revisadas para remover nesta aula.');
+      },
+      error: () => this.fail('Não foi possível limpar as fotos revisadas.'),
+    });
+  }
+
+  downloadLessonCsv() {
+    const lesson = this.selectedEcoLesson();
+    if (!lesson) {
+      return;
+    }
+    this.api.downloadEcoLessonCsv(lesson.id).subscribe({
+      next: (blob) => this.downloadBlob(blob, `eco-${lesson.lessonDate}-presencas.csv`),
+      error: () => this.fail('Não foi possível baixar a planilha da aula.'),
+    });
+  }
+
+  downloadEcoSummaryCsv() {
+    this.api.downloadEcoStudentsSummaryCsv().subscribe({
+      next: (blob) => this.downloadBlob(blob, 'eco-resumo-geral.csv'),
+      error: () => this.fail('Não foi possível baixar a planilha geral.'),
     });
   }
 
@@ -291,6 +360,25 @@ export class AdminModulePage implements OnInit {
       return 'Não validada';
     }
     return 'Pendente';
+  }
+
+  attendanceCount(lesson: EcoLesson) {
+    if (lesson.id !== this.selectedEcoLessonId()) {
+      return null;
+    }
+    return this.ecoAttendances().length;
+  }
+
+  pendingCount() {
+    return this.ecoAttendances().filter((attendance) => attendance.status === 'PENDING').length;
+  }
+
+  validatedCount() {
+    return this.ecoAttendances().filter((attendance) => attendance.status === 'VALIDATED').length;
+  }
+
+  hasPhoto(attendance: EcoAttendance) {
+    return Boolean(attendance.photoDataUrl);
   }
 
   formatDate(value: string) {
@@ -378,5 +466,16 @@ export class AdminModulePage implements OnInit {
   private fail(message: string) {
     this.isSaving.set(false);
     this.feedback.set(message);
+  }
+
+  private downloadBlob(blob: Blob, filename: string) {
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
   }
 }

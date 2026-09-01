@@ -513,7 +513,7 @@ strong {
 
 .eco-admin-menu p,
 .section-title p,
-.eco-attendance-table header p {
+.eco-operation-header p {
   margin: 0;
   color: rgba(247, 247, 244, 0.68);
   font-size: 0.78rem;
@@ -523,7 +523,7 @@ strong {
 
 .eco-admin-menu h2,
 .section-title h2,
-.eco-attendance-table header h2 {
+.eco-operation-header h2 {
   margin: 0;
   color: var(--dnms-text);
   line-height: 1.12;
@@ -531,6 +531,13 @@ strong {
 
 .eco-admin-menu .dnms-button {
   width: 100%;
+}
+
+.eco-admin-note {
+  margin: 0;
+  color: rgba(247, 247, 244, 0.64);
+  font-size: 0.9rem;
+  line-height: 1.45;
 }
 
 .eco-lessons-panel {
@@ -545,6 +552,7 @@ strong {
 }
 
 .eco-lesson-card {
+  position: relative;
   display: grid;
   gap: 7px;
   border-radius: 18px;
@@ -554,11 +562,26 @@ strong {
   text-align: left;
 }
 
+.eco-lesson-card svg {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 18px;
+  height: 18px;
+  color: rgba(247, 247, 244, 0.56);
+  transition: transform 160ms ease;
+}
+
 .eco-lesson-card.is-selected {
   border-color: rgba(255, 82, 31, 0.58);
   background:
     linear-gradient(135deg, rgba(255, 82, 31, 0.18), transparent 52%),
     rgba(8, 8, 8, 0.9);
+}
+
+.eco-lesson-card.is-selected svg {
+  transform: rotate(180deg);
+  color: var(--dnms-accent);
 }
 
 .eco-lesson-card span {
@@ -569,18 +592,25 @@ strong {
 }
 
 .eco-lesson-card strong {
+  padding-right: 24px;
   color: var(--dnms-text);
   font-size: 1rem;
 }
 
-.eco-attendance-table {
+.eco-lesson-card small {
+  color: rgba(247, 247, 244, 0.55);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.eco-lesson-operating {
   display: grid;
-  gap: 10px;
+  gap: 16px;
   border-radius: 22px;
   padding: 18px;
 }
 
-.eco-attendance-table > header {
+.eco-operation-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -588,15 +618,49 @@ strong {
   padding-bottom: 6px;
 }
 
-.eco-attendance-table > header strong {
-  display: grid;
-  min-width: 44px;
-  min-height: 44px;
-  place-items: center;
+.eco-operation-stats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.eco-operation-stats span {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  gap: 6px;
   border: 1px solid rgba(255, 82, 31, 0.38);
-  border-radius: 14px;
+  border-radius: 999px;
   background: rgba(255, 82, 31, 0.12);
+  color: rgba(247, 247, 244, 0.72);
+  font-size: 0.78rem;
+  font-weight: 850;
+  padding: 0 12px;
+}
+
+.eco-operation-stats strong {
   color: var(--dnms-text);
+}
+
+.eco-operation-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.eco-operation-actions .dnms-button {
+  min-height: 42px;
+}
+
+.eco-operation-actions svg {
+  width: 17px;
+  height: 17px;
+}
+
+.eco-attendance-table {
+  display: grid;
+  gap: 10px;
 }
 
 .attendance-grid {
@@ -903,14 +967,45 @@ strong {
   }
 
   .eco-admin-menu {
+    gap: 12px;
     border-radius: 16px;
     padding: 15px;
+  }
+
+  .eco-admin-menu h2 {
+    font-size: 1.35rem;
+  }
+
+  .eco-admin-note {
+    display: none;
+  }
+
+  .section-title h2 {
+    font-size: 1.35rem;
+  }
+
+  .eco-operation-header {
+    display: grid;
+  }
+
+  .eco-operation-stats {
+    justify-content: start;
+  }
+
+  .eco-operation-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .eco-operation-actions .dnms-button {
+    width: 100%;
   }
 
   .eco-lesson-list {
     grid-template-columns: 1fr;
   }
 
+  .eco-lesson-operating,
   .eco-attendance-table {
     border-radius: 16px;
     padding: 14px;

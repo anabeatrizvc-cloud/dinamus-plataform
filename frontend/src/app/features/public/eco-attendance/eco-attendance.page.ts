@@ -43,8 +43,11 @@ export class EcoAttendancePage implements OnInit {
   readonly photoAccepted = signal(false);
   readonly error = signal('');
   readonly success = signal('');
+  readonly lookupMessage = signal('');
   readonly isSaving = signal(false);
   readonly isProcessingPhoto = signal(false);
+  readonly isLookingUpStudent = signal(false);
+  private lastLookupDigits = '';
 
   readonly form = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(90)]],
@@ -76,6 +79,15 @@ export class EcoAttendancePage implements OnInit {
       value = `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
     }
     this.form.controls.phone.setValue(value, { emitEvent: false });
+
+    if (digits.length === 11) {
+      this.lookupStudent(digits);
+      return;
+    }
+
+    this.lookupMessage.set('');
+    this.isLookingUpStudent.set(false);
+    this.lastLookupDigits = '';
   }
 
   async onPhotoSelected(event: Event) {
@@ -159,9 +171,37 @@ export class EcoAttendancePage implements OnInit {
   }
 
   formattedDate() {
-    const value = this.lesson()?.lessonDate ?? this.route.snapshot.queryParamMap.get('data') ?? '2026-08-25';
+    const value = this.lesson()?.lessonDate ?? this.route.snapshot.queryParamMap.get('data') ?? '2026-09-01';
     const [year, month, day] = value.split('-');
     return `${day}/${month}/${year}`;
+  }
+
+  private lookupStudent(digits: string) {
+    if (this.lastLookupDigits === digits) {
+      return;
+    }
+
+    this.lastLookupDigits = digits;
+    this.lookupMessage.set('');
+    this.isLookingUpStudent.set(true);
+    this.api.lookupEcoStudent(digits).subscribe({
+      next: (student) => {
+        if (this.form.controls.phone.value.replace(/\D/g, '').replace(/^55(?=\d{11}$)/, '').slice(0, 11) !== digits) {
+          return;
+        }
+        if (student?.name) {
+          this.form.controls.name.setValue(student.name);
+          this.lookupMessage.set('Encontramos seu cadastro. Confira o nome e continue com a selfie.');
+        } else {
+          this.lookupMessage.set('Não encontramos esse telefone ainda. Pode preencher seu nome normalmente.');
+        }
+        this.isLookingUpStudent.set(false);
+      },
+      error: () => {
+        this.lookupMessage.set('Não encontramos esse telefone ainda. Pode preencher seu nome normalmente.');
+        this.isLookingUpStudent.set(false);
+      },
+    });
   }
 
   private resizeImage(file: File) {

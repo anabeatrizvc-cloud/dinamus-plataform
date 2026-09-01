@@ -2,6 +2,7 @@ package com.dinamus;
 
 import com.dinamus.adapters.in.web.AdminController;
 import com.dinamus.adapters.in.web.dto.AuthDtos;
+import com.dinamus.adapters.in.web.dto.EcoDtos;
 import com.dinamus.domain.model.AgendaItem;
 import com.dinamus.domain.model.EcoAttendance;
 import com.dinamus.domain.model.EcoLesson;
@@ -121,14 +122,14 @@ class PlatformApiTest {
     @Test
     void publicEcoAttendanceCanBeRegisteredAndValidatedByAdmin() {
         EcoLesson lesson = client.toBlocking().retrieve(HttpRequest.GET("/api/v1/eco/lesson"), EcoLesson.class);
-        assertEquals("eco-2026-08-25", lesson.id());
-        assertEquals("2026-08-25", lesson.lessonDate());
+        assertEquals("eco-2026-09-01", lesson.id());
+        assertEquals("2026-09-01", lesson.lessonDate());
 
         EcoAttendance created = client.toBlocking().retrieve(
             HttpRequest.POST("/api/v1/eco/attendance", Map.of(
                 "name", "Aluno Eco",
                 "phone", "(81) 99949-9159",
-                "lessonDate", "2026-08-25",
+                "lessonDate", "2026-09-01",
                 "photoDataUrl", samplePhoto()
             )),
             EcoAttendance.class
@@ -143,6 +144,8 @@ class PlatformApiTest {
             Argument.listOf(EcoLesson.class)
         );
         assertFalse(lessons.isEmpty());
+        assertTrue(lessons.stream().anyMatch(item -> item.id().equals("eco-2026-08-25")));
+        assertTrue(lessons.stream().anyMatch(item -> item.id().equals("eco-2026-09-01")));
 
         List<EcoAttendance> attendances = client.toBlocking().retrieve(
             HttpRequest.GET("/api/v1/admin/eco/lessons/" + lesson.id() + "/attendances").bearerAuth(admin.accessToken()),
@@ -160,6 +163,52 @@ class PlatformApiTest {
 
         assertEquals("VALIDATED", validated.status());
         assertFalse(validated.validatedAt().isBlank());
+        assertTrue(validated.photoDataUrl() == null || validated.photoDataUrl().isBlank());
+
+        EcoDtos.EcoStudentSuggestionResponse suggestion = client.toBlocking().retrieve(
+            HttpRequest.GET("/api/v1/eco/students/lookup?phone=81999499159"),
+            EcoDtos.EcoStudentSuggestionResponse.class
+        );
+
+        assertEquals("Aluno Eco", suggestion.name());
+
+        String csv = client.toBlocking().retrieve(
+            HttpRequest.GET("/api/v1/admin/eco/lessons/" + lesson.id() + "/attendances.csv").bearerAuth(admin.accessToken()),
+            String.class
+        );
+
+        assertTrue(csv.contains("Aluno Eco"));
+        assertFalse(csv.contains("data:image"));
+    }
+
+    @Test
+    void adminCanValidateAllEcoAttendancesAndExportStudentSummary() {
+        EcoLesson lesson = client.toBlocking().retrieve(HttpRequest.GET("/api/v1/eco/lesson"), EcoLesson.class);
+        client.toBlocking().retrieve(
+            HttpRequest.POST("/api/v1/eco/attendance", Map.of(
+                "name", "Aluno Lote Eco",
+                "phone", "81999887766",
+                "lessonDate", lesson.lessonDate(),
+                "photoDataUrl", samplePhoto()
+            )),
+            EcoAttendance.class
+        );
+
+        AuthDtos.LoginResponse admin = login();
+        List<EcoAttendance> validated = client.toBlocking().retrieve(
+            HttpRequest.POST("/api/v1/admin/eco/lessons/" + lesson.id() + "/attendances/validate-all", Map.of()).bearerAuth(admin.accessToken()),
+            Argument.listOf(EcoAttendance.class)
+        );
+
+        assertTrue(validated.stream().anyMatch(attendance -> attendance.name().equals("Aluno Lote Eco") && attendance.status().equals("VALIDATED")));
+
+        String summary = client.toBlocking().retrieve(
+            HttpRequest.GET("/api/v1/admin/eco/students-summary.csv").bearerAuth(admin.accessToken()),
+            String.class
+        );
+
+        assertTrue(summary.contains("Aluno Lote Eco"));
+        assertTrue(summary.contains("\"2\""));
     }
 
     @Test
@@ -168,7 +217,7 @@ class PlatformApiTest {
             client.toBlocking().exchange(HttpRequest.POST("/api/v1/eco/attendance", Map.of(
                 "name", "Aluno Eco",
                 "phone", "8133344444",
-                "lessonDate", "2026-08-25",
+                "lessonDate", "2026-09-01",
                 "photoDataUrl", samplePhoto()
             )))
         );

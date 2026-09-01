@@ -76,6 +76,31 @@ public class AdminController {
         return manageEcoAttendance.listAttendances(lessonId);
     }
 
+    @Get("/eco/lessons/{lessonId}/attendances.csv")
+    public HttpResponse<String> ecoAttendancesCsv(@PathVariable String lessonId) {
+        String csv = manageEcoAttendance.lessonAttendanceCsv(lessonId);
+        return HttpResponse.ok(csv)
+            .header("Content-Type", "text/csv; charset=utf-8")
+            .header("Content-Disposition", "attachment; filename=\"eco-" + lessonId + "-presencas.csv\"");
+    }
+
+    @Get("/eco/students-summary.csv")
+    public HttpResponse<String> ecoStudentsSummaryCsv() {
+        return HttpResponse.ok(manageEcoAttendance.studentSummaryCsv())
+            .header("Content-Type", "text/csv; charset=utf-8")
+            .header("Content-Disposition", "attachment; filename=\"eco-resumo-geral.csv\"");
+    }
+
+    @Post("/eco/lessons/{lessonId}/attendances/validate-all")
+    public List<EcoAttendance> validateAllEcoAttendances(@PathVariable String lessonId) {
+        return manageEcoAttendance.validateAll(lessonId);
+    }
+
+    @Post("/eco/lessons/{lessonId}/attendances/purge-photos")
+    public EcoDtos.EcoMaintenanceResponse purgeEcoPhotos(@PathVariable String lessonId) {
+        return new EcoDtos.EcoMaintenanceResponse(manageEcoAttendance.purgeReviewedPhotos(lessonId));
+    }
+
     @Put("/eco/lessons/{lessonId}/attendances/{attendanceId}/validation")
     public EcoAttendance validateEcoAttendance(
         @PathVariable String lessonId,

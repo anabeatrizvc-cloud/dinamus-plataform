@@ -18,8 +18,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import static com.dinamus.application.usecases.ManageEcoAttendanceUseCase.ECO_LESSON_DATE;
-import static com.dinamus.application.usecases.ManageEcoAttendanceUseCase.ECO_LESSON_ID;
+import static com.dinamus.application.usecases.ManageEcoAttendanceUseCase.ECO_LESSONS;
 
 @Singleton
 @Requires(property = "couchdb.enabled", notEquals = "true")
@@ -69,7 +68,7 @@ public class InMemoryContentRepository implements ContentRepository {
 
     @Override
     public List<EcoLesson> listEcoLessons() {
-        return List.of(new EcoLesson(ECO_LESSON_ID, "Aula", ECO_LESSON_DATE));
+        return ECO_LESSONS;
     }
 
     @Override

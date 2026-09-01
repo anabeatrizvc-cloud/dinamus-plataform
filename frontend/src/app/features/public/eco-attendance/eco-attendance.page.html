@@ -40,6 +40,11 @@
           <svg lucidePhone aria-hidden="true"></svg>
           <input id="eco-phone" formControlName="phone" autocomplete="tel" inputmode="tel" placeholder="(81) 99999-9999" (input)="formatPhone()" />
         </div>
+        @if (isLookingUpStudent()) {
+          <small class="field-hint">Buscando seu cadastro pelo telefone...</small>
+        } @else if (lookupMessage()) {
+          <small class="field-hint">{{ lookupMessage() }}</small>
+        }
       </div>
 
       <section class="selfie-card" aria-label="Selfie para validação">

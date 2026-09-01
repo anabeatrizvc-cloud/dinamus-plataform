@@ -255,6 +255,16 @@
 
         @if (selectedEcoLesson()) {
           <article class="surface eco-lesson-operating">
+            @if (isLoadingEcoAttendances()) {
+              <div class="eco-loading-overlay" role="status" aria-live="polite">
+                <span>
+                  <svg class="spin" lucideLoaderCircle aria-hidden="true"></svg>
+                </span>
+                <strong>Carregando aula</strong>
+                <small>Buscando as presenças dessa data...</small>
+              </div>
+            }
+
             <header class="eco-operation-header">
               <div>
                 <p>Aula selecionada</p>

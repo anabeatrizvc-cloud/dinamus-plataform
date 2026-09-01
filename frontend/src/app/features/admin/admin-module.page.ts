@@ -9,6 +9,7 @@ import {
   LucideDownload,
   LucideEye,
   LucideImageOff,
+  LucideLoaderCircle,
   LucideMail,
   LucidePencil,
   LucidePlus,
@@ -51,6 +52,7 @@ const labels: Record<string, string> = {
     LucideDownload,
     LucideImageOff,
     LucideShieldCheck,
+    LucideLoaderCircle,
   ],
   templateUrl: './admin-module.page.html',
   styleUrl: './admin.page.scss',
@@ -72,6 +74,7 @@ export class AdminModulePage implements OnInit {
   readonly feedback = signal('');
   readonly selectedEcoLessonId = signal<string | null>(null);
   readonly selectedPhoto = signal<EcoAttendance | null>(null);
+  readonly isLoadingEcoAttendances = signal(false);
   readonly moduleKey = toSignal(this.route.url.pipe(map((segments) => segments[0]?.path ?? '')), {
     initialValue: this.route.snapshot.url[0]?.path ?? '',
   });
@@ -239,11 +242,22 @@ export class AdminModulePage implements OnInit {
 
   selectEcoLesson(lesson: EcoLesson) {
     this.selectedEcoLessonId.set(lesson.id);
+    this.isLoadingEcoAttendances.set(true);
     this.feedback.set('');
     this.api.listEcoAttendances(lesson.id).subscribe({
-      next: (attendances) => this.ecoAttendancesState.set(attendances),
+      next: (attendances) => {
+        if (this.selectedEcoLessonId() !== lesson.id) {
+          return;
+        }
+        this.ecoAttendancesState.set(attendances);
+        this.isLoadingEcoAttendances.set(false);
+      },
       error: () => {
+        if (this.selectedEcoLessonId() !== lesson.id) {
+          return;
+        }
         this.ecoAttendancesState.set([]);
+        this.isLoadingEcoAttendances.set(false);
         this.feedback.set('Não foi possível carregar as presenças do Eco.');
       },
     });
@@ -416,6 +430,7 @@ export class AdminModulePage implements OnInit {
     this.feedback.set('');
     this.editingId.set(null);
     this.isSaving.set(false);
+    this.isLoadingEcoAttendances.set(false);
 
     if (this.isEventsModule()) {
       this.loadEvents();
@@ -447,6 +462,7 @@ export class AdminModulePage implements OnInit {
       error: () => {
         this.ecoLessonsState.set([]);
         this.ecoAttendancesState.set([]);
+        this.isLoadingEcoAttendances.set(false);
         this.feedback.set('Não foi possível carregar as aulas do Eco.');
       },
     });

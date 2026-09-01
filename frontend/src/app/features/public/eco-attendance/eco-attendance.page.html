@@ -27,14 +27,6 @@
 
     <form class="attendance-form" [formGroup]="form" (ngSubmit)="submit()">
       <div class="form-field">
-        <label for="eco-name">Nome completo</label>
-        <div class="input-control">
-          <svg lucideUserRound aria-hidden="true"></svg>
-          <input id="eco-name" formControlName="name" autocomplete="name" placeholder="Seu nome" />
-        </div>
-      </div>
-
-      <div class="form-field">
         <label for="eco-phone">Celular com DDD</label>
         <div class="input-control">
           <svg lucidePhone aria-hidden="true"></svg>
@@ -45,6 +37,14 @@
         } @else if (lookupMessage()) {
           <small class="field-hint">{{ lookupMessage() }}</small>
         }
+      </div>
+
+      <div class="form-field">
+        <label for="eco-name">Nome completo</label>
+        <div class="input-control">
+          <svg lucideUserRound aria-hidden="true"></svg>
+          <input id="eco-name" formControlName="name" autocomplete="name" placeholder="Seu nome" />
+        </div>
       </div>
 
       <section class="selfie-card" aria-label="Selfie para validação">
@@ -96,6 +96,16 @@
           Confirmar presença
         }
       </button>
+
+      @if (isLookingUpStudent()) {
+        <div class="form-loading-overlay" role="status" aria-live="polite">
+          <span>
+            <svg class="spin" lucideLoaderCircle aria-hidden="true"></svg>
+          </span>
+          <strong>Buscando cadastro</strong>
+          <small>Estamos conferindo seu telefone antes de continuar.</small>
+        </div>
+      }
     </form>
   </section>
 </main>

@@ -20,13 +20,16 @@ import java.util.stream.Collectors;
 
 @Singleton
 public class ManageEcoAttendanceUseCase {
-    public static final String PREVIOUS_ECO_LESSON_DATE = "2026-08-25";
-    public static final String PREVIOUS_ECO_LESSON_ID = "eco-2026-08-25";
-    public static final String ECO_LESSON_DATE = "2026-09-01";
-    public static final String ECO_LESSON_ID = "eco-2026-09-01";
+    public static final String FIRST_ECO_LESSON_DATE = "2026-08-25";
+    public static final String FIRST_ECO_LESSON_ID = "eco-2026-08-25";
+    public static final String SECOND_ECO_LESSON_DATE = "2026-09-01";
+    public static final String SECOND_ECO_LESSON_ID = "eco-2026-09-01";
+    public static final String ECO_LESSON_DATE = "2026-09-08";
+    public static final String ECO_LESSON_ID = "eco-2026-09-08";
     public static final List<EcoLesson> ECO_LESSONS = List.of(
         new EcoLesson(ECO_LESSON_ID, "Aula", ECO_LESSON_DATE),
-        new EcoLesson(PREVIOUS_ECO_LESSON_ID, "Aula", PREVIOUS_ECO_LESSON_DATE)
+        new EcoLesson(SECOND_ECO_LESSON_ID, "Aula", SECOND_ECO_LESSON_DATE),
+        new EcoLesson(FIRST_ECO_LESSON_ID, "Aula", FIRST_ECO_LESSON_DATE)
     );
 
     private static final Pattern PHOTO_PATTERN = Pattern.compile("^data:image/(jpeg|jpg|png|webp);base64,[A-Za-z0-9+/=\\r\\n]+$");

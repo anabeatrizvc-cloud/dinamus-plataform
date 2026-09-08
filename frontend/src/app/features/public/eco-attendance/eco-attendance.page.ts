@@ -171,7 +171,7 @@ export class EcoAttendancePage implements OnInit {
   }
 
   formattedDate() {
-    const value = this.lesson()?.lessonDate ?? this.route.snapshot.queryParamMap.get('data') ?? '2026-09-01';
+    const value = this.lesson()?.lessonDate ?? this.route.snapshot.queryParamMap.get('data') ?? '2026-09-08';
     const [year, month, day] = value.split('-');
     return `${day}/${month}/${year}`;
   }

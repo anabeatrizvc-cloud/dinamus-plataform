@@ -7,37 +7,37 @@ export const routes: Routes = [
   {
     path: '',
     loadComponent: () => import('./features/public/home/home.page').then((m) => m.HomePage),
-    title: 'DNMS Recife',
+    title: 'Dinamus Recife',
   },
   {
     path: 'agenda',
     loadComponent: () => import('./features/public/agenda/agenda.page').then((m) => m.AgendaPage),
-    title: 'Agenda | DNMS',
+    title: 'Agenda | Dinamus Recife',
   },
   {
     path: 'eventos',
     loadComponent: () => import('./features/public/eventos/eventos.page').then((m) => m.EventosPage),
-    title: 'Eventos | DNMS',
+    title: 'Eventos | Dinamus Recife',
   },
   {
     path: 'gcs',
     loadComponent: () => import('./features/public/gcs/gcs.page').then((m) => m.GcsPage),
-    title: 'GCs | DNMS',
+    title: 'GCs | Dinamus Recife',
   },
   {
     path: 'base-missionaria',
     loadComponent: () => import('./features/public/base-missionaria/base-missionaria.page').then((m) => m.BaseMissionariaPage),
-    title: 'Base Missionária | DNMS',
+    title: 'Base Missionária | Dinamus Recife',
   },
   {
     path: 'eco',
     loadComponent: () => import('./features/public/eco/eco.page').then((m) => m.EcoPage),
-    title: 'Eco | DNMS',
+    title: 'Eco | Dinamus Recife',
   },
   {
     path: 'eco/presenca',
     loadComponent: () => import('./features/public/eco-attendance/eco-attendance.page').then((m) => m.EcoAttendancePage),
-    title: 'Presença Eco | DNMS',
+    title: 'Presença Eco | Dinamus Recife',
   },
   {
     path: 'oracao',
@@ -52,12 +52,12 @@ export const routes: Routes = [
   {
     path: 'login',
     loadComponent: () => import('./features/auth/login.page').then((m) => m.LoginPage),
-    title: 'Entrar | DNMS',
+    title: 'Entrar | Dinamus Recife',
   },
   {
     path: 'setup-password',
     loadComponent: () => import('./features/auth/setup-password.page').then((m) => m.SetupPasswordPage),
-    title: 'Criar senha | DNMS',
+    title: 'Criar senha | Dinamus Recife',
   },
   {
     path: 'admin',
@@ -71,27 +71,27 @@ export const routes: Routes = [
       {
         path: 'dashboard',
         loadComponent: () => import('./features/admin/admin-dashboard.page').then((m) => m.AdminDashboardPage),
-        title: 'Dashboard | DNMS',
+        title: 'Painel | Dinamus Recife',
       },
       {
         path: 'eventos',
         loadComponent: () => import('./features/admin/admin-module.page').then((m) => m.AdminModulePage),
-        title: 'Eventos | DNMS',
+        title: 'Eventos | Dinamus Recife',
       },
       {
         path: 'membros',
         loadComponent: () => import('./features/admin/admin-module.page').then((m) => m.AdminModulePage),
-        title: 'Administração | DNMS',
+        title: 'Administração | Dinamus Recife',
       },
       {
         path: 'eco',
         loadComponent: () => import('./features/admin/admin-module.page').then((m) => m.AdminModulePage),
-        title: 'Eco | DNMS',
+        title: 'Eco | Dinamus Recife',
       },
       {
         path: 'base-missionaria',
         loadComponent: () => import('./features/admin/admin-module.page').then((m) => m.AdminModulePage),
-        title: 'Base Missionária | DNMS',
+        title: 'Base Missionária | Dinamus Recife',
       },
       {
         path: '**',

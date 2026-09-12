@@ -91,9 +91,10 @@ test('public mission base generates static pix without changing progress', async
   await expect(page.getByRole('heading', { name: /um lugar para o avanço do reino/i })).toBeVisible();
   await expect(page.getByText('30%')).toBeVisible();
   await page.getByRole('button', { name: /contribuir agora/i }).click();
-  await page.getByRole('button', { name: /reforma/i }).click();
-  await page.getByLabel('Outro valor').fill('123,45');
-  await page.getByRole('button', { name: /gerar pix/i }).click();
+  const drawer = page.getByRole('dialog', { name: /faça parte dessa história/i });
+  await drawer.getByRole('button', { name: /reforma/i }).click();
+  await drawer.getByLabel('Outro valor').fill('123,45');
+  await drawer.getByRole('button', { name: /gerar qr code pix/i }).click();
 
   await expect(page.getByAltText(/qr code pix/i)).toBeVisible();
   await expect(page.getByText(/txid reforma/i)).toBeVisible();

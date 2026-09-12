@@ -1,5 +1,16 @@
 <main class="mission-page">
-  <a class="back-home" routerLink="/">Voltar</a>
+  <header class="mission-nav" aria-label="Navegação da Base Missionária">
+    <a class="mission-logo" routerLink="/" aria-label="Dinamus Recife">
+      <img src="assets/home/wordmark-orange.png" alt="dnms." width="498" height="165" />
+    </a>
+    <nav>
+      <a routerLink="/">Início</a>
+      <a routerLink="/gcs">GCs</a>
+      <a routerLink="/agenda">Agenda</a>
+      <a routerLink="/eventos">Eventos</a>
+      <a class="active" routerLink="/base-missionaria">Base Missionária</a>
+    </nav>
+  </header>
 
   @if (isLoading()) {
     <section class="mission-loading" role="status" aria-live="polite">
@@ -9,39 +20,64 @@
   } @else if (campaign(); as campaign) {
     <section class="mission-hero" aria-labelledby="mission-title">
       <div class="hero-copy">
-        <span class="eyebrow">
-          <svg lucideMapPinned aria-hidden="true"></svg>
-          Base Missionária
-        </span>
+        <span class="eyebrow">Base Missionária</span>
         <h1 id="mission-title">{{ campaign.title }}</h1>
         <p>{{ campaign.description }}</p>
-        <button class="dnms-button" type="button" [disabled]="!campaign.active || !visibleStages().length" (click)="openContribution()">
-          Contribuir agora
-        </button>
+        <div class="hero-actions">
+          <button class="mission-play" type="button" [disabled]="!campaign.active || !visibleStages().length" (click)="openContribution()">
+            <span aria-hidden="true">›</span>
+            Contribuir via Pix
+          </button>
+          <small>Mais pessoas. Mais alcance. Mais Jesus.</small>
+        </div>
       </div>
 
       <aside class="surface total-card" aria-label="Progresso geral da Base Missionária">
-        <span>Progresso geral</span>
-        <strong>{{ formatMoney(campaign.totalRaisedCents) }}</strong>
-        <small>de {{ formatMoney(campaign.totalGoalCents) }}</small>
+        <div class="total-intro">
+          <svg lucideMapPinned aria-hidden="true"></svg>
+          <span>Juntos, estamos construindo esse lugar.</span>
+        </div>
+        <strong>{{ formatMoney(campaign.totalRaisedCents) }} arrecadados</strong>
         <div class="progress-track" aria-hidden="true">
           <i [style.width]="progressWidth(campaign.percent)"></i>
         </div>
         <div class="progress-meta">
-          <b>{{ campaign.percent }}%</b>
-          @if (campaign.goalExceeded) {
-            <em>Meta superada</em>
-          } @else {
-            <em>em avanço</em>
-          }
+          <b>Meta total: {{ formatMoney(campaign.totalGoalCents) }}</b>
+          <em>{{ campaign.goalExceeded ? 'Meta superada' : campaign.percent + '%' }}</em>
         </div>
+        <button class="mission-gold-button" type="button" [disabled]="!campaign.active || !visibleStages().length" (click)="openContribution()">
+          Contribuir agora
+        </button>
       </aside>
     </section>
 
     <section class="stage-section" aria-labelledby="stage-title">
       <div class="section-heading">
         <span>Etapas da missão</span>
-        <h2 id="stage-title">Cada fase sustenta o próximo avanço.</h2>
+        <h2 id="stage-title">Cada etapa nos aproxima.</h2>
+        <p>A Base Missionária está sendo construída por fases. Cada contribuição aponta para um avanço real.</p>
+      </div>
+
+      <div class="stage-timeline" aria-label="Linha das etapas">
+        @for (stage of visibleStages(); track stage.id) {
+          <button type="button" [class.current]="stage.current" (click)="openContribution(stage)">
+            <span class="stage-icon">
+              @switch (stage.icon) {
+                @case ('key') {
+                  <svg lucideKeyRound aria-hidden="true"></svg>
+                }
+                @case ('tool') {
+                  <svg lucideHammer aria-hidden="true"></svg>
+                }
+                @default {
+                  <svg lucideBuilding2 aria-hidden="true"></svg>
+                }
+              }
+            </span>
+            <strong>{{ stage.sortOrder }}. {{ stage.name }}</strong>
+            <small>{{ statusLabel(stage.status) }}</small>
+          </button>
+        }
       </div>
 
       <div class="stage-grid">
@@ -77,7 +113,7 @@
               @if (stage.goalExceeded) {
                 <em>superada</em>
               } @else {
-                <em>{{ stage.current ? 'etapa atual' : 'planejada' }}</em>
+                <em>{{ stage.status === 'CONCLUIDA' ? 'concluída' : stage.current ? 'etapa atual' : 'planejada' }}</em>
               }
             </div>
             <button class="stage-cta" type="button" [disabled]="!campaign.active" (click)="openContribution(stage)">Contribuir nesta etapa</button>
@@ -98,8 +134,9 @@
     <aside class="contribution-drawer" role="dialog" aria-modal="true" aria-labelledby="contribution-title">
       <header>
         <div>
-          <span>Contribuição Pix</span>
-          <h2 id="contribution-title">Avance com a Base Missionária</h2>
+          <span>Contribuir</span>
+          <h2 id="contribution-title">Faça parte dessa história.</h2>
+          <p>Escolha a etapa, informe o valor e gere o QR Code Pix.</p>
         </div>
         <button type="button" aria-label="Fechar contribuição" (click)="closeContribution()">
           <svg lucideX aria-hidden="true"></svg>
@@ -144,12 +181,12 @@
       }
 
       @if (!pix()) {
-        <button class="dnms-button generate-button" type="button" [disabled]="isGeneratingPix()" (click)="generatePix()">
+        <button class="mission-gold-button generate-button" type="button" [disabled]="isGeneratingPix()" (click)="generatePix()">
           @if (isGeneratingPix()) {
             <svg class="spin" lucideLoaderCircle aria-hidden="true"></svg>
-            Gerando Pix
+            Gerando QR Code
           } @else {
-            Gerar Pix
+            Gerar QR Code Pix
           }
         </button>
       } @else {
@@ -165,7 +202,7 @@
           }
 
           <textarea readonly [value]="pix()!.pixPayload" aria-label="Pix copia e cola"></textarea>
-          <button class="dnms-button" type="button" (click)="copyPix()">
+          <button class="mission-gold-button" type="button" (click)="copyPix()">
             @if (copied()) {
               <svg lucideCheck aria-hidden="true"></svg>
               Copiado

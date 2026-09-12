@@ -75,14 +75,14 @@ test('public mission base generates static pix without changing progress', async
     pixHit = true;
     const body = route.request().postDataJSON();
     expect(body.stageId).toBe('reforma');
-    expect(body.amountCents).toBe(10000);
+    expect(body.amountCents).toBe(12345);
     await route.fulfill({
       json: {
         stageId: 'reforma',
         stageName: 'Reforma',
-        amountCents: 10000,
+        amountCents: 12345,
         txid: 'REFORMA20260912ABCD1234',
-        pixPayload: '00020101021226580014BR.GOV.BCB.PIX0136pix@dinamus.local5204000053039865406100.005802BR5919IGREJA DINAMUS REC6006RECIFE62280524REFORMA20260912ABCD12346304ABCD',
+        pixPayload: '00020101021226580014BR.GOV.BCB.PIX0136pix@dinamus.local5204000053039865406123.455802BR5919IGREJA DINAMUS REC6006RECIFE62280524REFORMA20260912ABCD12346304ABCD',
       },
     });
   });
@@ -92,6 +92,7 @@ test('public mission base generates static pix without changing progress', async
   await expect(page.getByText('30%')).toBeVisible();
   await page.getByRole('button', { name: /contribuir agora/i }).click();
   await page.getByRole('button', { name: /reforma/i }).click();
+  await page.getByLabel('Outro valor').fill('123,45');
   await page.getByRole('button', { name: /gerar pix/i }).click();
 
   await expect(page.getByAltText(/qr code pix/i)).toBeVisible();
@@ -114,7 +115,7 @@ test('admin mission base edits campaign on mobile without horizontal overflow', 
   });
 
   await page.goto('/admin/base-missionaria', { waitUntil: 'domcontentloaded' });
-  await expect(page.getByRole('heading', { name: 'Base Missionária' })).toBeVisible();
+  await expect(page.locator('#module-title')).toHaveText('Base Missionária');
   await expect(page.getByText('arrecadado', { exact: true })).toBeVisible();
   await page.getByLabel('Título').fill('Um lugar para o avanço do Reino.');
   await page.getByRole('button', { name: /salvar base missionária/i }).click();

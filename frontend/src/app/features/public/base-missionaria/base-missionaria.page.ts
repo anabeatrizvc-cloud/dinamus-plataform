@@ -42,7 +42,7 @@ export class BaseMissionariaPage implements OnInit {
   readonly campaign = signal<MissionBaseCampaign | null>(null);
   readonly selectedStageId = signal('');
   readonly selectedAmountCents = signal(10000);
-  readonly customAmount = signal('');
+  readonly customAmount = signal<string | number | null>('');
   readonly drawerOpen = signal(false);
   readonly isLoading = signal(true);
   readonly isGeneratingPix = signal(false);
@@ -110,7 +110,7 @@ export class BaseMissionariaPage implements OnInit {
     this.qrCode.set('');
   }
 
-  setCustomAmount(value: string) {
+  setCustomAmount(value: string | number | null) {
     this.customAmount.set(value);
     this.pix.set(null);
     this.qrCode.set('');
@@ -171,8 +171,15 @@ export class BaseMissionariaPage implements OnInit {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cents / 100);
   }
 
-  private parseCurrencyToCents(value: string) {
-    const normalized = value.replace(/[^\d,.]/g, '').replace(',', '.');
+  private parseCurrencyToCents(value: string | number | null) {
+    if (value === null || value === undefined || value === '') {
+      return 0;
+    }
+    if (typeof value === 'number') {
+      return Number.isFinite(value) && value > 0 ? Math.round(value * 100) : 0;
+    }
+
+    const normalized = String(value).replace(/[^\d,.]/g, '').replace(',', '.');
     if (!normalized) {
       return 0;
     }

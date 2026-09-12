@@ -239,7 +239,7 @@ public class ManageMissionBaseUseCase {
     }
 
     private String pixPayload(MissionBaseStage stage, long amountCents, String txid) {
-        String key = clean(pixProperties.getKey(), 77);
+        String key = cleanPixKey(pixProperties.getKey(), 77);
         if (key.isBlank()) {
             throw new IllegalArgumentException("A chave Pix da Base Missionária não está configurada.");
         }
@@ -280,6 +280,14 @@ public class ManageMissionBaseUseCase {
             .replaceAll("[^A-Za-z0-9 .@+\\-_/]", "")
             .trim()
             .toUpperCase(Locale.ROOT);
+        return normalized.length() > maxLength ? normalized.substring(0, maxLength) : normalized;
+    }
+
+    private String cleanPixKey(String value, int maxLength) {
+        String normalized = value == null ? "" : Normalizer.normalize(value, Normalizer.Form.NFD)
+            .replaceAll("\\p{M}", "")
+            .replaceAll("[^A-Za-z0-9 .@+\\-_/]", "")
+            .trim();
         return normalized.length() > maxLength ? normalized.substring(0, maxLength) : normalized;
     }
 

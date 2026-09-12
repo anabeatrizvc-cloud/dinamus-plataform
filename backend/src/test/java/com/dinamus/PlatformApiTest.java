@@ -254,6 +254,7 @@ class PlatformApiTest {
         assertEquals(10000, pix.amountCents());
         assertTrue(pix.txid().length() <= 35);
         assertTrue(pix.pixPayload().startsWith("000201"));
+        assertTrue(pix.pixPayload().contains("pix@dinamus.local"));
         assertTrue(pix.pixPayload().contains("52040000"));
 
         MissionBaseDtos.CampaignResponse afterPix = client.toBlocking().retrieve(

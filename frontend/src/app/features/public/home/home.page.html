@@ -4,6 +4,7 @@
     <p class="city">DINAMUS RECIFE</p>
     <div class="accent-line" aria-hidden="true"></div>
     <h1 id="home-title">Uma família de cristãos íntimos de Deus</h1>
+    <a class="mission-link" routerLink="/base-missionaria">Base Missionária</a>
   </section>
 
   <section class="home-cards" aria-label="Acoes principais">
@@ -17,6 +18,9 @@
             }
             @case ('calendar') {
               <svg lucideCalendarDays aria-hidden="true"></svg>
+            }
+            @case ('mission') {
+              <svg lucideMapPinned aria-hidden="true"></svg>
             }
             @default {
               <svg lucideTicket aria-hidden="true"></svg>

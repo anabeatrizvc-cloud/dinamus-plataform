@@ -2,8 +2,10 @@ package com.dinamus.adapters.in.web;
 
 import com.dinamus.adapters.in.web.dto.EcoDtos;
 import com.dinamus.adapters.in.web.dto.EventDtos;
+import com.dinamus.adapters.in.web.dto.MissionBaseDtos;
 import com.dinamus.application.usecases.ManageEcoAttendanceUseCase;
 import com.dinamus.application.usecases.ManageEventsUseCase;
+import com.dinamus.application.usecases.ManageMissionBaseUseCase;
 import com.dinamus.domain.model.EcoAttendance;
 import com.dinamus.domain.model.EcoLesson;
 import com.dinamus.domain.model.EventSummary;
@@ -29,10 +31,16 @@ import java.util.List;
 public class AdminController {
     private final ManageEventsUseCase manageEvents;
     private final ManageEcoAttendanceUseCase manageEcoAttendance;
+    private final ManageMissionBaseUseCase manageMissionBase;
 
-    public AdminController(ManageEventsUseCase manageEvents, ManageEcoAttendanceUseCase manageEcoAttendance) {
+    public AdminController(
+        ManageEventsUseCase manageEvents,
+        ManageEcoAttendanceUseCase manageEcoAttendance,
+        ManageMissionBaseUseCase manageMissionBase
+    ) {
         this.manageEvents = manageEvents;
         this.manageEcoAttendance = manageEcoAttendance;
+        this.manageMissionBase = manageMissionBase;
     }
 
     @Get("/dashboard")
@@ -64,6 +72,35 @@ public class AdminController {
     public HttpResponse<?> deleteEvent(@PathVariable String id) {
         manageEvents.delete(id);
         return HttpResponse.noContent();
+    }
+
+    @Get("/mission-base")
+    public MissionBaseDtos.CampaignResponse missionBase() {
+        return MissionBaseDtos.from(manageMissionBase.adminCampaign());
+    }
+
+    @Put("/mission-base")
+    public MissionBaseDtos.CampaignResponse updateMissionBase(@Valid @Body MissionBaseDtos.CampaignRequest request) {
+        return MissionBaseDtos.from(manageMissionBase.update(
+            request.title(),
+            request.description(),
+            request.active(),
+            request.currentStageId(),
+            request.stages().stream()
+                .map(stage -> new ManageMissionBaseUseCase.StageUpdate(
+                    stage.id(),
+                    stage.goalCents(),
+                    stage.raisedCents(),
+                    stage.status(),
+                    stage.visible()
+                ))
+                .toList()
+        ));
+    }
+
+    @Post("/mission-base/reset")
+    public MissionBaseDtos.CampaignResponse resetMissionBase(@Valid @Body MissionBaseDtos.ResetRequest request) {
+        return MissionBaseDtos.from(manageMissionBase.reset(request.confirmation()));
     }
 
     @Get("/eco/lessons")

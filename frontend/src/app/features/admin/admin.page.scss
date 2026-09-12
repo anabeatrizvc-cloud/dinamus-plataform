@@ -478,6 +478,165 @@ strong {
   line-height: 1;
 }
 
+.mission-admin-layout {
+  display: grid;
+  gap: 18px;
+}
+
+.mission-admin-loading {
+  display: grid;
+  min-height: 240px;
+  place-items: center;
+  align-content: center;
+  gap: 9px;
+  border-radius: 22px;
+  color: rgba(247, 247, 244, 0.66);
+}
+
+.mission-admin-loading svg {
+  width: 32px;
+  height: 32px;
+  color: var(--dnms-accent);
+}
+
+.mission-admin-loading strong {
+  color: var(--dnms-text);
+}
+
+.mission-admin-grid {
+  display: grid;
+  grid-template-columns: minmax(300px, 400px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.mission-editor textarea {
+  min-height: 124px;
+  resize: vertical;
+  padding-block: 13px;
+}
+
+.mission-stage-editor {
+  display: grid;
+  gap: 12px;
+}
+
+.mission-admin-stage,
+.mission-reset-card {
+  display: grid;
+  gap: 14px;
+  border-color: rgba(255, 255, 255, 0.14);
+  border-radius: 22px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.052), rgba(255, 255, 255, 0.012)),
+    rgba(8, 8, 8, 0.84);
+  padding: 18px;
+}
+
+.mission-admin-stage.current {
+  border-color: rgba(255, 82, 31, 0.58);
+  background:
+    linear-gradient(135deg, rgba(255, 82, 31, 0.15), transparent 54%),
+    rgba(8, 8, 8, 0.9);
+}
+
+.mission-admin-stage header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+}
+
+.mission-admin-stage header > span {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  place-items: center;
+  border: 1px solid rgba(255, 82, 31, 0.36);
+  border-radius: 16px;
+  background: rgba(255, 82, 31, 0.1);
+  color: var(--dnms-accent);
+}
+
+.mission-admin-stage svg,
+.mission-reset-card svg {
+  width: 20px;
+  height: 20px;
+}
+
+.mission-admin-stage h2,
+.mission-reset-card h2 {
+  color: var(--dnms-text);
+  line-height: 1.12;
+}
+
+.mission-admin-stage p,
+.mission-reset-card span {
+  margin: 0;
+  color: rgba(247, 247, 244, 0.68);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.stage-description,
+.mission-reset-card p {
+  color: rgba(247, 247, 244, 0.68);
+  font-size: 0.92rem;
+  font-weight: 500;
+  line-height: 1.48;
+  text-transform: none;
+}
+
+.mission-stage-toggle {
+  display: grid;
+  align-content: end;
+}
+
+.mission-stage-toggle label {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 13px;
+  background: rgba(0, 0, 0, 0.42);
+  color: rgba(247, 247, 244, 0.78);
+  padding: 0 12px;
+}
+
+.mission-stage-toggle input {
+  accent-color: var(--dnms-accent);
+}
+
+.mission-progress-line {
+  height: 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.mission-progress-line i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #ff521f, #ff8b54);
+}
+
+.mission-admin-stage small {
+  color: rgba(247, 247, 244, 0.55);
+}
+
+.mission-reset-card {
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 280px) auto;
+  align-items: end;
+}
+
+.mission-reset-card .dnms-button {
+  min-height: 48px;
+  white-space: nowrap;
+}
+
 .eco-admin-layout {
   display: grid;
   grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
@@ -876,6 +1035,11 @@ strong {
     grid-template-columns: 1fr;
   }
 
+  .mission-admin-grid,
+  .mission-reset-card {
+    grid-template-columns: 1fr;
+  }
+
   .admin-editor {
     position: static;
   }
@@ -1000,7 +1164,9 @@ strong {
   .mini-stat,
   .admin-editor,
   .admin-list-card,
-  .empty-state {
+  .empty-state,
+  .mission-admin-stage,
+  .mission-reset-card {
     border-radius: 16px;
     padding: 15px;
   }
@@ -1014,6 +1180,31 @@ strong {
     gap: 12px;
     border-radius: 16px;
     padding: 15px;
+  }
+
+  .mission-admin-grid {
+    gap: 13px;
+  }
+
+  .mission-admin-stage header {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .mission-admin-stage header > span {
+    width: 40px;
+    height: 40px;
+    border-radius: 14px;
+  }
+
+  .mission-admin-stage h2,
+  .mission-reset-card h2 {
+    font-size: 1.18rem;
+  }
+
+  .mission-reset-card .dnms-button {
+    width: 100%;
+    min-height: 42px;
+    white-space: normal;
   }
 
   .eco-admin-menu h2 {

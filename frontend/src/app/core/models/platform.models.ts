@@ -104,3 +104,62 @@ export interface FirstVisitPayload {
   email: string;
   visitDate: string;
 }
+
+export type MissionBaseStageStatus = 'EM_BREVE' | 'EM_ANDAMENTO' | 'CONCLUIDA';
+
+export interface MissionBaseStage {
+  id: string;
+  name: string;
+  description: string;
+  goalCents: number;
+  raisedCents: number;
+  percent: number;
+  goalExceeded: boolean;
+  status: MissionBaseStageStatus;
+  icon: string;
+  sortOrder: number;
+  current: boolean;
+  visible: boolean;
+}
+
+export interface MissionBaseCampaign {
+  id: string;
+  title: string;
+  description: string;
+  active: boolean;
+  totalGoalCents: number;
+  totalRaisedCents: number;
+  percent: number;
+  goalExceeded: boolean;
+  stages: MissionBaseStage[];
+  updatedAt: string;
+}
+
+export interface MissionBaseStagePayload {
+  id: string;
+  goalCents: number;
+  raisedCents: number;
+  status: MissionBaseStageStatus;
+  visible: boolean;
+}
+
+export interface MissionBaseCampaignPayload {
+  title: string;
+  description: string;
+  active: boolean;
+  currentStageId: string;
+  stages: MissionBaseStagePayload[];
+}
+
+export interface MissionBasePixPayload {
+  stageId: string;
+  amountCents: number;
+}
+
+export interface MissionBasePix {
+  stageId: string;
+  stageName: string;
+  amountCents: number;
+  txid: string;
+  pixPayload: string;
+}

@@ -1,0 +1,186 @@
+<main class="mission-page">
+  <a class="back-home" routerLink="/">Voltar</a>
+
+  @if (isLoading()) {
+    <section class="mission-loading" role="status" aria-live="polite">
+      <svg class="spin" lucideLoaderCircle aria-hidden="true"></svg>
+      <span>Carregando Base Missionária</span>
+    </section>
+  } @else if (campaign(); as campaign) {
+    <section class="mission-hero" aria-labelledby="mission-title">
+      <div class="hero-copy">
+        <span class="eyebrow">
+          <svg lucideMapPinned aria-hidden="true"></svg>
+          Base Missionária
+        </span>
+        <h1 id="mission-title">{{ campaign.title }}</h1>
+        <p>{{ campaign.description }}</p>
+        <button class="dnms-button" type="button" [disabled]="!campaign.active || !visibleStages().length" (click)="openContribution()">
+          Contribuir agora
+        </button>
+      </div>
+
+      <aside class="surface total-card" aria-label="Progresso geral da Base Missionária">
+        <span>Progresso geral</span>
+        <strong>{{ formatMoney(campaign.totalRaisedCents) }}</strong>
+        <small>de {{ formatMoney(campaign.totalGoalCents) }}</small>
+        <div class="progress-track" aria-hidden="true">
+          <i [style.width]="progressWidth(campaign.percent)"></i>
+        </div>
+        <div class="progress-meta">
+          <b>{{ campaign.percent }}%</b>
+          @if (campaign.goalExceeded) {
+            <em>Meta superada</em>
+          } @else {
+            <em>em avanço</em>
+          }
+        </div>
+      </aside>
+    </section>
+
+    <section class="stage-section" aria-labelledby="stage-title">
+      <div class="section-heading">
+        <span>Etapas da missão</span>
+        <h2 id="stage-title">Cada fase sustenta o próximo avanço.</h2>
+      </div>
+
+      <div class="stage-grid">
+        @for (stage of visibleStages(); track stage.id) {
+          <article class="surface stage-card" [class.current]="stage.current">
+            <header>
+              <span class="stage-icon">
+                @switch (stage.icon) {
+                  @case ('key') {
+                    <svg lucideKeyRound aria-hidden="true"></svg>
+                  }
+                  @case ('tool') {
+                    <svg lucideHammer aria-hidden="true"></svg>
+                  }
+                  @default {
+                    <svg lucideBuilding2 aria-hidden="true"></svg>
+                  }
+                }
+              </span>
+              <span class="status">{{ statusLabel(stage.status) }}</span>
+            </header>
+            <h3>{{ stage.name }}</h3>
+            <p>{{ stage.description }}</p>
+            <div class="stage-values">
+              <strong>{{ formatMoney(stage.raisedCents) }}</strong>
+              <span>meta {{ formatMoney(stage.goalCents) }}</span>
+            </div>
+            <div class="progress-track" aria-hidden="true">
+              <i [style.width]="progressWidth(stage.percent)"></i>
+            </div>
+            <div class="progress-meta">
+              <b>{{ stage.percent }}%</b>
+              @if (stage.goalExceeded) {
+                <em>superada</em>
+              } @else {
+                <em>{{ stage.current ? 'etapa atual' : 'planejada' }}</em>
+              }
+            </div>
+            <button class="stage-cta" type="button" [disabled]="!campaign.active" (click)="openContribution(stage)">Contribuir nesta etapa</button>
+          </article>
+        }
+      </div>
+    </section>
+  } @else {
+    <section class="surface mission-empty">
+      <h1>Base Missionária</h1>
+      <p>{{ error() || 'A campanha ainda não está disponível.' }}</p>
+      <button class="dnms-button" type="button" (click)="loadCampaign()">Tentar novamente</button>
+    </section>
+  }
+
+  @if (drawerOpen()) {
+    <div class="drawer-backdrop" (click)="closeContribution()" aria-hidden="true"></div>
+    <aside class="contribution-drawer" role="dialog" aria-modal="true" aria-labelledby="contribution-title">
+      <header>
+        <div>
+          <span>Contribuição Pix</span>
+          <h2 id="contribution-title">Avance com a Base Missionária</h2>
+        </div>
+        <button type="button" aria-label="Fechar contribuição" (click)="closeContribution()">
+          <svg lucideX aria-hidden="true"></svg>
+        </button>
+      </header>
+
+      <section class="drawer-step" aria-label="Escolha da etapa">
+        <p>1. Escolha a etapa</p>
+        <div class="choice-grid">
+          @for (stage of visibleStages(); track stage.id) {
+            <button type="button" [class.selected]="stage.id === selectedStageId()" (click)="selectStage(stage)">
+              <strong>{{ stage.name }}</strong>
+              <span>{{ statusLabel(stage.status) }}</span>
+            </button>
+          }
+        </div>
+      </section>
+
+      <section class="drawer-step" aria-label="Escolha do valor">
+        <p>2. Escolha o valor</p>
+        <div class="amount-grid">
+          @for (amount of amountOptions; track amount) {
+            <button type="button" [class.selected]="amount === selectedAmountCents() && !customAmount()" (click)="selectAmount(amount)">
+              {{ formatMoney(amount) }}
+            </button>
+          }
+        </div>
+        <label class="field">
+          <span>Outro valor</span>
+          <input
+            type="number"
+            min="1"
+            step="0.01"
+            inputmode="decimal"
+            placeholder="100,00"
+            [ngModel]="customAmount()"
+            (ngModelChange)="setCustomAmount($event)"
+          />
+        </label>
+      </section>
+
+      @if (error()) {
+        <div class="drawer-feedback" role="alert">{{ error() }}</div>
+      }
+
+      @if (!pix()) {
+        <button class="dnms-button generate-button" type="button" [disabled]="isGeneratingPix()" (click)="generatePix()">
+          @if (isGeneratingPix()) {
+            <svg class="spin" lucideLoaderCircle aria-hidden="true"></svg>
+            Gerando Pix
+          } @else {
+            Gerar Pix
+          }
+        </button>
+      } @else {
+        <section class="pix-result" aria-label="Pix gerado">
+          <div class="pix-summary">
+            <span>{{ pix()!.stageName }}</span>
+            <strong>{{ formatMoney(pix()!.amountCents) }}</strong>
+            <small>TXID {{ pix()!.txid }}</small>
+          </div>
+
+          @if (qrCode()) {
+            <img [src]="qrCode()" alt="QR Code Pix da Base Missionária" />
+          }
+
+          <textarea readonly [value]="pix()!.pixPayload" aria-label="Pix copia e cola"></textarea>
+          <button class="dnms-button" type="button" (click)="copyPix()">
+            @if (copied()) {
+              <svg lucideCheck aria-hidden="true"></svg>
+              Copiado
+            } @else {
+              <svg lucideCopy aria-hidden="true"></svg>
+              Copiar Pix
+            }
+          </button>
+          <p>O progresso é atualizado pela administração após confirmação da contribuição.</p>
+        </section>
+      }
+    </aside>
+  }
+
+  <dnms-bottom-nav />
+</main>

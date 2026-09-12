@@ -8,12 +8,16 @@ import {
   LucideCheck,
   LucideDownload,
   LucideEye,
+  LucideHammer,
   LucideImageOff,
+  LucideKeyRound,
   LucideLoaderCircle,
   LucideMail,
+  LucideMapPinned,
   LucidePencil,
   LucidePlus,
   LucideQrCode,
+  LucideRotateCcw,
   LucideShieldCheck,
   LucideTicket,
   LucideTrash2,
@@ -23,12 +27,37 @@ import {
 import { map } from 'rxjs';
 
 import { DnmsApiService } from '../../core/api/dnms-api.service';
-import { EcoAttendance, EcoLesson, EventPayload, EventSummary, MemberPayload, MemberSummary, Role } from '../../core/models/platform.models';
+import {
+  EcoAttendance,
+  EcoLesson,
+  EventPayload,
+  EventSummary,
+  MemberPayload,
+  MemberSummary,
+  MissionBaseCampaign,
+  MissionBaseCampaignPayload,
+  MissionBaseStageStatus,
+  Role,
+} from '../../core/models/platform.models';
 
 const labels: Record<string, string> = {
   membros: 'Membros',
   eventos: 'Eventos',
   eco: 'Eco',
+  'base-missionaria': 'Base Missionária',
+};
+
+type MissionStageDraft = {
+  id: string;
+  name: string;
+  description: string;
+  goalCents: number;
+  raisedCents: number;
+  status: MissionBaseStageStatus;
+  visible: boolean;
+  current: boolean;
+  percent: number;
+  goalExceeded: boolean;
 };
 
 @Component({
@@ -46,6 +75,9 @@ const labels: Record<string, string> = {
     LucideUsersRound,
     LucideMail,
     LucideQrCode,
+    LucideMapPinned,
+    LucideKeyRound,
+    LucideHammer,
     LucideEye,
     LucideCheck,
     LucideX,
@@ -53,6 +85,7 @@ const labels: Record<string, string> = {
     LucideImageOff,
     LucideShieldCheck,
     LucideLoaderCircle,
+    LucideRotateCcw,
   ],
   templateUrl: './admin-module.page.html',
   styleUrl: './admin.page.scss',
@@ -68,9 +101,12 @@ export class AdminModulePage implements OnInit {
   private readonly membersState = signal<MemberSummary[]>([]);
   private readonly ecoLessonsState = signal<EcoLesson[]>([]);
   private readonly ecoAttendancesState = signal<EcoAttendance[]>([]);
+  private readonly missionBaseState = signal<MissionBaseCampaign | null>(null);
+  readonly missionStageDrafts = signal<MissionStageDraft[]>([]);
 
   readonly editingId = signal<string | null>(null);
   readonly isSaving = signal(false);
+  readonly isLoadingMissionBase = signal(false);
   readonly feedback = signal('');
   readonly selectedEcoLessonId = signal<string | null>(null);
   readonly selectedPhoto = signal<EcoAttendance | null>(null);
@@ -82,10 +118,12 @@ export class AdminModulePage implements OnInit {
   readonly isEventsModule = computed(() => this.moduleKey() === 'eventos');
   readonly isMembersModule = computed(() => this.moduleKey() === 'membros');
   readonly isEcoModule = computed(() => this.moduleKey() === 'eco');
+  readonly isMissionBaseModule = computed(() => this.moduleKey() === 'base-missionaria');
   readonly events = this.eventsState.asReadonly();
   readonly members = this.membersState.asReadonly();
   readonly ecoLessons = this.ecoLessonsState.asReadonly();
   readonly ecoAttendances = this.ecoAttendancesState.asReadonly();
+  readonly missionBase = this.missionBaseState.asReadonly();
   readonly selectedEcoLesson = computed(() => this.ecoLessons().find((lesson) => lesson.id === this.selectedEcoLessonId()) ?? null);
   readonly activeMembers = computed(() => this.members().filter((member) => member.active).length);
   readonly pendingInvites = computed(() => this.members().filter((member) => member.invitePending).length);
@@ -104,6 +142,14 @@ export class AdminModulePage implements OnInit {
     email: ['', [Validators.email]],
     active: [true],
     admin: [false],
+  });
+
+  readonly missionBaseForm = this.fb.nonNullable.group({
+    title: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(120)]],
+    description: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(360)]],
+    active: [true],
+    currentStageId: [''],
+    resetConfirmation: [''],
   });
 
   ngOnInit() {
@@ -238,6 +284,94 @@ export class AdminModulePage implements OnInit {
       },
       error: () => this.fail('Não foi possível enviar o convite. Verifique a configuração de e-mail.'),
     });
+  }
+
+  saveMissionBase() {
+    this.missionBaseForm.markAllAsTouched();
+    if (this.missionBaseForm.invalid) {
+      this.feedback.set('Preencha título, descrição e etapa atual da Base Missionária.');
+      return;
+    }
+
+    const form = this.missionBaseForm.getRawValue();
+    const payload: MissionBaseCampaignPayload = {
+      title: form.title,
+      description: form.description,
+      active: form.active,
+      currentStageId: form.currentStageId,
+      stages: this.missionStageDrafts().map((stage) => ({
+        id: stage.id,
+        goalCents: stage.goalCents,
+        raisedCents: stage.raisedCents,
+        status: stage.status,
+        visible: stage.visible,
+      })),
+    };
+
+    this.isSaving.set(true);
+    this.api.updateMissionBase(payload).subscribe({
+      next: (campaign) => {
+        this.applyMissionBase(campaign);
+        this.isSaving.set(false);
+        this.feedback.set('Base Missionária atualizada com sucesso.');
+      },
+      error: () => this.fail('Não foi possível salvar a Base Missionária. Confira metas e status.'),
+    });
+  }
+
+  resetMissionBase() {
+    const confirmation = this.missionBaseForm.controls.resetConfirmation.value;
+    if (confirmation !== 'ZERAR') {
+      this.feedback.set('Digite ZERAR para confirmar o reset dos valores arrecadados.');
+      return;
+    }
+
+    this.isSaving.set(true);
+    this.api.resetMissionBase(confirmation).subscribe({
+      next: (campaign) => {
+        this.applyMissionBase(campaign);
+        this.missionBaseForm.controls.resetConfirmation.setValue('');
+        this.isSaving.set(false);
+        this.feedback.set('Valores arrecadados zerados. Metas, textos e status foram preservados.');
+      },
+      error: () => this.fail('Não foi possível zerar os dados da Base Missionária.'),
+    });
+  }
+
+  updateMissionStage(stageId: string, field: 'goalCents' | 'raisedCents' | 'status' | 'visible', value: string | boolean) {
+    this.missionStageDrafts.update((stages) =>
+      stages.map((stage) => {
+        if (stage.id !== stageId) {
+          return stage;
+        }
+        if (field === 'goalCents' || field === 'raisedCents') {
+          return { ...stage, [field]: this.reaisToCents(String(value)) };
+        }
+        return { ...stage, [field]: value };
+      }),
+    );
+  }
+
+  missionBaseProgressWidth(percent: number) {
+    return `${Math.max(0, Math.min(100, percent))}%`;
+  }
+
+  missionStageStatusLabel(status: MissionBaseStageStatus) {
+    if (status === 'CONCLUIDA') {
+      return 'Concluída';
+    }
+    if (status === 'EM_ANDAMENTO') {
+      return 'Em andamento';
+    }
+    return 'Em breve';
+  }
+
+  formatCurrency(cents: number) {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cents / 100);
+  }
+
+  currencyInputValue(cents: number) {
+    return (cents / 100).toFixed(2);
   }
 
   selectEcoLesson(lesson: EcoLesson) {
@@ -447,6 +581,11 @@ export class AdminModulePage implements OnInit {
       return;
     }
 
+    if (this.isMissionBaseModule()) {
+      this.loadMissionBase();
+      return;
+    }
+
     void this.router.navigateByUrl('/admin/dashboard');
   }
 
@@ -477,6 +616,54 @@ export class AdminModulePage implements OnInit {
       this.memberForm.reset({ name: '', phone: '', email: '', active: true, admin: false });
     }
     this.isSaving.set(false);
+  }
+
+  private loadMissionBase() {
+    this.isLoadingMissionBase.set(true);
+    this.api.getAdminMissionBase().subscribe({
+      next: (campaign) => {
+        this.applyMissionBase(campaign);
+        this.isLoadingMissionBase.set(false);
+      },
+      error: () => {
+        this.missionBaseState.set(null);
+        this.missionStageDrafts.set([]);
+        this.isLoadingMissionBase.set(false);
+        this.feedback.set('Não foi possível carregar a Base Missionária.');
+      },
+    });
+  }
+
+  private applyMissionBase(campaign: MissionBaseCampaign) {
+    this.missionBaseState.set(campaign);
+    this.missionBaseForm.patchValue({
+      title: campaign.title,
+      description: campaign.description,
+      active: campaign.active,
+      currentStageId: campaign.stages.find((stage) => stage.current)?.id ?? campaign.stages[0]?.id ?? '',
+    });
+    this.missionStageDrafts.set(
+      campaign.stages.map((stage) => ({
+        id: stage.id,
+        name: stage.name,
+        description: stage.description,
+        goalCents: stage.goalCents,
+        raisedCents: stage.raisedCents,
+        status: stage.status,
+        visible: stage.visible,
+        current: stage.current,
+        percent: stage.percent,
+        goalExceeded: stage.goalExceeded,
+      })),
+    );
+  }
+
+  private reaisToCents(value: string) {
+    const parsed = Number(value.replace(/[^\d,.]/g, '').replace(',', '.'));
+    if (!Number.isFinite(parsed) || parsed < 0) {
+      return 0;
+    }
+    return Math.round(parsed * 100);
   }
 
   private fail(message: string) {

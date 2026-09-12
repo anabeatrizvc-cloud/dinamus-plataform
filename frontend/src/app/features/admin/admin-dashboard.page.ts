@@ -1,12 +1,22 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { LucideArrowRight, LucideHeartHandshake, LucideQrCode, LucideShieldCheck, LucideTicket, LucideUsersRound } from '@lucide/angular';
+import { LucideArrowRight, LucideHeartHandshake, LucideMapPinned, LucideQrCode, LucideShieldCheck, LucideTicket, LucideUsersRound } from '@lucide/angular';
 
 import { AuthService } from '../../core/auth/auth.service';
 
 @Component({
   selector: 'dnms-admin-dashboard-page',
-  imports: [RouterLink, RouterLinkActive, LucideUsersRound, LucideTicket, LucideQrCode, LucideHeartHandshake, LucideShieldCheck, LucideArrowRight],
+  imports: [
+    RouterLink,
+    RouterLinkActive,
+    LucideUsersRound,
+    LucideTicket,
+    LucideQrCode,
+    LucideMapPinned,
+    LucideHeartHandshake,
+    LucideShieldCheck,
+    LucideArrowRight,
+  ],
   templateUrl: './admin-dashboard.page.html',
   styleUrl: './admin.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -34,6 +44,13 @@ export class AdminDashboardPage {
       path: '/admin/eco',
       detail: 'Valide presenças da aula a partir das selfies enviadas.',
       icon: 'eco',
+      tone: 'default',
+    },
+    {
+      label: 'Base Missionária',
+      path: '/admin/base-missionaria',
+      detail: 'Configure metas, etapas e progresso de contribuição.',
+      icon: 'mission',
       tone: 'default',
     },
   ];

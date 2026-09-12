@@ -4,6 +4,7 @@ test('renders approved home composition on desktop', async ({ page }) => {
   await page.goto('/', { waitUntil: 'domcontentloaded' });
 
   await expect(page.getByRole('heading', { name: /uma família de cristãos íntimos de deus/i })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Base Missionária', exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: /abrir gcs/i })).toBeVisible();
   await expect(page.getByRole('navigation', { name: /navegação principal/i })).toBeVisible();
 });

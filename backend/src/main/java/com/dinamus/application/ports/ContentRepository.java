@@ -6,6 +6,7 @@ import com.dinamus.domain.model.EcoAttendance;
 import com.dinamus.domain.model.EcoLesson;
 import com.dinamus.domain.model.FirstVisit;
 import com.dinamus.domain.model.GrowthGroup;
+import com.dinamus.domain.model.MissionBaseCampaign;
 import com.dinamus.domain.model.PrayerRequest;
 import com.dinamus.domain.model.UserAccount;
 
@@ -20,6 +21,10 @@ public interface ContentRepository {
     EventSummary saveEvent(EventSummary event);
 
     void deleteEvent(String id);
+
+    Optional<MissionBaseCampaign> findMissionBaseCampaign();
+
+    MissionBaseCampaign saveMissionBaseCampaign(MissionBaseCampaign campaign);
 
     List<EcoLesson> listEcoLessons();
 

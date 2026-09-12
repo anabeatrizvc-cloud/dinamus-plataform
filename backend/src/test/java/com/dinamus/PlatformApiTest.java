@@ -3,6 +3,7 @@ package com.dinamus;
 import com.dinamus.adapters.in.web.AdminController;
 import com.dinamus.adapters.in.web.dto.AuthDtos;
 import com.dinamus.adapters.in.web.dto.EcoDtos;
+import com.dinamus.adapters.in.web.dto.MissionBaseDtos;
 import com.dinamus.domain.model.AgendaItem;
 import com.dinamus.domain.model.EcoAttendance;
 import com.dinamus.domain.model.EcoLesson;
@@ -230,6 +231,78 @@ class PlatformApiTest {
     void adminDashboardRequiresToken() {
         HttpClientResponseException exception = assertThrows(HttpClientResponseException.class, () ->
             client.toBlocking().exchange(HttpRequest.GET("/api/v1/admin/dashboard"), String.class)
+        );
+
+        assertEquals(HttpStatus.UNAUTHORIZED, exception.getStatus());
+    }
+
+    @Test
+    void missionBasePixDoesNotChangeProgressAndAdminCanResetRaisedValues() {
+        MissionBaseDtos.CampaignResponse publicCampaign = client.toBlocking().retrieve(
+            HttpRequest.GET("/api/v1/mission-base"),
+            MissionBaseDtos.CampaignResponse.class
+        );
+        assertEquals(3, publicCampaign.stages().size());
+        assertEquals(0, publicCampaign.percent());
+
+        MissionBaseDtos.PixResponse pix = client.toBlocking().retrieve(
+            HttpRequest.POST("/api/v1/mission-base/pix", Map.of("stageId", "aquisicao", "amountCents", 10000)),
+            MissionBaseDtos.PixResponse.class
+        );
+
+        assertEquals("aquisicao", pix.stageId());
+        assertEquals(10000, pix.amountCents());
+        assertTrue(pix.txid().length() <= 35);
+        assertTrue(pix.pixPayload().startsWith("000201"));
+        assertTrue(pix.pixPayload().contains("52040000"));
+
+        MissionBaseDtos.CampaignResponse afterPix = client.toBlocking().retrieve(
+            HttpRequest.GET("/api/v1/mission-base"),
+            MissionBaseDtos.CampaignResponse.class
+        );
+        assertEquals(publicCampaign.totalRaisedCents(), afterPix.totalRaisedCents());
+
+        HttpClientResponseException invalidAmount = assertThrows(HttpClientResponseException.class, () ->
+            client.toBlocking().exchange(HttpRequest.POST("/api/v1/mission-base/pix", Map.of("stageId", "aquisicao", "amountCents", 0)), String.class)
+        );
+        assertEquals(HttpStatus.BAD_REQUEST, invalidAmount.getStatus());
+
+        AuthDtos.LoginResponse admin = login();
+        MissionBaseDtos.CampaignResponse updated = client.toBlocking().retrieve(
+            HttpRequest.PUT("/api/v1/admin/mission-base", Map.of(
+                "title", "Um lugar para o avanço do Reino.",
+                "description", "Campanha administrada pela igreja para acompanhar cada etapa da Base Missionária.",
+                "active", true,
+                "currentStageId", "reforma",
+                "stages", List.of(
+                    Map.of("id", "aquisicao", "goalCents", 10000, "raisedCents", 15000, "status", "CONCLUIDA", "visible", true),
+                    Map.of("id", "reforma", "goalCents", 0, "raisedCents", 0, "status", "EM_ANDAMENTO", "visible", true),
+                    Map.of("id", "construcao", "goalCents", 30000, "raisedCents", 0, "status", "EM_BREVE", "visible", true)
+                )
+            )).bearerAuth(admin.accessToken()),
+            MissionBaseDtos.CampaignResponse.class
+        );
+
+        assertEquals(15000, updated.totalRaisedCents());
+        assertEquals(40000, updated.totalGoalCents());
+        assertEquals(38, updated.percent());
+        assertTrue(updated.stages().stream().anyMatch(stage -> stage.id().equals("aquisicao") && stage.percent() == 100 && stage.goalExceeded()));
+        assertTrue(updated.stages().stream().anyMatch(stage -> stage.id().equals("reforma") && stage.percent() == 0 && stage.current()));
+
+        MissionBaseDtos.CampaignResponse reset = client.toBlocking().retrieve(
+            HttpRequest.POST("/api/v1/admin/mission-base/reset", Map.of("confirmation", "ZERAR")).bearerAuth(admin.accessToken()),
+            MissionBaseDtos.CampaignResponse.class
+        );
+
+        assertEquals(0, reset.totalRaisedCents());
+        assertEquals(40000, reset.totalGoalCents());
+        assertTrue(reset.stages().stream().allMatch(stage -> stage.raisedCents() == 0));
+    }
+
+    @Test
+    void adminMissionBaseRequiresToken() {
+        HttpClientResponseException exception = assertThrows(HttpClientResponseException.class, () ->
+            client.toBlocking().exchange(HttpRequest.GET("/api/v1/admin/mission-base"), String.class)
         );
 
         assertEquals(HttpStatus.UNAUTHORIZED, exception.getStatus());

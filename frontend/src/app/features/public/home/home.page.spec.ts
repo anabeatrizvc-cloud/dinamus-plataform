@@ -15,6 +15,7 @@ describe('HomePage', () => {
 
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain('DINAMUS RECIFE');
-    expect(fixture.nativeElement.querySelectorAll('.home-card').length).toBe(3);
+    expect(text).toContain('Base Missionária');
+    expect(fixture.nativeElement.querySelectorAll('.home-card').length).toBe(4);
   });
 });

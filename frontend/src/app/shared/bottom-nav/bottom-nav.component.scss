@@ -1,6 +1,6 @@
 .bottom-nav {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   min-height: clamp(92px, 8.4vw, 128px);
   align-items: center;
   border: 1px solid var(--dnms-border);
@@ -54,7 +54,7 @@ span {
 
 @media (max-width: 720px) {
   .bottom-nav {
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(6, 1fr);
     min-height: 64px;
     border-radius: 16px;
     background: rgba(4, 4, 4, 0.96);

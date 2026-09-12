@@ -119,6 +119,13 @@ ensure_env_value() {
     return
   fi
 
+  if [[ "$value" =~ [[:space:]\"\\] ]]; then
+    value="${value//\\/\\\\}"
+    value="${value//\"/\\\"}"
+    printf '%s="%s"\n' "$key" "$value" >>"$ENV_FILE"
+    return
+  fi
+
   printf '%s=%s\n' "$key" "$value" >>"$ENV_FILE"
 }
 
@@ -147,6 +154,10 @@ write_env_file() {
   ensure_env_value "MAIL_SMTP_PASSWORD" ""
   ensure_env_value "MAIL_FROM" "no-reply@$DOMAIN"
   ensure_env_value "MAIL_SMTP_STARTTLS" "true"
+  ensure_env_value "MISSION_BASE_PIX_KEY" "pix@dinamus.local"
+  ensure_env_value "MISSION_BASE_PIX_RECEIVER_NAME" "IGREJA DINAMUS RECIFE"
+  ensure_env_value "MISSION_BASE_PIX_RECEIVER_CITY" "RECIFE"
+  ensure_env_value "MISSION_BASE_PIX_DESCRIPTION" "BASE MISSIONARIA"
   ensure_env_value "DNMS_PROXY_PORT" "$APP_PORT"
 
   chmod 600 "$ENV_FILE"
@@ -228,6 +239,10 @@ services:
       MAIL_SMTP_PASSWORD: ${MAIL_SMTP_PASSWORD}
       MAIL_FROM: ${MAIL_FROM}
       MAIL_SMTP_STARTTLS: ${MAIL_SMTP_STARTTLS}
+      MISSION_BASE_PIX_KEY: ${MISSION_BASE_PIX_KEY}
+      MISSION_BASE_PIX_RECEIVER_NAME: ${MISSION_BASE_PIX_RECEIVER_NAME}
+      MISSION_BASE_PIX_RECEIVER_CITY: ${MISSION_BASE_PIX_RECEIVER_CITY}
+      MISSION_BASE_PIX_DESCRIPTION: ${MISSION_BASE_PIX_DESCRIPTION}
     depends_on:
       couchdb:
         condition: service_healthy

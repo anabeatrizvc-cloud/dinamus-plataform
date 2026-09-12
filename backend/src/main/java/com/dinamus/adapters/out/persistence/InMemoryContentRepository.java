@@ -8,6 +8,7 @@ import com.dinamus.domain.model.EcoLesson;
 import com.dinamus.domain.model.EventSummary;
 import com.dinamus.domain.model.FirstVisit;
 import com.dinamus.domain.model.GrowthGroup;
+import com.dinamus.domain.model.MissionBaseCampaign;
 import com.dinamus.domain.model.PrayerRequest;
 import com.dinamus.domain.model.UserAccount;
 import io.micronaut.context.annotation.Requires;
@@ -17,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.dinamus.application.usecases.ManageEcoAttendanceUseCase.ECO_LESSONS;
 
@@ -27,6 +29,7 @@ public class InMemoryContentRepository implements ContentRepository {
     private final List<FirstVisit> firstVisits = new CopyOnWriteArrayList<>();
     private final List<EventSummary> events = new CopyOnWriteArrayList<>(defaultEvents());
     private final List<EcoAttendance> ecoAttendances = new CopyOnWriteArrayList<>();
+    private final AtomicReference<MissionBaseCampaign> missionBaseCampaign = new AtomicReference<>();
     private final List<UserAccount> users;
 
     public InMemoryContentRepository(PasswordHasher hasher) {
@@ -64,6 +67,17 @@ public class InMemoryContentRepository implements ContentRepository {
     @Override
     public void deleteEvent(String id) {
         events.removeIf(event -> event.id().equals(id));
+    }
+
+    @Override
+    public Optional<MissionBaseCampaign> findMissionBaseCampaign() {
+        return Optional.ofNullable(missionBaseCampaign.get());
+    }
+
+    @Override
+    public MissionBaseCampaign saveMissionBaseCampaign(MissionBaseCampaign campaign) {
+        missionBaseCampaign.set(campaign);
+        return campaign;
     }
 
     @Override

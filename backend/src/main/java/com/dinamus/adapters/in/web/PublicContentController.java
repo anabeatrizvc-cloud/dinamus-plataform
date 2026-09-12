@@ -2,8 +2,10 @@ package com.dinamus.adapters.in.web;
 
 import com.dinamus.adapters.in.web.dto.CareDtos;
 import com.dinamus.adapters.in.web.dto.EcoDtos;
+import com.dinamus.adapters.in.web.dto.MissionBaseDtos;
 import com.dinamus.application.usecases.ListPublicContentUseCase;
 import com.dinamus.application.usecases.ManageEcoAttendanceUseCase;
+import com.dinamus.application.usecases.ManageMissionBaseUseCase;
 import com.dinamus.application.usecases.RegisterCareRequestsUseCase;
 import com.dinamus.domain.model.AgendaItem;
 import com.dinamus.domain.model.EcoAttendance;
@@ -32,15 +34,18 @@ public class PublicContentController {
     private final ListPublicContentUseCase listPublicContent;
     private final RegisterCareRequestsUseCase registerCareRequests;
     private final ManageEcoAttendanceUseCase manageEcoAttendance;
+    private final ManageMissionBaseUseCase manageMissionBase;
 
     public PublicContentController(
         ListPublicContentUseCase listPublicContent,
         RegisterCareRequestsUseCase registerCareRequests,
-        ManageEcoAttendanceUseCase manageEcoAttendance
+        ManageEcoAttendanceUseCase manageEcoAttendance,
+        ManageMissionBaseUseCase manageMissionBase
     ) {
         this.listPublicContent = listPublicContent;
         this.registerCareRequests = registerCareRequests;
         this.manageEcoAttendance = manageEcoAttendance;
+        this.manageMissionBase = manageMissionBase;
     }
 
     @Get("/agenda")
@@ -56,6 +61,16 @@ public class PublicContentController {
     @Get("/growth-groups")
     public List<GrowthGroup> growthGroups() {
         return listPublicContent.growthGroups();
+    }
+
+    @Get("/mission-base")
+    public MissionBaseDtos.CampaignResponse missionBase() {
+        return MissionBaseDtos.from(manageMissionBase.publicCampaign());
+    }
+
+    @Post("/mission-base/pix")
+    public MissionBaseDtos.PixResponse missionBasePix(@Valid @Body MissionBaseDtos.PixRequest request) {
+        return MissionBaseDtos.PixResponse.from(manageMissionBase.generatePix(request.stageId(), request.amountCents()));
     }
 
     @Get("/eco/lesson")

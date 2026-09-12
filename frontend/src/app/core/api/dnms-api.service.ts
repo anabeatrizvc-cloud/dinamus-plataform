@@ -14,6 +14,10 @@ import {
   GrowthGroup,
   MemberPayload,
   MemberSummary,
+  MissionBaseCampaign,
+  MissionBaseCampaignPayload,
+  MissionBasePix,
+  MissionBasePixPayload,
   PrayerRequestPayload,
 } from '../models/platform.models';
 
@@ -116,6 +120,26 @@ export class DnmsApiService {
 
   listGrowthGroups() {
     return this.http.get<GrowthGroup[]>(`${this.baseUrl}/growth-groups`);
+  }
+
+  getMissionBase() {
+    return this.http.get<MissionBaseCampaign>(`${this.baseUrl}/mission-base`);
+  }
+
+  generateMissionBasePix(payload: MissionBasePixPayload) {
+    return this.http.post<MissionBasePix>(`${this.baseUrl}/mission-base/pix`, payload);
+  }
+
+  getAdminMissionBase() {
+    return this.http.get<MissionBaseCampaign>(`${this.baseUrl}/admin/mission-base`);
+  }
+
+  updateMissionBase(payload: MissionBaseCampaignPayload) {
+    return this.http.put<MissionBaseCampaign>(`${this.baseUrl}/admin/mission-base`, payload);
+  }
+
+  resetMissionBase(confirmation: string) {
+    return this.http.post<MissionBaseCampaign>(`${this.baseUrl}/admin/mission-base/reset`, { confirmation });
   }
 
   requestPrayer(payload: PrayerRequestPayload) {

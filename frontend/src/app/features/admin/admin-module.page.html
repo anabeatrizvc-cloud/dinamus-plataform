@@ -8,6 +8,7 @@
       <a routerLink="/admin/eventos" routerLinkActive="is-active">Eventos</a>
       <a routerLink="/admin/membros" routerLinkActive="is-active">Membros</a>
       <a routerLink="/admin/eco" routerLinkActive="is-active">Eco</a>
+      <a routerLink="/admin/base-missionaria" routerLinkActive="is-active">Base</a>
     </nav>
     <a class="dnms-button secondary" routerLink="/admin/dashboard">Painel</a>
   </header>
@@ -22,7 +23,9 @@
             ? 'Controle inscrições e datas com uma tela objetiva.'
             : isEcoModule()
               ? 'Acompanhe a aula do Eco e valide presenças com segurança.'
-              : 'Cadastre pessoas, defina permissões e acompanhe convites.'
+              : isMissionBaseModule()
+                ? 'Configure etapas, metas e progresso da Base Missionária.'
+                : 'Cadastre pessoas, defina permissões e acompanhe convites.'
         }}
       </span>
     </div>
@@ -197,6 +200,171 @@
           </article>
         }
       </section>
+    </section>
+  }
+
+  @if (isMissionBaseModule()) {
+    <section class="mission-admin-layout" aria-label="Administração da Base Missionária">
+      @if (isLoadingMissionBase()) {
+        <article class="surface mission-admin-loading" role="status" aria-live="polite">
+          <svg class="spin" lucideLoaderCircle aria-hidden="true"></svg>
+          <strong>Carregando campanha</strong>
+          <span>Buscando metas e etapas...</span>
+        </article>
+      } @else if (missionBase(); as campaign) {
+        <section class="member-summary-grid" aria-label="Resumo da Base Missionária">
+          <article class="surface mini-stat">
+            <strong>{{ formatCurrency(campaign.totalRaisedCents) }}</strong>
+            <span>arrecadado</span>
+          </article>
+          <article class="surface mini-stat">
+            <strong>{{ formatCurrency(campaign.totalGoalCents) }}</strong>
+            <span>meta total</span>
+          </article>
+          <article class="surface mini-stat">
+            <strong>{{ campaign.percent }}%</strong>
+            <span>progresso</span>
+          </article>
+          <article class="surface mini-stat">
+            <strong>{{ campaign.active ? 'Ativa' : 'Pausada' }}</strong>
+            <span>campanha</span>
+          </article>
+        </section>
+
+        <section class="mission-admin-grid">
+          <form class="surface admin-editor mission-editor" [formGroup]="missionBaseForm" (ngSubmit)="saveMissionBase()">
+            <header>
+              <svg lucideMapPinned aria-hidden="true"></svg>
+              <div>
+                <p>Configuração pública</p>
+                <h2>Base Missionária</h2>
+              </div>
+            </header>
+
+            <label class="field">
+              <span>Título</span>
+              <input formControlName="title" autocomplete="off" />
+            </label>
+
+            <label class="field">
+              <span>Descrição</span>
+              <textarea formControlName="description" rows="4"></textarea>
+            </label>
+
+            <label class="field">
+              <span>Etapa atual</span>
+              <select formControlName="currentStageId">
+                @for (stage of missionStageDrafts(); track stage.id) {
+                  <option [value]="stage.id">{{ stage.name }}</option>
+                }
+              </select>
+            </label>
+
+            <div class="role-row">
+              <label><input type="checkbox" formControlName="active" /> Campanha ativa</label>
+            </div>
+
+            <button class="dnms-button" type="submit" [disabled]="isSaving()">
+              <svg lucidePlus aria-hidden="true"></svg>
+              {{ isSaving() ? 'Salvando' : 'Salvar Base Missionária' }}
+            </button>
+          </form>
+
+          <section class="mission-stage-editor" aria-label="Etapas da Base Missionária">
+            @for (stage of missionStageDrafts(); track stage.id) {
+              <article class="surface mission-admin-stage" [class.current]="missionBaseForm.controls.currentStageId.value === stage.id">
+                <header>
+                  <span>
+                    @if (stage.id === 'aquisicao') {
+                      <svg lucideKeyRound aria-hidden="true"></svg>
+                    } @else if (stage.id === 'reforma') {
+                      <svg lucideHammer aria-hidden="true"></svg>
+                    } @else {
+                      <svg lucideMapPinned aria-hidden="true"></svg>
+                    }
+                  </span>
+                  <div>
+                    <p>{{ missionStageStatusLabel(stage.status) }}</p>
+                    <h2>{{ stage.name }}</h2>
+                  </div>
+                </header>
+                <p class="stage-description">{{ stage.description }}</p>
+
+                <div class="form-row">
+                  <label class="field">
+                    <span>Meta da etapa</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      [value]="currencyInputValue(stage.goalCents)"
+                      (input)="updateMissionStage(stage.id, 'goalCents', $any($event.target).value)"
+                    />
+                  </label>
+                  <label class="field">
+                    <span>Arrecadado confirmado</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      [value]="currencyInputValue(stage.raisedCents)"
+                      (input)="updateMissionStage(stage.id, 'raisedCents', $any($event.target).value)"
+                    />
+                  </label>
+                </div>
+
+                <div class="form-row">
+                  <label class="field">
+                    <span>Status</span>
+                    <select [value]="stage.status" (change)="updateMissionStage(stage.id, 'status', $any($event.target).value)">
+                      <option value="EM_BREVE">Em breve</option>
+                      <option value="EM_ANDAMENTO">Em andamento</option>
+                      <option value="CONCLUIDA">Concluída</option>
+                    </select>
+                  </label>
+                  <div class="mission-stage-toggle">
+                    <label>
+                      <input
+                        type="checkbox"
+                        [checked]="stage.visible"
+                        (change)="updateMissionStage(stage.id, 'visible', $any($event.target).checked)"
+                      />
+                      Visível na página pública
+                    </label>
+                  </div>
+                </div>
+
+                <div class="mission-progress-line" aria-hidden="true">
+                  <i [style.width]="missionBaseProgressWidth(stage.percent)"></i>
+                </div>
+                <small>{{ stage.percent }}% publicado atualmente</small>
+              </article>
+            }
+          </section>
+        </section>
+
+        <section class="surface mission-reset-card" [formGroup]="missionBaseForm" aria-label="Zerar dados de contribuição">
+          <div>
+            <span>Zerar dados de teste</span>
+            <h2>Resetar valores arrecadados</h2>
+            <p>Preserva textos, metas, status, Pix e configuração da campanha. Apenas os valores confirmados voltam para zero.</p>
+          </div>
+          <label class="field">
+            <span>Digite ZERAR para confirmar</span>
+            <input formControlName="resetConfirmation" autocomplete="off" />
+          </label>
+          <button class="dnms-button secondary" type="button" [disabled]="isSaving()" (click)="resetMissionBase()">
+            <svg lucideRotateCcw aria-hidden="true"></svg>
+            Zerar arrecadação
+          </button>
+        </section>
+      } @else {
+        <article class="surface empty-state">
+          <svg lucideMapPinned aria-hidden="true"></svg>
+          <h2>Base Missionária indisponível</h2>
+          <p>Recarregue a página para tentar buscar as informações novamente.</p>
+        </article>
+      }
     </section>
   }
 

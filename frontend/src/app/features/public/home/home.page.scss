@@ -58,9 +58,25 @@ h1 {
   line-height: 1.2;
 }
 
+.mission-link {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 82, 31, 0.42);
+  border-radius: 999px;
+  background: rgba(255, 82, 31, 0.11);
+  color: var(--dnms-text);
+  font-size: 0.82rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  padding: 0 18px;
+  text-transform: uppercase;
+}
+
 .home-cards {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: clamp(18px, 2.2vw, 30px);
   margin-bottom: 30px;
 }
@@ -207,7 +223,7 @@ h1 {
   }
 
   .home-cards {
-    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     grid-template-rows: repeat(2, minmax(150px, 1fr));
     width: min(100%, 720px);
     min-height: clamp(360px, 38dvh, 430px);
@@ -220,11 +236,7 @@ h1 {
     padding: 22px;
   }
 
-  .home-card:first-child {
-    grid-row: 1 / span 2;
-  }
-
-  .home-card:not(:first-child) {
+  .home-card {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
     grid-template-rows: auto auto;
@@ -234,17 +246,17 @@ h1 {
     row-gap: 5px;
   }
 
-  .home-card:not(:first-child) .card-icon {
+  .home-card .card-icon {
     grid-row: 1 / span 2;
   }
 
-  .home-card:not(:first-child) strong {
+  .home-card strong {
     align-self: end;
     margin-top: 0;
     font-size: 1.55rem;
   }
 
-  .home-card:not(:first-child) span:not(.card-lines, .card-icon) {
+  .home-card span:not(.card-lines, .card-icon) {
     align-self: start;
   }
 
@@ -276,6 +288,12 @@ h1 {
     font-size: 1.32rem;
   }
 
+  .mission-link {
+    min-height: 38px;
+    font-size: 0.68rem;
+    padding-inline: 14px;
+  }
+
   .home-cards {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -305,30 +323,6 @@ h1 {
       rgba(8, 8, 8, 0.92);
     box-shadow: 0 14px 30px rgba(0, 0, 0, 0.3);
     text-align: center;
-  }
-
-  .home-card:first-child {
-    grid-column: 1 / -1;
-    grid-template-columns: auto minmax(0, 1fr);
-    grid-template-rows: auto auto;
-    min-height: 124px;
-    justify-items: start;
-    align-items: center;
-    column-gap: 14px;
-    padding-inline: 20px;
-    text-align: left;
-  }
-
-  .home-card:first-child .card-icon {
-    grid-row: 1 / span 2;
-  }
-
-  .home-card:first-child strong {
-    align-self: end;
-  }
-
-  .home-card:first-child span:not(.card-lines, .card-icon) {
-    align-self: start;
   }
 
   .card-lines {
@@ -398,11 +392,6 @@ h1 {
   .home-card {
     min-height: 124px;
     padding: 14px 12px;
-  }
-
-  .home-card:first-child {
-    min-height: 112px;
-    padding-inline: 16px;
   }
 
   .home-card span:not(.card-lines, .card-icon) {

@@ -1,12 +1,12 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { LucideCalendarDays, LucideTicket, LucideUsersRound } from '@lucide/angular';
+import { LucideCalendarDays, LucideMapPinned, LucideTicket, LucideUsersRound } from '@lucide/angular';
 
 import { BottomNavComponent } from '../../../shared/bottom-nav/bottom-nav.component';
 
 @Component({
   selector: 'dnms-home-page',
-  imports: [RouterLink, BottomNavComponent, LucideUsersRound, LucideCalendarDays, LucideTicket],
+  imports: [RouterLink, BottomNavComponent, LucideUsersRound, LucideCalendarDays, LucideTicket, LucideMapPinned],
   templateUrl: './home.page.html',
   styleUrl: './home.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -33,6 +33,13 @@ export class HomePage {
       path: '/eventos',
       icon: 'ticket',
       aria: 'Abrir Eventos',
+    },
+    {
+      label: 'Base Missionária',
+      description: 'Avance conosco nessa missão',
+      path: '/base-missionaria',
+      icon: 'mission',
+      aria: 'Abrir Base Missionária',
     },
   ];
 }

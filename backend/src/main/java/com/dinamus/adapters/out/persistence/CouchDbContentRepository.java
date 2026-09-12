@@ -8,6 +8,7 @@ import com.dinamus.domain.model.EcoLesson;
 import com.dinamus.domain.model.EventSummary;
 import com.dinamus.domain.model.FirstVisit;
 import com.dinamus.domain.model.GrowthGroup;
+import com.dinamus.domain.model.MissionBaseCampaign;
 import com.dinamus.domain.model.PrayerRequest;
 import com.dinamus.domain.model.UserAccount;
 import io.micronaut.context.annotation.Requires;
@@ -73,6 +74,17 @@ public class CouchDbContentRepository implements ContentRepository {
     @Override
     public void deleteEvent(String id) {
         findRevisionDocument("event", id).ifPresent(document -> send("DELETE", documentUri("event", id) + "?rev=" + encode(document._rev()), ""));
+    }
+
+    @Override
+    public Optional<MissionBaseCampaign> findMissionBaseCampaign() {
+        return request("GET", documentUri("mission-base-campaign", "current"), "").flatMap(this::readMissionBaseDocument);
+    }
+
+    @Override
+    public MissionBaseCampaign saveMissionBaseCampaign(MissionBaseCampaign campaign) {
+        saveDocument("mission-base-campaign", campaign.id(), campaign);
+        return campaign;
     }
 
     @Override
@@ -181,6 +193,14 @@ public class CouchDbContentRepository implements ContentRepository {
         }
     }
 
+    private Optional<MissionBaseCampaign> readMissionBaseDocument(String body) {
+        try {
+            return Optional.ofNullable(objectMapper.readValue(body, Argument.of(CouchMissionBaseDocument.class)).payload());
+        } catch (Exception exception) {
+            return Optional.empty();
+        }
+    }
+
     private void send(String method, String uri, String body) {
         if (request(method, uri, body).isEmpty()) {
             throw new IllegalStateException("Could not complete CouchDB request");
@@ -244,6 +264,10 @@ public class CouchDbContentRepository implements ContentRepository {
 
     @Serdeable
     record CouchEcoAttendanceDocument(String _id, String _rev, String type, EcoAttendance payload) {
+    }
+
+    @Serdeable
+    record CouchMissionBaseDocument(String _id, String _rev, String type, MissionBaseCampaign payload) {
     }
 
     @Serdeable

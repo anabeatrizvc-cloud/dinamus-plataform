@@ -25,6 +25,11 @@ export const routes: Routes = [
     title: 'GCs | DNMS',
   },
   {
+    path: 'base-missionaria',
+    loadComponent: () => import('./features/public/base-missionaria/base-missionaria.page').then((m) => m.BaseMissionariaPage),
+    title: 'Base Missionária | DNMS',
+  },
+  {
     path: 'eco',
     loadComponent: () => import('./features/public/eco/eco.page').then((m) => m.EcoPage),
     title: 'Eco | DNMS',
@@ -82,6 +87,11 @@ export const routes: Routes = [
         path: 'eco',
         loadComponent: () => import('./features/admin/admin-module.page').then((m) => m.AdminModulePage),
         title: 'Eco | DNMS',
+      },
+      {
+        path: 'base-missionaria',
+        loadComponent: () => import('./features/admin/admin-module.page').then((m) => m.AdminModulePage),
+        title: 'Base Missionária | DNMS',
       },
       {
         path: '**',

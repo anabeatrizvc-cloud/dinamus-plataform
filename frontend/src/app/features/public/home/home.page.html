@@ -4,6 +4,10 @@
     <p class="city">DINAMUS RECIFE</p>
     <div class="accent-line" aria-hidden="true"></div>
     <h1 id="home-title">Uma família de cristãos íntimos de Deus</h1>
+    <a class="primary-cta" routerLink="/agenda" aria-label="Conhecer a Dínamus pela agenda">
+      <span>Quero conhecer a Dínamus</span>
+      <svg lucideChevronRight aria-hidden="true"></svg>
+    </a>
   </section>
 
   <section class="home-cards" aria-label="Acoes principais">
@@ -23,8 +27,11 @@
             }
           }
         </span>
-        <strong>{{ card.label }}</strong>
-        <span>{{ card.description }}</span>
+        <span class="card-copy">
+          <strong>{{ card.label }}</strong>
+          <span>{{ card.description }}</span>
+        </span>
+        <svg class="card-chevron" lucideChevronRight aria-hidden="true"></svg>
       </a>
     }
   </section>

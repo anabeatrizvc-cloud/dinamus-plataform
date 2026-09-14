@@ -1,81 +1,137 @@
+:host {
+  display: block;
+}
+
 .bottom-nav {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  min-height: clamp(92px, 8.4vw, 128px);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   align-items: center;
-  border: 1px solid var(--dnms-border);
-  border-radius: 28px;
-  background: rgba(4, 4, 4, 0.9);
+  min-height: 96px;
+  border: 1px solid rgba(245, 243, 240, 0.18);
+  border-radius: 32px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), transparent 60%),
+    rgba(5, 5, 5, 0.92);
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.34);
   overflow: hidden;
 }
 
 a {
   position: relative;
   display: grid;
-  min-height: clamp(68px, 5.6vw, 84px);
-  place-items: center;
+  min-height: 78px;
+  align-content: center;
+  justify-items: center;
   gap: 8px;
-  color: var(--dnms-text);
-  text-transform: uppercase;
+  color: rgba(245, 243, 240, 0.7);
+  padding: 8px 4px 14px;
+  text-decoration: none;
 }
 
-a + a {
-  border-left: 1px solid rgba(255, 255, 255, 0.18);
+a:visited {
+  color: rgba(245, 243, 240, 0.7);
 }
 
 svg {
-  width: clamp(24px, 2.2vw, 34px);
-  height: clamp(24px, 2.2vw, 34px);
+  width: 28px;
+  height: 28px;
+  stroke-width: 1.9;
 }
 
 span {
-  font-size: clamp(0.76rem, 1vw, 1rem);
+  font-size: 0.92rem;
+  font-weight: 800;
   letter-spacing: 0;
+  line-height: 1;
 }
 
-.active {
+.active,
+.active:visited {
   color: var(--dnms-accent);
 }
 
 .active::after {
   position: absolute;
-  bottom: -1px;
-  width: min(88px, 62%);
+  bottom: 6px;
+  width: 42px;
   height: 6px;
-  border-radius: 999px 999px 0 0;
+  border-radius: 999px;
   background: var(--dnms-accent);
   content: "";
 }
 
 .compact {
-  min-height: 92px;
-  border-radius: 20px;
+  min-height: 88px;
+  border-radius: 24px;
 }
 
 @media (max-width: 720px) {
+  :host {
+    position: fixed;
+    right: 16px;
+    bottom: max(14px, env(safe-area-inset-bottom));
+    left: 16px;
+    z-index: 20;
+  }
+
   .bottom-nav {
-    grid-template-columns: repeat(6, 1fr);
-    min-height: 64px;
-    border-radius: 16px;
-    background: rgba(4, 4, 4, 0.96);
+    min-height: 78px;
+    border-radius: 27px;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.055), transparent 62%),
+      rgba(8, 8, 8, 0.94);
+    backdrop-filter: blur(18px);
   }
 
   a {
-    min-height: 62px;
-    gap: 3px;
+    min-height: 72px;
+    gap: 7px;
+    padding: 8px 4px 13px;
   }
 
   svg {
-    width: 19px;
-    height: 19px;
+    width: 25px;
+    height: 25px;
   }
 
   span {
-    font-size: 0.58rem;
+    font-size: 0.78rem;
   }
 
   .active::after {
-    width: min(50px, 56%);
-    height: 4px;
+    bottom: 6px;
+    width: 34px;
+    height: 5px;
+  }
+}
+
+@media (max-width: 360px) {
+  :host {
+    right: 10px;
+    left: 10px;
+  }
+
+  .bottom-nav {
+    min-height: 72px;
+    border-radius: 23px;
+  }
+
+  a {
+    min-height: 68px;
+    gap: 5px;
+    padding: 7px 2px 12px;
+  }
+
+  svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  span {
+    font-size: 0.7rem;
+  }
+
+  .active::after {
+    bottom: 4px;
   }
 }

@@ -15,6 +15,8 @@ describe('HomePage', () => {
 
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain('DINAMUS RECIFE');
+    expect(text).toContain('Quero conhecer a Dínamus');
+    expect(text).toContain('Grupos de conexão');
     expect(text).not.toContain('Base Missionária');
     expect(fixture.nativeElement.querySelectorAll('.home-card').length).toBe(3);
   });

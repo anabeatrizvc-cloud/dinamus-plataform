@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { LucideCalendarDays, LucideTicket, LucideUsersRound } from '@lucide/angular';
+import { LucideCalendarDays, LucideChevronRight, LucideTicket, LucideUsersRound } from '@lucide/angular';
 
 import { BottomNavComponent } from '../../../shared/bottom-nav/bottom-nav.component';
 
@@ -14,7 +14,7 @@ type HomeCard = {
 
 @Component({
   selector: 'dnms-home-page',
-  imports: [RouterLink, BottomNavComponent, LucideUsersRound, LucideCalendarDays, LucideTicket],
+  imports: [RouterLink, BottomNavComponent, LucideUsersRound, LucideCalendarDays, LucideTicket, LucideChevronRight],
   templateUrl: './home.page.html',
   styleUrl: './home.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -22,7 +22,7 @@ type HomeCard = {
 export class HomePage {
   readonly cards: HomeCard[] = [
     {
-      label: 'GCs',
+      label: 'Grupos de conexão',
       description: 'Encontre um grupo perto de você',
       path: '/gcs',
       icon: 'users',

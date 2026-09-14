@@ -1,16 +1,16 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { LucideArrowLeft, LucideCalendarDays, LucideHome, LucideTicket, LucideUsersRound } from '@lucide/angular';
+import { LucideCalendarDays, LucideHome, LucideTicket, LucideUsersRound } from '@lucide/angular';
 
 type NavItem = {
   label: string;
   path: string;
-  icon: 'home' | 'users' | 'calendar' | 'ticket' | 'back';
+  icon: 'home' | 'users' | 'calendar' | 'ticket';
 };
 
 @Component({
   selector: 'dnms-bottom-nav',
-  imports: [RouterLink, RouterLinkActive, LucideHome, LucideUsersRound, LucideCalendarDays, LucideTicket, LucideArrowLeft],
+  imports: [RouterLink, RouterLinkActive, LucideHome, LucideUsersRound, LucideCalendarDays, LucideTicket],
   templateUrl: './bottom-nav.component.html',
   styleUrl: './bottom-nav.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -23,6 +23,5 @@ export class BottomNavComponent {
     { label: 'GCs', path: '/gcs', icon: 'users' },
     { label: 'Agenda', path: '/agenda', icon: 'calendar' },
     { label: 'Eventos', path: '/eventos', icon: 'ticket' },
-    { label: 'Voltar', path: '/', icon: 'back' },
   ];
 }

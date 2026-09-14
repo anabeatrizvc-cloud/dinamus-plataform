@@ -1,27 +1,37 @@
 <nav class="bottom-nav" aria-label="Navegação principal" [class.compact]="compact()">
   @for (item of items; track item.path + item.label) {
-    <a [routerLink]="item.path" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: item.path === '/' }">
-      @switch (item.icon) {
-        @case ('home') {
-          <svg lucideHome aria-hidden="true"></svg>
-        }
-        @case ('users') {
-          <svg lucideUsersRound aria-hidden="true"></svg>
-        }
-        @case ('calendar') {
-          <svg lucideCalendarDays aria-hidden="true"></svg>
-        }
-        @case ('ticket') {
-          <svg lucideTicket aria-hidden="true"></svg>
-        }
-        @case ('mission') {
-          <svg lucideMapPinned aria-hidden="true"></svg>
-        }
-        @case ('back') {
-          <svg lucideArrowLeft aria-hidden="true"></svg>
-        }
-      }
-      <span>{{ item.label }}</span>
-    </a>
+    @if (item.external) {
+      <a [href]="item.path">
+        <ng-container [ngTemplateOutlet]="navContent" [ngTemplateOutletContext]="{ item: item }" />
+      </a>
+    } @else {
+      <a [routerLink]="item.path" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: item.path === '/' }">
+        <ng-container [ngTemplateOutlet]="navContent" [ngTemplateOutletContext]="{ item: item }" />
+      </a>
+    }
   }
 </nav>
+
+<ng-template #navContent let-item="item">
+  @switch (item.icon) {
+    @case ('home') {
+      <svg lucideHome aria-hidden="true"></svg>
+    }
+    @case ('users') {
+      <svg lucideUsersRound aria-hidden="true"></svg>
+    }
+    @case ('calendar') {
+      <svg lucideCalendarDays aria-hidden="true"></svg>
+    }
+    @case ('ticket') {
+      <svg lucideTicket aria-hidden="true"></svg>
+    }
+    @case ('mission') {
+      <svg lucideMapPinned aria-hidden="true"></svg>
+    }
+    @case ('back') {
+      <svg lucideArrowLeft aria-hidden="true"></svg>
+    }
+  }
+  <span>{{ item.label }}</span>
+</ng-template>

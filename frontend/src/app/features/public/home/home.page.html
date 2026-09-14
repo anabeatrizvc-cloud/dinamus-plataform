@@ -4,34 +4,44 @@
     <p class="city">DINAMUS RECIFE</p>
     <div class="accent-line" aria-hidden="true"></div>
     <h1 id="home-title">Uma família de cristãos íntimos de Deus</h1>
-    <a class="mission-link" routerLink="/base-missionaria">Base Missionária</a>
+    <a class="mission-link" href="/base/">Base Missionária</a>
   </section>
 
   <section class="home-cards" aria-label="Acoes principais">
     @for (card of cards; track card.path) {
-      <a class="home-card" [routerLink]="card.path" [attr.aria-label]="card.aria">
-        <span class="card-lines" aria-hidden="true"></span>
-        <span class="card-icon">
-          @switch (card.icon) {
-            @case ('users') {
-              <svg lucideUsersRound aria-hidden="true"></svg>
-            }
-            @case ('calendar') {
-              <svg lucideCalendarDays aria-hidden="true"></svg>
-            }
-            @case ('mission') {
-              <svg lucideMapPinned aria-hidden="true"></svg>
-            }
-            @default {
-              <svg lucideTicket aria-hidden="true"></svg>
-            }
-          }
-        </span>
-        <strong>{{ card.label }}</strong>
-        <span>{{ card.description }}</span>
-      </a>
+      @if (card.external) {
+        <a class="home-card" [href]="card.path" [attr.aria-label]="card.aria">
+          <ng-container [ngTemplateOutlet]="cardContent" [ngTemplateOutletContext]="{ card: card }" />
+        </a>
+      } @else {
+        <a class="home-card" [routerLink]="card.path" [attr.aria-label]="card.aria">
+          <ng-container [ngTemplateOutlet]="cardContent" [ngTemplateOutletContext]="{ card: card }" />
+        </a>
+      }
     }
   </section>
 
   <dnms-bottom-nav />
 </main>
+
+<ng-template #cardContent let-card="card">
+  <span class="card-lines" aria-hidden="true"></span>
+  <span class="card-icon">
+    @switch (card.icon) {
+      @case ('users') {
+        <svg lucideUsersRound aria-hidden="true"></svg>
+      }
+      @case ('calendar') {
+        <svg lucideCalendarDays aria-hidden="true"></svg>
+      }
+      @case ('mission') {
+        <svg lucideMapPinned aria-hidden="true"></svg>
+      }
+      @default {
+        <svg lucideTicket aria-hidden="true"></svg>
+      }
+    }
+  </span>
+  <strong>{{ card.label }}</strong>
+  <span>{{ card.description }}</span>
+</ng-template>

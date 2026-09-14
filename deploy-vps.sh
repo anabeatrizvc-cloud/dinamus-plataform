@@ -60,6 +60,7 @@ check_project() {
   cd "$PROJECT_DIR"
 
   [[ -f frontend/Dockerfile ]] || fail "frontend/Dockerfile nao encontrado. Execute este script na raiz do projeto."
+  [[ -f base-mission-farm/Dockerfile ]] || fail "base-mission-farm/Dockerfile nao encontrado. Execute este script na raiz do projeto."
   [[ -f backend/Dockerfile ]] || fail "backend/Dockerfile nao encontrado. Execute este script na raiz do projeto."
   [[ -f infrastructure/nginx/reverse-proxy.conf ]] || fail "config interna do Nginx nao encontrada."
 }
@@ -265,6 +266,19 @@ services:
       timeout: 5s
       retries: 10
 
+  base-frontend:
+    build:
+      context: ./base-mission-farm
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
   reverse-proxy:
     image: nginx:1.27-alpine
     restart: unless-stopped
@@ -274,6 +288,8 @@ services:
       - ./infrastructure/nginx/reverse-proxy.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       frontend:
+        condition: service_healthy
+      base-frontend:
         condition: service_healthy
       backend:
         condition: service_healthy
@@ -354,7 +370,7 @@ server {
   add_header X-Frame-Options DENY always;
   add_header Referrer-Policy strict-origin-when-cross-origin always;
   add_header Permissions-Policy "camera=(self), microphone=(), geolocation=()" always;
-  add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; frame-src https://www.youtube.com https://www.youtube-nocookie.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none';" always;
+  add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'; frame-src https://www.youtube.com https://www.youtube-nocookie.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none';" always;
 
   location / {
     limit_req zone=dnms_rate burst=40 nodelay;

@@ -1,7 +1,6 @@
-import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { LucideCalendarDays, LucideMapPinned, LucideTicket, LucideUsersRound } from '@lucide/angular';
+import { LucideCalendarDays, LucideTicket, LucideUsersRound } from '@lucide/angular';
 
 import { BottomNavComponent } from '../../../shared/bottom-nav/bottom-nav.component';
 
@@ -9,14 +8,13 @@ type HomeCard = {
   label: string;
   description: string;
   path: string;
-  icon: 'users' | 'calendar' | 'ticket' | 'mission';
+  icon: 'users' | 'calendar' | 'ticket';
   aria: string;
-  external?: boolean;
 };
 
 @Component({
   selector: 'dnms-home-page',
-  imports: [NgTemplateOutlet, RouterLink, BottomNavComponent, LucideUsersRound, LucideCalendarDays, LucideTicket, LucideMapPinned],
+  imports: [RouterLink, BottomNavComponent, LucideUsersRound, LucideCalendarDays, LucideTicket],
   templateUrl: './home.page.html',
   styleUrl: './home.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -43,14 +41,6 @@ export class HomePage {
       path: '/eventos',
       icon: 'ticket',
       aria: 'Abrir Eventos',
-    },
-    {
-      label: 'Base Missionária',
-      description: 'Avance conosco nessa missão',
-      path: '/base/',
-      icon: 'mission',
-      aria: 'Abrir Base Missionária',
-      external: true,
     },
   ];
 }

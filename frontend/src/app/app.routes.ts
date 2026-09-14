@@ -25,11 +25,6 @@ export const routes: Routes = [
     title: 'GCs | Dinamus Recife',
   },
   {
-    path: 'base-missionaria',
-    loadComponent: () => import('./features/public/base-missionaria/base-missionaria.page').then((m) => m.BaseMissionariaPage),
-    title: 'Base Missionária | Dinamus Recife',
-  },
-  {
     path: 'eco',
     loadComponent: () => import('./features/public/eco/eco.page').then((m) => m.EcoPage),
     title: 'Eco | Dinamus Recife',

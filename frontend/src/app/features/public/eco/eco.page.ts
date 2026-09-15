@@ -14,6 +14,7 @@ import { EcoLesson } from '../../../core/models/platform.models';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EcoPage implements OnInit {
+  private readonly publicOrigin = 'https://igrejadinamusrecife.com.br';
   private readonly api = inject(DnmsApiService);
   readonly lesson = signal<EcoLesson | null>(null);
   readonly qrCode = signal('');
@@ -37,7 +38,7 @@ export class EcoPage implements OnInit {
   }
 
   private async renderQrCode(lesson: EcoLesson) {
-    const url = new URL('/eco/presenca', globalThis.location?.origin ?? 'https://igrejadinamusrecife.com.br');
+    const url = new URL('/eco/presenca', this.attendanceOrigin());
     url.searchParams.set('data', lesson.lessonDate);
     this.attendanceUrl.set(url.toString());
     this.qrCode.set(await QRCode.toDataURL(url.toString(), {
@@ -49,5 +50,14 @@ export class EcoPage implements OnInit {
         light: '#ffffff',
       },
     }));
+  }
+
+  private attendanceOrigin() {
+    const location = globalThis.location;
+    const hostname = location?.hostname ?? '';
+    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]') {
+      return location.origin;
+    }
+    return this.publicOrigin;
   }
 }

@@ -1,13 +1,10 @@
 import { CommonModule, DOCUMENT } from '@angular/common';
 import {
-  AfterViewInit,
   ChangeDetectionStrategy,
   Component,
-  ElementRef,
   HostListener,
   OnDestroy,
   OnInit,
-  ViewChild,
   computed,
   inject,
   signal,
@@ -16,7 +13,20 @@ import { FormsModule } from '@angular/forms';
 import QRCode from 'qrcode';
 
 import { BaseApiService, MissionBaseCampaign, MissionBasePix, MissionBaseStage } from './base-api.service';
-import { ExploreMedia, ProjectPair, contributionValues, exploreItems, projectPairs } from './base-content';
+import { ExploreMedia, contributionValues, exploreItems } from './base-content';
+
+type BaseLayer = 'vision' | 'gallery' | 'contribute' | 'progress' | null;
+type Scene = {
+  index: string;
+  label: string;
+  title: string;
+  action: string;
+  layer: Exclude<BaseLayer, null>;
+  mediaType: 'image' | 'video';
+  media: string;
+  poster?: string;
+  className: string;
+};
 
 @Component({
   selector: 'base-root',
@@ -26,32 +36,79 @@ import { ExploreMedia, ProjectPair, contributionValues, exploreItems, projectPai
   styleUrl: './app.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
+export class AppComponent implements OnInit, OnDestroy {
   private readonly api = inject(BaseApiService);
   private readonly document = inject(DOCUMENT);
-  private contributionObserver?: IntersectionObserver;
+  private previousBodyOverflow = '';
 
-  @ViewChild('heroVideo') private readonly heroVideo?: ElementRef<HTMLVideoElement>;
-  @ViewChild('visionSection') private readonly visionSection?: ElementRef<HTMLElement>;
-  @ViewChild('contributionSection') private readonly contributionSection?: ElementRef<HTMLElement>;
+  readonly scenes: Scene[] = [
+    {
+      index: '01 / 03',
+      label: 'META DE ARRECADAÇÃO · REFORMA',
+      title: 'Faça parte dessa história.',
+      action: 'Contribuir ↗',
+      layer: 'contribute',
+      mediaType: 'video',
+      media: 'assets/base/videos/drone-current-horizontal.mp4',
+      poster: 'assets/base/photos/drone-current-horizontal.jpg',
+      className: 'scene-hero',
+    },
+    {
+      index: '02 / 03',
+      label: '',
+      title: 'Formar.\nServir.\nEnviar.',
+      action: 'A visão ↗',
+      layer: 'vision',
+      mediaType: 'image',
+      media: 'assets/base/photos/varanda-interior.jpeg',
+      className: 'scene-vision',
+    },
+    {
+      index: '03 / 03',
+      label: '',
+      title: 'O próximo capítulo começa aqui.',
+      action: 'Explore a Base ↗',
+      layer: 'gallery',
+      mediaType: 'image',
+      media: 'assets/base/photos/construcoes-patio.jpeg',
+      className: 'scene-explore',
+    },
+  ];
 
-  readonly projectPairs = projectPairs;
-  readonly exploreItems = exploreItems;
+  readonly galleryItems: ExploreMedia[] = [
+    ...exploreItems,
+    {
+      id: 'drone',
+      type: 'video',
+      name: 'Vista aérea',
+      caption: 'O terreno real visto de cima.',
+      src: 'assets/base/videos/drone-current-horizontal.mp4',
+      poster: 'assets/base/photos/drone-current-horizontal.jpg',
+      alt: 'Vídeo aéreo da Base Mission Farm',
+    },
+    {
+      id: 'project',
+      type: 'video',
+      name: 'Transformação',
+      caption: 'Vídeo da visão de reforma.',
+      src: 'assets/base/videos/final-project.mp4',
+      poster: 'assets/base/project/after-corridor.jpeg',
+      alt: 'Vídeo do projeto final da Base Mission Farm',
+    },
+  ];
+
   readonly contributionValues = contributionValues;
   readonly campaign = signal<MissionBaseCampaign | null>(null);
   readonly loadingCampaign = signal(true);
   readonly campaignError = signal('');
-  readonly showContributionActions = signal(false);
-  readonly heroPaused = signal(false);
-  readonly selectedProject = signal<ProjectPair>(projectPairs[0]);
-  readonly comparePosition = signal(52);
-  readonly selectedExploreItem = signal<ExploreMedia>(exploreItems[0]);
+  readonly activeLayer = signal<BaseLayer>(null);
+  readonly selectedExploreItem = signal<ExploreMedia>(this.galleryItems[0]);
   readonly pixLoading = signal(false);
   readonly pixError = signal('');
   readonly pixSuccess = signal('');
   readonly pixResult = signal<MissionBasePix | null>(null);
   readonly pixQrCode = signal('');
-  readonly selectedValue = signal(100);
+  readonly selectedValue = signal(0);
   readonly customValue = signal('');
   readonly selectedStageId = signal('');
 
@@ -65,47 +122,30 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     return stages.find((stage) => stage.id === this.selectedStageId()) ?? stages.find((stage) => stage.current) ?? stages[0] ?? null;
   });
 
-  readonly currentStage = computed(() => {
-    const stages = this.visibleStages();
-    return stages.find((stage) => stage.current) ?? stages[0] ?? null;
+  readonly campaignRawPercent = computed(() => {
+    const campaign = this.campaign();
+    if (!campaign?.totalGoalCents || campaign.totalGoalCents <= 0) {
+      return 0;
+    }
+    return Math.max(0, Math.round((campaign.totalRaisedCents / campaign.totalGoalCents) * 100));
   });
 
-  readonly campaignPercent = computed(() => Math.max(0, Math.min(100, Number(this.campaign()?.percent ?? 0))));
+  readonly campaignPercent = computed(() => Math.min(100, this.campaignRawPercent()));
+  readonly remainingPercent = computed(() => Math.max(0, 100 - this.campaignPercent()));
+  readonly hasGoal = computed(() => Boolean(this.campaign()?.totalGoalCents && Number(this.campaign()?.totalGoalCents) > 0));
 
   ngOnInit(): void {
     this.loadCampaign();
   }
 
-  ngAfterViewInit(): void {
-    const win = this.document.defaultView;
-    if (!win || !this.visionSection?.nativeElement || !('IntersectionObserver' in win)) {
-      return;
-    }
-
-    if (win.location.hash && win.location.hash !== '#inicio') {
-      this.showContributionActions.set(true);
-    }
-
-    this.contributionObserver = new win.IntersectionObserver(
-      (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) {
-          this.showContributionActions.set(true);
-          this.contributionObserver?.disconnect();
-        }
-      },
-      { rootMargin: '-18% 0px -45% 0px', threshold: 0.2 },
-    );
-    this.contributionObserver.observe(this.visionSection.nativeElement);
-  }
-
   ngOnDestroy(): void {
-    this.contributionObserver?.disconnect();
+    this.document.body.style.overflow = this.previousBodyOverflow;
   }
 
   @HostListener('document:keydown.escape')
-  clearPixFeedback(): void {
-    if (this.pixResult()) {
-      this.resetPixFeedback();
+  closeOnEscape(): void {
+    if (this.activeLayer()) {
+      this.closeLayer();
     }
   }
 
@@ -127,44 +167,32 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  toggleHeroVideo(): void {
-    const video = this.heroVideo?.nativeElement;
-    if (!video) {
-      return;
+  openLayer(layer: Exclude<BaseLayer, null>): void {
+    if (!this.activeLayer()) {
+      this.previousBodyOverflow = this.document.body.style.overflow;
     }
-
-    void video.play();
-    this.heroPaused.set(false);
+    this.activeLayer.set(layer);
+    this.document.body.style.overflow = 'hidden';
   }
 
-  selectProject(project: ProjectPair): void {
-    this.selectedProject.set(project);
-    this.comparePosition.set(52);
-  }
-
-  moveProject(direction: 1 | -1): void {
-    const currentIndex = projectPairs.findIndex((project) => project.id === this.selectedProject().id);
-    const nextIndex = (currentIndex + direction + projectPairs.length) % projectPairs.length;
-    this.selectProject(projectPairs[nextIndex]);
-  }
-
-  setComparePosition(value: string | number): void {
-    const parsed = Number(value);
-    if (Number.isFinite(parsed)) {
-      this.comparePosition.set(Math.max(8, Math.min(92, parsed)));
-    }
+  closeLayer(): void {
+    this.activeLayer.set(null);
+    this.document.body.style.overflow = this.previousBodyOverflow;
   }
 
   selectExploreItem(item: ExploreMedia): void {
     this.selectedExploreItem.set(item);
   }
 
-  scrollToContribution(): void {
-    this.showContributionActions.set(true);
-    this.contributionSection?.nativeElement.scrollIntoView({
-      behavior: this.document.defaultView?.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
-      block: 'start',
-    });
+  moveGallery(direction: 1 | -1): void {
+    const currentIndex = this.galleryItems.findIndex((item) => item.id === this.selectedExploreItem().id);
+    const nextIndex = (currentIndex + direction + this.galleryItems.length) % this.galleryItems.length;
+    this.selectExploreItem(this.galleryItems[nextIndex]);
+  }
+
+  galleryPosition(): string {
+    const currentIndex = this.galleryItems.findIndex((item) => item.id === this.selectedExploreItem().id);
+    return `${currentIndex + 1} / ${this.galleryItems.length}`;
   }
 
   resetPixFeedback(): void {
@@ -176,7 +204,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
 
   selectValue(value: number): void {
     this.selectedValue.set(value);
-    this.customValue.set('');
+    this.customValue.set(String(value));
     this.resetPixFeedback();
   }
 
@@ -241,6 +269,11 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.selectedValue() * 100;
   }
 
+  setSelectedStage(stageId: string): void {
+    this.selectedStageId.set(stageId);
+    this.resetPixFeedback();
+  }
+
   formatCurrency(cents: number | null | undefined): string {
     const value = Number(cents ?? 0) / 100;
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
@@ -260,14 +293,12 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     return `${this.formatCurrency(stage.raisedCents)} de ${this.formatCurrency(stage.goalCents)}`;
   }
 
-  statusLabel(status: MissionBaseStage['status']): string {
-    switch (status) {
-      case 'CONCLUIDA':
-        return 'Concluída';
-      case 'EM_ANDAMENTO':
-        return 'Em andamento';
-      case 'EM_BREVE':
-        return 'Em breve';
+  updatedAtLabel(): string {
+    const value = this.campaign()?.updatedAt;
+    if (!value) {
+      return '';
     }
+    return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(value));
   }
+
 }

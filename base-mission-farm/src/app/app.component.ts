@@ -1,10 +1,23 @@
 import { CommonModule, DOCUMENT } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ElementRef, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  HostListener,
+  OnInit,
+  ViewChild,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import QRCode from 'qrcode';
 
 import { BaseApiService, MissionBaseCampaign, MissionBasePix, MissionBaseStage } from './base-api.service';
-import { EnvironmentMedia, contributionValues, environments } from './base-content';
+import { EnvironmentMedia, GalleryMedia, contributionValues, environments, galleryItems } from './base-content';
+
+type Layer = 'vision' | 'gallery' | 'contribute' | 'progress';
+type GalleryTab = 'photo' | 'video';
 
 @Component({
   selector: 'base-root',
@@ -20,16 +33,19 @@ export class AppComponent implements OnInit {
 
   @ViewChild('heroDesktop') private readonly heroDesktop?: ElementRef<HTMLVideoElement>;
   @ViewChild('heroMobile') private readonly heroMobile?: ElementRef<HTMLVideoElement>;
+  @ViewChild('layerClose') private readonly layerClose?: ElementRef<HTMLButtonElement>;
 
   readonly environments = environments;
+  readonly galleryItems = galleryItems;
   readonly contributionValues = contributionValues;
   readonly campaign = signal<MissionBaseCampaign | null>(null);
   readonly loadingCampaign = signal(true);
   readonly campaignError = signal('');
-  readonly selectedEnvironment = signal<EnvironmentMedia>(environments[0]);
-  readonly dreamMode = signal(false);
+  readonly selectedEnvironment = signal<EnvironmentMedia>(environments[1]);
+  readonly selectedGalleryItem = signal<GalleryMedia>(galleryItems[0]);
+  readonly galleryTab = signal<GalleryTab>('photo');
   readonly heroPaused = signal(false);
-  readonly pixOpen = signal(false);
+  readonly activeLayer = signal<Layer | null>(null);
   readonly pixLoading = signal(false);
   readonly pixError = signal('');
   readonly pixSuccess = signal('');
@@ -40,6 +56,7 @@ export class AppComponent implements OnInit {
   readonly selectedStageId = signal('');
   readonly actionNotice = signal('');
   readonly prefersReducedMotion = signal(false);
+  private layerTrigger: HTMLElement | null = null;
 
   readonly visibleStages = computed(() => {
     const stages = this.campaign()?.stages ?? [];
@@ -51,10 +68,42 @@ export class AppComponent implements OnInit {
     return stages.find((stage) => stage.id === this.selectedStageId()) ?? stages.find((stage) => stage.current) ?? stages[0] ?? null;
   });
 
+  readonly heroStage = computed(() => {
+    const stages = this.visibleStages();
+    return stages.find((stage) => stage.current) ?? stages.find((stage) => stage.name.toLowerCase().includes('reforma')) ?? stages[0] ?? null;
+  });
+
+  readonly galleryByTab = computed(() => this.galleryItems.filter((item) => item.type === this.galleryTab()));
+
+  readonly raisedPercentRaw = computed(() => {
+    const stage = this.heroStage();
+    if (!stage?.goalCents || stage.goalCents <= 0) {
+      return null;
+    }
+    return (Number(stage.raisedCents || 0) / stage.goalCents) * 100;
+  });
+
+  readonly progressWidth = computed(() => {
+    const percent = this.raisedPercentRaw();
+    return percent === null ? 0 : Math.max(0, Math.min(100, percent));
+  });
+
+  readonly remainingPercent = computed(() => {
+    const percent = this.raisedPercentRaw();
+    return percent === null ? null : Math.max(0, Math.ceil(100 - percent));
+  });
+
   ngOnInit(): void {
     const reducedMotion = this.document.defaultView?.matchMedia('(prefers-reduced-motion: reduce)').matches ?? false;
     this.prefersReducedMotion.set(reducedMotion);
     this.loadCampaign();
+  }
+
+  @HostListener('document:keydown.escape')
+  closeLayerByEscape(): void {
+    if (this.activeLayer()) {
+      this.closeLayer();
+    }
   }
 
   loadCampaign(): void {
@@ -77,13 +126,23 @@ export class AppComponent implements OnInit {
 
   selectEnvironment(environment: EnvironmentMedia): void {
     this.selectedEnvironment.set(environment);
-    this.dreamMode.set(false);
   }
 
   moveGallery(direction: 1 | -1): void {
-    const currentIndex = environments.findIndex((item) => item.id === this.selectedEnvironment().id);
-    const nextIndex = (currentIndex + direction + environments.length) % environments.length;
-    this.selectEnvironment(environments[nextIndex]);
+    const items = this.galleryByTab();
+    if (!items.length) {
+      return;
+    }
+    const currentIndex = items.findIndex((item) => item.id === this.selectedGalleryItem().id);
+    const nextIndex = (currentIndex + direction + items.length) % items.length;
+    this.selectedGalleryItem.set(items[nextIndex]);
+  }
+
+  moveEnvironment(direction: 1 | -1): void {
+    const scenic = environments.filter((item) => item.id !== 'caminho');
+    const currentIndex = scenic.findIndex((item) => item.id === this.selectedEnvironment().id);
+    const nextIndex = (currentIndex + direction + scenic.length) % scenic.length;
+    this.selectEnvironment(scenic[nextIndex]);
   }
 
   toggleHeroVideo(): void {
@@ -101,19 +160,41 @@ export class AppComponent implements OnInit {
     }
   }
 
-  openPix(stage?: MissionBaseStage): void {
-    this.pixOpen.set(true);
+  openLayer(layer: Layer, event?: Event): void {
+    this.layerTrigger = event?.currentTarget instanceof HTMLElement ? event.currentTarget : null;
+    this.activeLayer.set(layer);
+    if (layer === 'contribute') {
+      this.resetPixFeedback();
+    }
+    window.setTimeout(() => this.layerClose?.nativeElement.focus(), 0);
+  }
+
+  closeLayer(): void {
+    this.activeLayer.set(null);
+    this.layerTrigger?.focus();
+    this.layerTrigger = null;
+  }
+
+  resetPixFeedback(): void {
     this.pixError.set('');
     this.pixSuccess.set('');
     this.pixResult.set(null);
     this.pixQrCode.set('');
+  }
+
+  openPix(stage?: MissionBaseStage, event?: Event): void {
+    this.openLayer('contribute', event);
     if (stage) {
       this.selectedStageId.set(stage.id);
     }
   }
 
+  contributeToHero(event?: Event): void {
+    this.openPix(this.heroStage() ?? undefined, event);
+  }
+
   closePix(): void {
-    this.pixOpen.set(false);
+    this.closeLayer();
   }
 
   selectValue(value: number): void {
@@ -153,7 +234,7 @@ export class AppComponent implements OnInit {
             },
           }),
         );
-        this.pixSuccess.set('Pix gerado. A confirmação da oferta continua sendo manual pela administração.');
+        this.pixSuccess.set('Pix gerado com sucesso.');
         this.pixLoading.set(false);
       },
       error: () => {
@@ -161,6 +242,14 @@ export class AppComponent implements OnInit {
         this.pixLoading.set(false);
       },
     });
+  }
+
+  setGalleryTab(tab: GalleryTab): void {
+    this.galleryTab.set(tab);
+    const first = this.galleryByTab()[0];
+    if (first) {
+      this.selectedGalleryItem.set(first);
+    }
   }
 
   async copyPix(): Promise<void> {
@@ -206,6 +295,42 @@ export class AppComponent implements OnInit {
       return 'Meta em definição';
     }
     return `${this.formatCurrency(stage.raisedCents)} de ${this.formatCurrency(stage.goalCents)}`;
+  }
+
+  heroMetaText(): string {
+    const stage = this.heroStage();
+    if (!stage?.goalCents || stage.goalCents <= 0) {
+      return 'Meta em definição';
+    }
+    const remaining = this.remainingPercent();
+    if (remaining === 0) {
+      return 'Meta alcançada';
+    }
+    return `Faltam ${remaining}% para alcançar a meta`;
+  }
+
+  heroStageName(): string {
+    return this.heroStage()?.name ?? 'Reforma';
+  }
+
+  layerTitle(): string {
+    switch (this.activeLayer()) {
+      case 'vision':
+        return 'A visão';
+      case 'gallery':
+        return 'Fotos e vídeos';
+      case 'contribute':
+        return 'Contribuir';
+      case 'progress':
+        return 'Acompanhar';
+      default:
+        return '';
+    }
+  }
+
+  currentGalleryIndex(): number {
+    const items = this.galleryByTab();
+    return Math.max(0, items.findIndex((item) => item.id === this.selectedGalleryItem().id)) + 1;
   }
 
   statusLabel(status: MissionBaseStage['status']): string {

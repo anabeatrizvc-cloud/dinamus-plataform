@@ -1,307 +1,232 @@
 <main class="base-site">
   <header class="site-header" aria-label="Navegação da Base Mission Farm">
-    <a class="brand" href="/" aria-label="Voltar para Dinamus Recife">
-      <span class="brand-mark" aria-hidden="true">
-        <span></span>
-        <i></i>
-      </span>
-      <span class="brand-text">
-        <strong>BASE</strong>
-        <small>Mission Farm</small>
-      </span>
-    </a>
-
-    <nav class="chapter-nav" aria-label="Capítulos">
-      <a href="#visao">A visão</a>
-      <a href="#lugar">O lugar</a>
-      <a href="#fazer-parte">Faça parte</a>
+    <a class="brand" href="/" aria-label="Voltar para Dinamus Recife">BASE MISSION FARM</a>
+    <nav class="site-actions" aria-label="Ações da Base Mission Farm">
+      <button type="button" class="optional-link" (click)="openLayer('progress', $event)">Acompanhar</button>
+      <button type="button" class="contribute-link" (click)="contributeToHero($event)">Contribuir</button>
+      <button type="button" class="menu-dot" aria-label="Acompanhar etapas" (click)="openLayer('progress', $event)">☰</button>
     </nav>
   </header>
 
-  <section class="hero chapter" id="chegar" aria-labelledby="hero-title">
-    <picture class="hero-fallback" aria-hidden="true">
-      <img src="assets/base/photos/caminho-jardim.jpeg" alt="" />
-    </picture>
+  <section class="journey" aria-label="Jornada Base Mission Farm">
+    <article class="scene scene-hero" id="inicio" aria-labelledby="hero-title">
+      <picture class="scene-fallback" aria-hidden="true">
+        <img src="assets/base/photos/drone-poster.jpg" alt="" />
+      </picture>
 
-    <video
-      #heroDesktop
-      class="hero-video hero-video-desktop"
-      autoplay
-      muted
-      loop
-      playsinline
-      preload="metadata"
-      poster="assets/base/photos/caminho-jardim.jpeg"
-      [attr.aria-hidden]="true"
-    >
-      <source src="assets/base/videos/drone-horizontal.mp4" type="video/mp4" />
-    </video>
+      <video
+        #heroDesktop
+        class="scene-video scene-video-desktop"
+        autoplay
+        muted
+        loop
+        playsinline
+        preload="metadata"
+        poster="assets/base/photos/drone-poster.jpg"
+        [attr.aria-hidden]="true"
+      >
+        <source src="assets/base/videos/drone-horizontal.mp4" type="video/mp4" />
+      </video>
 
-    <video
-      #heroMobile
-      class="hero-video hero-video-mobile"
-      autoplay
-      muted
-      loop
-      playsinline
-      preload="metadata"
-      poster="assets/base/photos/caminho-jardim.jpeg"
-      [attr.aria-hidden]="true"
-    >
-      <source src="assets/base/videos/drone-vertical.mp4" type="video/mp4" />
-    </video>
+      <video
+        #heroMobile
+        class="scene-video scene-video-mobile"
+        autoplay
+        muted
+        loop
+        playsinline
+        preload="metadata"
+        poster="assets/base/photos/drone-poster.jpg"
+        [attr.aria-hidden]="true"
+      >
+        <source src="assets/base/videos/drone-vertical.mp4" type="video/mp4" />
+      </video>
 
-    <div class="shade"></div>
+      <div class="scene-shade hero-shade"></div>
 
-    <div class="hero-content">
-      <p class="kicker">Formar · Servir · Enviar</p>
-      <h1 id="hero-title">Não é um destino.<br />É um ponto de partida.</h1>
-      <p class="hero-copy">Uma base para cultivar pessoas, servir com excelência e enviar discípulos para a colheita.</p>
-      <div class="hero-actions">
-        <a class="button button-light" href="#visao">Conheça a Base</a>
-        <button class="video-toggle" type="button" (click)="toggleHeroVideo()">
-          {{ heroPaused() ? 'Reproduzir vídeo' : 'Pausar vídeo' }}
-        </button>
-      </div>
-    </div>
-
-    <aside class="verse" aria-label="Versículo João 4:35">
-      <p>“Levantem os olhos e vejam os campos, pois estão maduros para a colheita.”</p>
-      <span>João 4:35</span>
-    </aside>
-
-    <div class="chapter-footer" aria-hidden="true">
-      <span>01 · Chegar</span>
-      <span>Role para explorar</span>
-    </div>
-  </section>
-
-  <section class="vision chapter" id="visao" aria-labelledby="vision-title">
-    <div class="vision-grid">
-      <div>
-        <p class="eyebrow">A visão</p>
-        <h2 id="vision-title">O mesmo Evangelho. Novos terrenos.</h2>
-      </div>
-      <div class="vision-copy">
-        <p>
-          A Base Mission Farm nasce como um espaço de alicerce, formação e comunidade. Um lugar para preparar gente que
-          serve, caminha junto e entende que missão começa no coração antes de chegar ao campo.
-        </p>
-        <p>
-          A proposta é simples e profunda: formar discípulos, servir pessoas e enviar com propósito.
-        </p>
-      </div>
-    </div>
-
-    <div class="pillars" aria-label="Pilares da Base Mission Farm">
-      <article>
-        <span>01</span>
-        <h3>Formar</h3>
-        <p>Ensino, discipulado e maturidade para sustentar o chamado.</p>
-      </article>
-      <article>
-        <span>02</span>
-        <h3>Comunidade</h3>
-        <p>Um ambiente de pertencimento, escuta, cuidado e serviço.</p>
-      </article>
-      <article>
-        <span>03</span>
-        <h3>Servir</h3>
-        <p>Mãos disponíveis para transformar amor em prática.</p>
-      </article>
-      <article>
-        <span>04</span>
-        <h3>Enviar</h3>
-        <p>Pessoas preparadas para avançar onde Deus abrir caminho.</p>
-      </article>
-    </div>
-  </section>
-
-  <section class="explore chapter" id="lugar" aria-labelledby="explore-title">
-    <div class="explore-media" (keydown.arrowleft)="moveGallery(-1)" (keydown.arrowright)="moveGallery(1)" tabindex="0">
-      <img [src]="selectedEnvironment().image" [alt]="selectedEnvironment().alt" />
-      <div class="media-overlay"></div>
-      @if (dreamMode()) {
-        <div class="dream-state">
-          <span>O sonho</span>
-          <strong>Visão de futuro em preparação.</strong>
-          <p>Sem projetos confirmados para exibir, mantemos a foto real como base da história.</p>
+      <div class="hero-center">
+        <h1 id="hero-title">Faça parte dessa história.</h1>
+        <p class="funding-label">META DE ARRECADAÇÃO · {{ heroStageName() }}</p>
+        <div class="funding-progress" [class.is-empty]="remainingPercent() === null" aria-label="Progresso de arrecadação">
+          <span [style.width.%]="progressWidth()"></span>
         </div>
-      }
-    </div>
-
-    <div class="explore-panel">
-      <p class="eyebrow">O lugar</p>
-      <h2 id="explore-title">Um lugar. Muitos começos.</h2>
-      <p>Conheça os espaços de hoje e os sonhos para o amanhã.</p>
-
-      <div class="mode-toggle" aria-label="Alternar visão atual e sonho">
-        <button type="button" [class.active]="!dreamMode()" (click)="dreamMode.set(false)">Hoje</button>
-        <button type="button" [class.active]="dreamMode()" (click)="dreamMode.set(true)">O sonho</button>
+        <p class="funding-text">{{ heroMetaText() }}</p>
+        <button class="cta" type="button" (click)="contributeToHero($event)">Contribuir ↗</button>
       </div>
 
-      <div class="environment-text">
-        <strong>{{ selectedEnvironment().name }}</strong>
-        <span>{{ selectedEnvironment().description }}</span>
-      </div>
-
-      <div class="gallery-controls">
-        <button type="button" aria-label="Imagem anterior" (click)="moveGallery(-1)">←</button>
-        <button type="button" aria-label="Próxima imagem" (click)="moveGallery(1)">→</button>
-      </div>
-
-      <div class="thumbs" aria-label="Galeria de ambientes">
-        @for (environment of environments; track environment.id) {
-          <button
-            type="button"
-            [class.active]="selectedEnvironment().id === environment.id"
-            (click)="selectEnvironment(environment)"
-          >
-            <img [src]="environment.image" [alt]="environment.name" />
-          </button>
-        }
-      </div>
-
-      <details class="walkthrough">
-        <summary>Ver caminhada pelo terreno</summary>
-        <video controls preload="none" playsinline poster="assets/base/photos/caminho-jardim.jpeg">
-          <source src="assets/base/videos/caminhada-terreno.mp4" type="video/mp4" />
-        </video>
-      </details>
-    </div>
-  </section>
-
-  <section class="participate chapter" id="fazer-parte" aria-labelledby="participate-title">
-    <div class="participate-heading">
-      <p class="eyebrow">Faça parte</p>
-      <h2 id="participate-title">O próximo capítulo também pode ter você.</h2>
-      <p>
-        Acompanhe as etapas reais da Base e contribua com segurança. O Pix é gerado pela plataforma, e a confirmação da
-        oferta permanece manual pela administração.
-      </p>
-    </div>
-
-    <div class="participate-layout">
-      <figure class="participate-photo">
-        <img src="assets/base/photos/construcoes-patio.jpeg" alt="Construções e pátio da Base Mission Farm" />
-      </figure>
-
-      <div class="stage-panel">
-        @if (loadingCampaign()) {
-          <div class="state-card">
-            <span class="loader" aria-hidden="true"></span>
-            <strong>Carregando etapas</strong>
-            <p>Buscando os dados atualizados da Base Missionária.</p>
-          </div>
-        } @else if (campaignError()) {
-          <div class="state-card error">
-            <strong>Não carregou agora</strong>
-            <p>{{ campaignError() }}</p>
-            <button type="button" class="text-button" (click)="loadCampaign()">Tentar novamente</button>
-          </div>
-        } @else {
-          <div class="campaign-summary">
-            <span>{{ campaign()?.title || 'Base Mission Farm' }}</span>
-            <strong>{{ formatCurrency(campaign()?.totalRaisedCents) }}</strong>
-            <small>Atualizado em {{ formatDate(campaign()?.updatedAt) }}</small>
-          </div>
-
-          <div class="stages" aria-label="Etapas da Base Mission Farm">
-            @for (stage of visibleStages(); track stage.id) {
-              <article class="stage-row" [class.current]="stage.current">
-                <button type="button" class="stage-main" (click)="selectedStageId.set(stage.id)">
-                  <span class="stage-index">{{ stage.sortOrder }}</span>
-                  <span>
-                    <strong>{{ stage.name }}</strong>
-                    <small>{{ stage.description }}</small>
-                  </span>
-                </button>
-                <div class="stage-meta">
-                  <span>{{ statusLabel(stage.status) }}</span>
-                  <strong>{{ stageMeta(stage) }}</strong>
-                </div>
-                <div class="progress" [class.neutral]="!stage.goalCents">
-                  <span [style.width.%]="stagePercent(stage)"></span>
-                </div>
-                <button type="button" class="stage-donate" (click)="openPix(stage)">Contribuir</button>
-              </article>
-            }
-          </div>
-        }
-      </div>
-    </div>
-
-    <div class="participate-actions">
-      <button type="button" class="button button-terracotta" (click)="openPix()">Contribuir com Pix</button>
-      <button type="button" class="button button-outline" (click)="showActionNotice('serve')">Quero servir</button>
-      <button type="button" class="button button-ghost" (click)="showActionNotice('pray')">Quero orar</button>
-    </div>
-
-    @if (actionNotice()) {
-      <p class="notice" role="status">{{ actionNotice() }}</p>
-    }
-  </section>
-
-  @if (pixOpen()) {
-    <div class="pix-backdrop" (click)="closePix()"></div>
-    <aside class="pix-drawer" role="dialog" aria-modal="true" aria-labelledby="pix-title">
-      <button class="drawer-close" type="button" aria-label="Fechar Pix" (click)="closePix()">×</button>
-      <p class="eyebrow">Contribuir</p>
-      <h2 id="pix-title">Pix da Base Mission Farm</h2>
-      <p class="drawer-copy">Escolha a etapa e o valor. O QR Code será gerado com os dados configurados no backend.</p>
-
-      <label class="field">
-        <span>Etapa</span>
-        <select [ngModel]="selectedStageId()" (ngModelChange)="selectedStageId.set($event)">
-          @for (stage of visibleStages(); track stage.id) {
-            <option [ngValue]="stage.id">{{ stage.name }}</option>
-          }
-        </select>
-      </label>
-
-      <div class="value-grid" aria-label="Valores sugeridos">
-        @for (value of contributionValues; track value) {
-          <button type="button" [class.active]="selectedValue() === value && !customValue()" (click)="selectValue(value)">
-            {{ formatCurrency(value * 100) }}
-          </button>
-        }
-      </div>
-
-      <label class="field">
-        <span>Outro valor</span>
-        <input
-          type="text"
-          inputmode="decimal"
-          placeholder="Ex.: 150,00"
-          [ngModel]="customValue()"
-          (ngModelChange)="customValue.set($event)"
-        />
-      </label>
-
-      <button class="button button-terracotta drawer-submit" type="button" [disabled]="pixLoading()" (click)="generatePix()">
-        {{ pixLoading() ? 'Gerando Pix...' : 'Gerar QR Code Pix' }}
+      <button class="video-toggle" type="button" (click)="toggleHeroVideo()">
+        {{ heroPaused() ? 'Reproduzir' : 'Pausar' }}
       </button>
 
-      @if (pixError()) {
-        <p class="form-feedback error" role="alert">{{ pixError() }}</p>
-      }
-      @if (pixSuccess()) {
-        <p class="form-feedback success" role="status">{{ pixSuccess() }}</p>
-      }
+      <a class="scroll-cue" href="#visao-cena">Conheça a Base ↓</a>
+      <span class="scene-count">01 / 03</span>
+    </article>
 
-      @if (pixResult()) {
-        <section class="pix-result" aria-label="Pix gerado">
-          <div class="qr-shell">
-            <img [src]="pixQrCode()" alt="QR Code Pix para contribuição da Base Mission Farm" />
-          </div>
-          <div>
-            <strong>{{ pixResult()?.stageName }} · {{ formatCurrency(pixResult()?.amountCents) }}</strong>
-            <small>TXID {{ pixResult()?.txid }}</small>
-          </div>
-          <textarea readonly [value]="pixResult()?.pixPayload" aria-label="Código Pix copia e cola"></textarea>
-          <button type="button" class="button button-outline dark" (click)="copyPix()">Copiar código Pix</button>
-        </section>
-      }
-    </aside>
+    <article class="scene scene-vision" id="visao-cena" aria-labelledby="vision-scene-title">
+      <img class="scene-image" src="assets/base/photos/varanda-interior.jpeg" alt="Varanda interior da Base Mission Farm" loading="lazy" />
+      <div class="scene-shade"></div>
+      <div class="scene-copy bottom-left">
+        <h2 id="vision-scene-title">Formar.<br />Servir.<br />Enviar.</h2>
+        <button type="button" class="scene-link" (click)="openLayer('vision', $event)">A visão ↗</button>
+        <span class="scene-count inline">02 / 03</span>
+      </div>
+    </article>
+
+    <article class="scene scene-explore" id="explorar" aria-labelledby="explore-scene-title">
+      <img class="scene-image" [src]="selectedEnvironment().image" [alt]="selectedEnvironment().alt" loading="lazy" />
+      <div class="scene-shade"></div>
+      <div class="scene-copy bottom-left">
+        <h2 id="explore-scene-title">O próximo capítulo<br />começa aqui.</h2>
+        <button type="button" class="scene-link" (click)="openLayer('gallery', $event)">Explore a Base ↗</button>
+        <span class="scene-count inline">03 / 03</span>
+      </div>
+      <div class="scene-arrows" aria-label="Alternar espaços reais">
+        <button type="button" aria-label="Espaço anterior" (click)="moveEnvironment(-1)">←</button>
+        <button type="button" aria-label="Próximo espaço" (click)="moveEnvironment(1)">→</button>
+      </div>
+    </article>
+  </section>
+
+  @if (activeLayer()) {
+    <section class="layer-shell" role="dialog" aria-modal="true" [attr.aria-label]="layerTitle()">
+      <div class="layer-backdrop" (click)="closeLayer()"></div>
+      <div class="layer-panel" [class.compact-layer]="activeLayer() === 'contribute' || activeLayer() === 'progress'">
+        <div class="layer-top">
+          <span>BASE MISSION FARM</span>
+          <button #layerClose class="layer-close" type="button" aria-label="Fechar" (click)="closeLayer()">×</button>
+        </div>
+
+        @switch (activeLayer()) {
+          @case ('vision') {
+            <div class="vision-layer layer-content">
+              <p class="layer-kicker">A VISÃO</p>
+              <h2>Uma base.<br />Um ponto de partida.</h2>
+              <p>Formação, comunidade e serviço. Pessoas preparadas para levar o Evangelho às nações.</p>
+              <figure>
+                <img src="assets/base/photos/ambiente-interno.jpeg" alt="Ambiente interno da Base Mission Farm" />
+              </figure>
+              <div class="vision-pillars">
+                <span>Formar</span>
+                <span>Servir</span>
+                <span>Enviar</span>
+              </div>
+            </div>
+          }
+
+          @case ('gallery') {
+            <div class="gallery-layer layer-content">
+              <p class="layer-kicker">FOTOS E VÍDEOS</p>
+              <div class="media-tabs" aria-label="Tipo de mídia">
+                <button type="button" [class.active]="galleryTab() === 'photo'" (click)="setGalleryTab('photo')">Fotos</button>
+                <button type="button" [class.active]="galleryTab() === 'video'" (click)="setGalleryTab('video')">Vídeos</button>
+              </div>
+
+              <figure class="media-stage">
+                @if (selectedGalleryItem().type === 'video') {
+                  <video controls preload="none" playsinline [poster]="selectedGalleryItem().poster">
+                    <source [src]="selectedGalleryItem().src" type="video/mp4" />
+                  </video>
+                } @else {
+                  <img [src]="selectedGalleryItem().src" [alt]="selectedGalleryItem().alt" />
+                }
+              </figure>
+
+              <div class="media-meta">
+                <div>
+                  <strong>{{ selectedGalleryItem().name }}</strong>
+                  <span>{{ selectedGalleryItem().caption }}</span>
+                </div>
+                <span>{{ currentGalleryIndex() }} / {{ galleryByTab().length }}</span>
+              </div>
+
+              <div class="media-controls">
+                <button type="button" aria-label="Mídia anterior" (click)="moveGallery(-1)">‹</button>
+                <button type="button" aria-label="Próxima mídia" (click)="moveGallery(1)">›</button>
+              </div>
+
+              <div class="media-thumbs" aria-label="Miniaturas">
+                @for (item of galleryByTab(); track item.id) {
+                  <button type="button" [class.active]="selectedGalleryItem().id === item.id" (click)="selectedGalleryItem.set(item)">
+                    <img [src]="item.poster || item.src" [alt]="item.name" />
+                  </button>
+                }
+              </div>
+            </div>
+          }
+
+          @case ('contribute') {
+            <div class="contribute-layer layer-content">
+              <p class="layer-kicker">CONTRIBUIR</p>
+              <h2>Faça parte<br />dessa história.</h2>
+
+              <label class="field readonly-field">
+                <span>Destino</span>
+                <input value="Base Mission Farm" readonly />
+              </label>
+
+              <label class="field">
+                <span>Valor</span>
+                <input
+                  type="text"
+                  inputmode="decimal"
+                  placeholder="R$"
+                  [ngModel]="customValue()"
+                  (ngModelChange)="customValue.set($event)"
+                />
+              </label>
+
+              <button class="cta layer-cta" type="button" [disabled]="pixLoading()" (click)="generatePix()">
+                {{ pixLoading() ? 'Gerando...' : 'Gerar Pix ↗' }}
+              </button>
+
+              @if (pixError()) {
+                <p class="feedback error" role="alert">{{ pixError() }}</p>
+              }
+              @if (pixSuccess()) {
+                <p class="feedback success" role="status">{{ pixSuccess() }}</p>
+              }
+
+              @if (pixResult()) {
+                <div class="pix-result">
+                  <img [src]="pixQrCode()" alt="QR Code Pix para contribuição da Base Mission Farm" />
+                  <textarea readonly [value]="pixResult()?.pixPayload" aria-label="Código Pix copia e cola"></textarea>
+                  <button type="button" class="secondary-action" (click)="copyPix()">Copiar código Pix</button>
+                </div>
+              }
+            </div>
+          }
+
+          @case ('progress') {
+            <div class="progress-layer layer-content">
+              <p class="layer-kicker">ACOMPANHAR</p>
+              <h2>Cada passo faz parte<br />da história.</h2>
+
+              @if (loadingCampaign()) {
+                <p class="muted">Carregando etapas...</p>
+              } @else if (campaignError()) {
+                <p class="feedback error">{{ campaignError() }}</p>
+              } @else {
+                <div class="progress-lines">
+                  @for (stage of visibleStages(); track stage.id) {
+                    <article>
+                      <div>
+                        <strong>{{ stage.name }}</strong>
+                        <small>{{ stage.description }}</small>
+                      </div>
+                      <span>{{ stageMeta(stage) }}</span>
+                      <div class="stage-bar" [class.is-empty]="!stage.goalCents">
+                        <i [style.width.%]="stagePercent(stage)"></i>
+                      </div>
+                    </article>
+                  }
+                </div>
+              }
+
+              <button class="cta layer-cta" type="button" (click)="contributeToHero($event)">Contribuir com Pix ↗</button>
+            </div>
+          }
+        }
+      </div>
+    </section>
   }
 </main>

@@ -27,6 +27,8 @@ prompts/
 # Design/source docs not intended for deploy repository
 docs/
 Base_Mission_Farm_Codex/
+Base_Mission_Farm_Codex_FINAL/
+dnms-redesign/
 
 # OS/editor files
 .DS_Store

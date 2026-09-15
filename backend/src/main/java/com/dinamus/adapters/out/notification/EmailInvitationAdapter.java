@@ -19,7 +19,7 @@ public class EmailInvitationAdapter implements InvitationPort {
     private final InvitationProperties mail;
     private final String publicUrl;
 
-    public EmailInvitationAdapter(InvitationProperties mail, @Value("${app.public-url}") String publicUrl) {
+    public EmailInvitationAdapter(InvitationProperties mail, @Value("${app.public-url:http://localhost:4200}") String publicUrl) {
         this.mail = mail;
         String configuredUrl = publicUrl == null ? "" : publicUrl.trim();
         this.publicUrl = (configuredUrl.contains("://") ? configuredUrl : "http://localhost:4200").replaceAll("/+$", "");

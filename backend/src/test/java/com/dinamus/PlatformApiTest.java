@@ -123,14 +123,14 @@ class PlatformApiTest {
     @Test
     void publicEcoAttendanceCanBeRegisteredAndValidatedByAdmin() {
         EcoLesson lesson = client.toBlocking().retrieve(HttpRequest.GET("/api/v1/eco/lesson"), EcoLesson.class);
-        assertEquals("eco-2026-09-08", lesson.id());
-        assertEquals("2026-09-08", lesson.lessonDate());
+        assertEquals("eco-2026-09-15", lesson.id());
+        assertEquals("2026-09-15", lesson.lessonDate());
 
         EcoAttendance created = client.toBlocking().retrieve(
             HttpRequest.POST("/api/v1/eco/attendance", Map.of(
                 "name", "Aluno Eco",
                 "phone", "(81) 99949-9159",
-                "lessonDate", "2026-09-08",
+                "lessonDate", "2026-09-15",
                 "photoDataUrl", samplePhoto()
             )),
             EcoAttendance.class
@@ -148,6 +148,7 @@ class PlatformApiTest {
         assertTrue(lessons.stream().anyMatch(item -> item.id().equals("eco-2026-08-25")));
         assertTrue(lessons.stream().anyMatch(item -> item.id().equals("eco-2026-09-01")));
         assertTrue(lessons.stream().anyMatch(item -> item.id().equals("eco-2026-09-08")));
+        assertTrue(lessons.stream().anyMatch(item -> item.id().equals("eco-2026-09-15")));
 
         List<EcoAttendance> attendances = client.toBlocking().retrieve(
             HttpRequest.GET("/api/v1/admin/eco/lessons/" + lesson.id() + "/attendances").bearerAuth(admin.accessToken()),
@@ -210,7 +211,7 @@ class PlatformApiTest {
         );
 
         assertTrue(summary.contains("Aluno Lote Eco"));
-        assertTrue(summary.contains("\"3\""));
+        assertTrue(summary.contains("\"4\""));
     }
 
     @Test
@@ -219,7 +220,7 @@ class PlatformApiTest {
             client.toBlocking().exchange(HttpRequest.POST("/api/v1/eco/attendance", Map.of(
                 "name", "Aluno Eco",
                 "phone", "8133344444",
-                "lessonDate", "2026-09-08",
+                "lessonDate", "2026-09-15",
                 "photoDataUrl", samplePhoto()
             )))
         );

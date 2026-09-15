@@ -675,8 +675,18 @@ h2 {
 }
 
 @media (max-width: 720px) {
+  .journey {
+    height: 100dvh;
+    min-height: 100dvh;
+  }
+
+  .scene {
+    height: calc(100dvh - 32px);
+    min-height: calc(100dvh - 32px);
+  }
+
   .site-header {
-    padding-top: calc(env(safe-area-inset-top) + 20px);
+    padding: calc(env(safe-area-inset-top) + 16px) 22px 0;
   }
 
   .site-actions .optional-link {
@@ -697,46 +707,53 @@ h2 {
 
   .hero-center {
     width: calc(100% - 48px);
+    top: 51.5%;
   }
 
   .hero-center h1 {
-    font-size: clamp(3.05rem, 13vw, 4.45rem);
-    line-height: 0.94;
+    font-size: clamp(2.82rem, 12.2vw, 4rem);
+    line-height: 0.93;
   }
 
   .funding-label {
-    margin-top: 1.15rem;
+    margin: 0.95rem 0 0.52rem;
     font-size: 0.62rem;
   }
 
   .funding-progress {
-    height: 12px;
+    height: 11px;
   }
 
   .funding-text {
-    font-size: 0.96rem;
+    margin-top: 0.78rem;
+    font-size: 0.94rem;
   }
 
   .cta {
-    min-height: 64px;
+    min-height: 58px;
     min-width: min(100%, 260px);
-    font-size: 1.25rem;
+    font-size: 1.18rem;
+  }
+
+  .hero-center .cta {
+    margin-top: 1.15rem;
   }
 
   .video-toggle {
     right: 1rem;
-    bottom: 1rem;
+    bottom: max(0.82rem, env(safe-area-inset-bottom));
     font-size: 0.68rem;
   }
 
   .scroll-cue,
   .scene-hero .scene-count {
-    bottom: 1.25rem;
+    bottom: max(1.05rem, env(safe-area-inset-bottom));
     font-size: 0.68rem;
   }
 
   .scene-hero .scene-count {
-    bottom: 3.75rem;
+    right: 1.12rem;
+    bottom: calc(max(0.82rem, env(safe-area-inset-bottom)) + 2.75rem);
   }
 
   .scene-copy h2 {

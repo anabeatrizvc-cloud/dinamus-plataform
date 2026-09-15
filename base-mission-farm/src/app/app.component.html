@@ -1,232 +1,263 @@
 <main class="base-site">
   <header class="site-header" aria-label="Navegação da Base Mission Farm">
-    <a class="brand" href="/" aria-label="Voltar para Dinamus Recife">BASE MISSION FARM</a>
-    <nav class="site-actions" aria-label="Ações da Base Mission Farm">
-      <button type="button" class="optional-link" (click)="openLayer('progress', $event)">Acompanhar</button>
-      <button type="button" class="contribute-link" (click)="contributeToHero($event)">Contribuir</button>
-      <button type="button" class="menu-dot" aria-label="Acompanhar etapas" (click)="openLayer('progress', $event)">☰</button>
+    <a class="brand" href="/base/" aria-label="Base Mission Farm">
+      <img src="assets/base/brand/logo-base-dark.png" alt="" />
+      <span>Base Mission Farm</span>
+    </a>
+
+    <nav class="site-nav" aria-label="Seções da Base Mission Farm">
+      <a href="#visao">A visão</a>
+      <a href="#projeto">Antes e depois</a>
+      <a href="#explorar">Explore</a>
     </nav>
   </header>
 
-  <section class="journey" aria-label="Jornada Base Mission Farm">
-    <article class="scene scene-hero" id="inicio" aria-labelledby="hero-title">
-      <picture class="scene-fallback" aria-hidden="true">
-        <img src="assets/base/photos/drone-poster.jpg" alt="" />
-      </picture>
+  <section class="hero-section" id="inicio" aria-labelledby="hero-title">
+    <picture class="hero-poster" aria-hidden="true">
+      <img src="assets/base/photos/drone-current-horizontal.jpg" alt="" />
+    </picture>
 
-      <video
-        #heroDesktop
-        class="scene-video scene-video-desktop"
-        autoplay
-        muted
-        loop
-        playsinline
-        preload="metadata"
-        poster="assets/base/photos/drone-poster.jpg"
-        [attr.aria-hidden]="true"
-      >
-        <source src="assets/base/videos/drone-horizontal.mp4" type="video/mp4" />
-      </video>
+    <video
+      #heroVideo
+      class="hero-video"
+      autoplay
+      muted
+      loop
+      playsinline
+      preload="metadata"
+      poster="assets/base/photos/drone-current-horizontal.jpg"
+      [attr.aria-hidden]="true"
+    >
+      <source src="assets/base/videos/drone-current-horizontal.mp4" type="video/mp4" />
+    </video>
 
-      <video
-        #heroMobile
-        class="scene-video scene-video-mobile"
-        autoplay
-        muted
-        loop
-        playsinline
-        preload="metadata"
-        poster="assets/base/photos/drone-poster.jpg"
-        [attr.aria-hidden]="true"
-      >
-        <source src="assets/base/videos/drone-vertical.mp4" type="video/mp4" />
-      </video>
+    <div class="hero-vignette" aria-hidden="true"></div>
 
-      <div class="scene-shade hero-shade"></div>
+    <div class="hero-copy">
+      <p class="eyebrow">BASE MISSION FARM</p>
+      <h1 id="hero-title">Faça parte dessa história.</h1>
+      <p>
+        Um lugar de alicerce, formação e comunidade. Não é um destino; é um ponto de partida para formar,
+        servir e enviar.
+      </p>
+    </div>
 
-      <div class="hero-center">
-        <h1 id="hero-title">Faça parte dessa história.</h1>
-        <p class="funding-label">META DE ARRECADAÇÃO · {{ heroStageName() }}</p>
-        <div class="funding-progress" [class.is-empty]="remainingPercent() === null" aria-label="Progresso de arrecadação">
-          <span [style.width.%]="progressWidth()"></span>
-        </div>
-        <p class="funding-text">{{ heroMetaText() }}</p>
-        <button class="cta" type="button" (click)="contributeToHero($event)">Contribuir ↗</button>
-      </div>
-
-      <button class="video-toggle" type="button" (click)="toggleHeroVideo()">
-        {{ heroPaused() ? 'Reproduzir' : 'Pausar' }}
-      </button>
-
-      <a class="scroll-cue" href="#visao-cena">Conheça a Base ↓</a>
-      <span class="scene-count">01 / 03</span>
-    </article>
-
-    <article class="scene scene-vision" id="visao-cena" aria-labelledby="vision-scene-title">
-      <img class="scene-image" src="assets/base/photos/varanda-interior.jpeg" alt="Varanda interior da Base Mission Farm" loading="lazy" />
-      <div class="scene-shade"></div>
-      <div class="scene-copy bottom-left">
-        <h2 id="vision-scene-title">Formar.<br />Servir.<br />Enviar.</h2>
-        <button type="button" class="scene-link" (click)="openLayer('vision', $event)">A visão ↗</button>
-        <span class="scene-count inline">02 / 03</span>
-      </div>
-    </article>
-
-    <article class="scene scene-explore" id="explorar" aria-labelledby="explore-scene-title">
-      <img class="scene-image" [src]="selectedEnvironment().image" [alt]="selectedEnvironment().alt" loading="lazy" />
-      <div class="scene-shade"></div>
-      <div class="scene-copy bottom-left">
-        <h2 id="explore-scene-title">O próximo capítulo<br />começa aqui.</h2>
-        <button type="button" class="scene-link" (click)="openLayer('gallery', $event)">Explore a Base ↗</button>
-        <span class="scene-count inline">03 / 03</span>
-      </div>
-      <div class="scene-arrows" aria-label="Alternar espaços reais">
-        <button type="button" aria-label="Espaço anterior" (click)="moveEnvironment(-1)">←</button>
-        <button type="button" aria-label="Próximo espaço" (click)="moveEnvironment(1)">→</button>
-      </div>
-    </article>
+    <a class="hero-scroll" href="#visao">Conheça a Base ↓</a>
+    <span class="hero-count">01 / 05</span>
+    <button class="hero-play" type="button" (click)="toggleHeroVideo()">Reproduzir</button>
   </section>
 
-  @if (activeLayer()) {
-    <section class="layer-shell" role="dialog" aria-modal="true" [attr.aria-label]="layerTitle()">
-      <div class="layer-backdrop" (click)="closeLayer()"></div>
-      <div class="layer-panel" [class.compact-layer]="activeLayer() === 'contribute' || activeLayer() === 'progress'">
-        <div class="layer-top">
-          <span>BASE MISSION FARM</span>
-          <button #layerClose class="layer-close" type="button" aria-label="Fechar" (click)="closeLayer()">×</button>
+  <section #visionSection class="vision-section section-shell" id="visao" aria-labelledby="vision-title">
+    <div class="section-heading">
+      <p class="eyebrow">DO QUE EXISTE AO QUE ESTAMOS CONSTRUINDO</p>
+      <h2 id="vision-title">A visão começa no lugar real.</h2>
+      <p>
+        A Base Mission Farm já existe como terreno, casa e possibilidade. Agora, cada etapa transforma esse
+        começo em um espaço preparado para receber, formar e enviar pessoas.
+      </p>
+    </div>
+
+    <div class="vision-grid">
+      <article class="vision-card">
+        <span>Hoje</span>
+        <video autoplay muted loop playsinline preload="metadata" poster="assets/base/photos/drone-current-vertical.jpg">
+          <source src="assets/base/videos/drone-current-vertical.mp4" type="video/mp4" />
+        </video>
+      </article>
+
+      <div class="vision-bridge">
+        <span>01 / 05</span>
+        <strong>Formar · Servir · Enviar</strong>
+        <p>Uma estrutura simples sendo preparada para uma missão maior.</p>
+        <button type="button" (click)="scrollToContribution()">Quero contribuir ↗</button>
+      </div>
+
+      <article class="vision-card vision-card-featured">
+        <span>A visão</span>
+        <video controls playsinline preload="metadata">
+          <source src="assets/base/videos/final-project.mp4" type="video/mp4" />
+        </video>
+      </article>
+    </div>
+  </section>
+
+  <section class="project-section section-shell" id="projeto" aria-labelledby="project-title">
+    <div class="section-heading compact">
+      <p class="eyebrow">TRANSFORMAÇÃO CONCRETA</p>
+      <h2 id="project-title">Antes e depois, sem perder a essência.</h2>
+      <p>Arraste o controle para comparar o estado atual com a visão de reforma.</p>
+    </div>
+
+    <div class="project-tabs" aria-label="Ambientes do projeto">
+      @for (project of projectPairs; track project.id) {
+        <button type="button" [class.active]="selectedProject().id === project.id" (click)="selectProject(project)">
+          <span>{{ project.index }}</span>
+          {{ project.name }}
+        </button>
+      }
+    </div>
+
+    <div class="comparison-layout">
+      <article class="comparison-card">
+        <div class="comparison-frame">
+          <img class="comparison-image" [src]="selectedProject().before.src" [alt]="selectedProject().before.alt" />
+          <div class="comparison-after" [style.clip-path]="'inset(0 ' + (100 - comparePosition()) + '% 0 0)'">
+            <img [src]="selectedProject().after.src" [alt]="selectedProject().after.alt" />
+          </div>
+          <span class="compare-label before">Hoje</span>
+          <span class="compare-label after">A visão</span>
+          <i class="compare-handle" [style.left.%]="comparePosition()" aria-hidden="true"></i>
+          <input
+            type="range"
+            min="8"
+            max="92"
+            [ngModel]="comparePosition()"
+            (ngModelChange)="setComparePosition($event)"
+            aria-label="Comparar antes e depois"
+          />
         </div>
+      </article>
 
-        @switch (activeLayer()) {
-          @case ('vision') {
-            <div class="vision-layer layer-content">
-              <p class="layer-kicker">A VISÃO</p>
-              <h2>Uma base.<br />Um ponto de partida.</h2>
-              <p>Formação, comunidade e serviço. Pessoas preparadas para levar o Evangelho às nações.</p>
-              <figure>
-                <img src="assets/base/photos/ambiente-interno.jpeg" alt="Ambiente interno da Base Mission Farm" />
-              </figure>
-              <div class="vision-pillars">
-                <span>Formar</span>
-                <span>Servir</span>
-                <span>Enviar</span>
-              </div>
-            </div>
+      <aside class="project-copy">
+        <span>{{ selectedProject().index }} / {{ projectPairs.length }}</span>
+        <h3>{{ selectedProject().name }}</h3>
+        <p>{{ selectedProject().description }}</p>
+        <div class="detail-pills">
+          @for (detail of selectedProject().details; track detail) {
+            <small>{{ detail }}</small>
           }
+        </div>
+        <div class="project-arrows" aria-label="Alternar projeto">
+          <button type="button" aria-label="Projeto anterior" (click)="moveProject(-1)">←</button>
+          <button type="button" aria-label="Próximo projeto" (click)="moveProject(1)">→</button>
+        </div>
+      </aside>
+    </div>
+  </section>
 
-          @case ('gallery') {
-            <div class="gallery-layer layer-content">
-              <p class="layer-kicker">FOTOS E VÍDEOS</p>
-              <div class="media-tabs" aria-label="Tipo de mídia">
-                <button type="button" [class.active]="galleryTab() === 'photo'" (click)="setGalleryTab('photo')">Fotos</button>
-                <button type="button" [class.active]="galleryTab() === 'video'" (click)="setGalleryTab('video')">Vídeos</button>
-              </div>
+  <section class="explore-section section-shell" id="explorar" aria-labelledby="explore-title">
+    <div class="section-heading compact">
+      <p class="eyebrow">EXPLORE A BASE</p>
+      <h2 id="explore-title">O restante do lugar também conta a história.</h2>
+    </div>
 
-              <figure class="media-stage">
-                @if (selectedGalleryItem().type === 'video') {
-                  <video controls preload="none" playsinline [poster]="selectedGalleryItem().poster">
-                    <source [src]="selectedGalleryItem().src" type="video/mp4" />
-                  </video>
-                } @else {
-                  <img [src]="selectedGalleryItem().src" [alt]="selectedGalleryItem().alt" />
-                }
-              </figure>
+    <div class="explore-grid">
+      <figure class="explore-stage">
+        @if (selectedExploreItem().type === 'video') {
+          <video controls playsinline preload="metadata" [poster]="selectedExploreItem().poster">
+            <source [src]="selectedExploreItem().src" type="video/mp4" />
+          </video>
+        } @else {
+          <img [src]="selectedExploreItem().src" [alt]="selectedExploreItem().alt" />
+        }
+        <figcaption>
+          <strong>{{ selectedExploreItem().name }}</strong>
+          <span>{{ selectedExploreItem().caption }}</span>
+        </figcaption>
+      </figure>
 
-              <div class="media-meta">
-                <div>
-                  <strong>{{ selectedGalleryItem().name }}</strong>
-                  <span>{{ selectedGalleryItem().caption }}</span>
-                </div>
-                <span>{{ currentGalleryIndex() }} / {{ galleryByTab().length }}</span>
-              </div>
-
-              <div class="media-controls">
-                <button type="button" aria-label="Mídia anterior" (click)="moveGallery(-1)">‹</button>
-                <button type="button" aria-label="Próxima mídia" (click)="moveGallery(1)">›</button>
-              </div>
-
-              <div class="media-thumbs" aria-label="Miniaturas">
-                @for (item of galleryByTab(); track item.id) {
-                  <button type="button" [class.active]="selectedGalleryItem().id === item.id" (click)="selectedGalleryItem.set(item)">
-                    <img [src]="item.poster || item.src" [alt]="item.name" />
-                  </button>
-                }
-              </div>
-            </div>
-          }
-
-          @case ('contribute') {
-            <div class="contribute-layer layer-content">
-              <p class="layer-kicker">CONTRIBUIR</p>
-              <h2>Faça parte<br />dessa história.</h2>
-
-              <label class="field readonly-field">
-                <span>Destino</span>
-                <input value="Base Mission Farm" readonly />
-              </label>
-
-              <label class="field">
-                <span>Valor</span>
-                <input
-                  type="text"
-                  inputmode="decimal"
-                  placeholder="R$"
-                  [ngModel]="customValue()"
-                  (ngModelChange)="customValue.set($event)"
-                />
-              </label>
-
-              <button class="cta layer-cta" type="button" [disabled]="pixLoading()" (click)="generatePix()">
-                {{ pixLoading() ? 'Gerando...' : 'Gerar Pix ↗' }}
-              </button>
-
-              @if (pixError()) {
-                <p class="feedback error" role="alert">{{ pixError() }}</p>
-              }
-              @if (pixSuccess()) {
-                <p class="feedback success" role="status">{{ pixSuccess() }}</p>
-              }
-
-              @if (pixResult()) {
-                <div class="pix-result">
-                  <img [src]="pixQrCode()" alt="QR Code Pix para contribuição da Base Mission Farm" />
-                  <textarea readonly [value]="pixResult()?.pixPayload" aria-label="Código Pix copia e cola"></textarea>
-                  <button type="button" class="secondary-action" (click)="copyPix()">Copiar código Pix</button>
-                </div>
-              }
-            </div>
-          }
-
-          @case ('progress') {
-            <div class="progress-layer layer-content">
-              <p class="layer-kicker">ACOMPANHAR</p>
-              <h2>Cada passo faz parte<br />da história.</h2>
-
-              @if (loadingCampaign()) {
-                <p class="muted">Carregando etapas...</p>
-              } @else if (campaignError()) {
-                <p class="feedback error">{{ campaignError() }}</p>
-              } @else {
-                <div class="progress-lines">
-                  @for (stage of visibleStages(); track stage.id) {
-                    <article>
-                      <div>
-                        <strong>{{ stage.name }}</strong>
-                        <small>{{ stage.description }}</small>
-                      </div>
-                      <span>{{ stageMeta(stage) }}</span>
-                      <div class="stage-bar" [class.is-empty]="!stage.goalCents">
-                        <i [style.width.%]="stagePercent(stage)"></i>
-                      </div>
-                    </article>
-                  }
-                </div>
-              }
-
-              <button class="cta layer-cta" type="button" (click)="contributeToHero($event)">Contribuir com Pix ↗</button>
-            </div>
-          }
+      <div class="explore-list" aria-label="Galeria de ambientes">
+        @for (item of exploreItems; track item.id) {
+          <button type="button" [class.active]="selectedExploreItem().id === item.id" (click)="selectExploreItem(item)">
+            <img [src]="item.poster || item.src" [alt]="item.name" />
+            <span>{{ item.name }}</span>
+          </button>
         }
       </div>
-    </section>
+    </div>
+  </section>
+
+  <section #contributionSection class="contribute-section section-shell" id="contribuir" aria-labelledby="contribute-title">
+    <div class="section-heading">
+      <p class="eyebrow">CONTRIBUIR</p>
+      <h2 id="contribute-title">Agora, faça parte dessa história.</h2>
+      <p>
+        Escolha uma etapa, gere o Pix e contribua de forma segura. Cada oferta é direcionada para transformar a
+        Base em um instrumento nas mãos de Deus.
+      </p>
+    </div>
+
+    @if (loadingCampaign()) {
+      <div class="state-card" role="status">Carregando etapas da campanha...</div>
+    } @else if (campaignError()) {
+      <div class="state-card error" role="alert">{{ campaignError() }}</div>
+    } @else {
+      <div class="contribute-grid">
+        <article class="progress-card">
+          <span class="eyebrow">PROGRESSO GERAL</span>
+          <strong>{{ formatCurrency(campaign()?.totalRaisedCents) }}</strong>
+          <p>arrecadados até agora</p>
+          <div class="big-progress" [class.is-empty]="!campaign()?.totalGoalCents">
+            <i [style.width.%]="campaignPercent()"></i>
+          </div>
+          <small>
+            @if (campaign()?.totalGoalCents) {
+              {{ campaignPercent() }}% de {{ formatCurrency(campaign()?.totalGoalCents) }}
+            } @else {
+              Meta em definição
+            }
+          </small>
+
+          <div class="stage-stack">
+            @for (stage of visibleStages(); track stage.id) {
+              <button type="button" [class.active]="selectedStageId() === stage.id" (click)="selectedStageId.set(stage.id); resetPixFeedback()">
+                <span>
+                  <strong>{{ stage.name }}</strong>
+                  <small>{{ statusLabel(stage.status) }}</small>
+                </span>
+                <em>{{ stageMeta(stage) }}</em>
+                <i [style.width.%]="stagePercent(stage)"></i>
+              </button>
+            }
+          </div>
+        </article>
+
+        <article class="pix-card">
+          <span class="eyebrow">PIX</span>
+          <h3>Escolha um valor</h3>
+          <div class="value-grid">
+            @for (value of contributionValues; track value) {
+              <button type="button" [class.active]="!customValue() && selectedValue() === value" (click)="selectValue(value)">
+                {{ formatCurrency(value * 100) }}
+              </button>
+            }
+          </div>
+
+          <label class="custom-field">
+            <span>Outro valor</span>
+            <input
+              type="text"
+              inputmode="decimal"
+              placeholder="Ex.: 150,00"
+              [ngModel]="customValue()"
+              (ngModelChange)="customValue.set($event); resetPixFeedback()"
+            />
+          </label>
+
+          <button class="primary-cta" type="button" [disabled]="pixLoading()" (click)="generatePix()">
+            {{ pixLoading() ? 'Gerando Pix...' : 'Gerar QR Code Pix ↗' }}
+          </button>
+
+          @if (pixError()) {
+            <p class="feedback error" role="alert">{{ pixError() }}</p>
+          }
+          @if (pixSuccess()) {
+            <p class="feedback success" role="status">{{ pixSuccess() }}</p>
+          }
+
+          @if (pixResult()) {
+            <div class="pix-result">
+              <img [src]="pixQrCode()" alt="QR Code Pix para contribuição da Base Mission Farm" />
+              <textarea readonly [value]="pixResult()?.pixPayload" aria-label="Código Pix copia e cola"></textarea>
+              <button type="button" class="secondary-action" (click)="copyPix()">Copiar código Pix</button>
+            </div>
+          }
+        </article>
+      </div>
+    }
+  </section>
+
+  @if (showContributionActions()) {
+    <button class="floating-contribute" type="button" (click)="scrollToContribution()">Quero contribuir ↗</button>
   }
 </main>

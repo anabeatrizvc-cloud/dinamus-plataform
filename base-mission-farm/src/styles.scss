@@ -1,3 +1,67 @@
+@font-face {
+  font-family: "Lora";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/base/assets/base/fonts/lora-400.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Lora";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/base/assets/base/fonts/lora-500.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Lora";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/base/assets/base/fonts/lora-600.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Lora";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/base/assets/base/fonts/lora-700.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Sora";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/base/assets/base/fonts/sora-400.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Sora";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/base/assets/base/fonts/sora-600.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Sora";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/base/assets/base/fonts/sora-700.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Sora";
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("/base/assets/base/fonts/sora-800.ttf") format("truetype");
+}
+
 :root {
   color-scheme: dark;
   --base-green: #10261d;

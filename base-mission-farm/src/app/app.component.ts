@@ -1,9 +1,11 @@
 import { CommonModule, DOCUMENT } from '@angular/common';
 import {
+  AfterViewInit,
   ChangeDetectionStrategy,
   Component,
   ElementRef,
   HostListener,
+  OnDestroy,
   OnInit,
   ViewChild,
   computed,
@@ -14,10 +16,7 @@ import { FormsModule } from '@angular/forms';
 import QRCode from 'qrcode';
 
 import { BaseApiService, MissionBaseCampaign, MissionBasePix, MissionBaseStage } from './base-api.service';
-import { EnvironmentMedia, GalleryMedia, contributionValues, environments, galleryItems } from './base-content';
-
-type Layer = 'vision' | 'gallery' | 'contribute' | 'progress';
-type GalleryTab = 'photo' | 'video';
+import { ExploreMedia, ProjectPair, contributionValues, exploreItems, projectPairs } from './base-content';
 
 @Component({
   selector: 'base-root',
@@ -27,25 +26,26 @@ type GalleryTab = 'photo' | 'video';
   styleUrl: './app.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AppComponent implements OnInit {
+export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly api = inject(BaseApiService);
   private readonly document = inject(DOCUMENT);
+  private contributionObserver?: IntersectionObserver;
 
-  @ViewChild('heroDesktop') private readonly heroDesktop?: ElementRef<HTMLVideoElement>;
-  @ViewChild('heroMobile') private readonly heroMobile?: ElementRef<HTMLVideoElement>;
-  @ViewChild('layerClose') private readonly layerClose?: ElementRef<HTMLButtonElement>;
+  @ViewChild('heroVideo') private readonly heroVideo?: ElementRef<HTMLVideoElement>;
+  @ViewChild('visionSection') private readonly visionSection?: ElementRef<HTMLElement>;
+  @ViewChild('contributionSection') private readonly contributionSection?: ElementRef<HTMLElement>;
 
-  readonly environments = environments;
-  readonly galleryItems = galleryItems;
+  readonly projectPairs = projectPairs;
+  readonly exploreItems = exploreItems;
   readonly contributionValues = contributionValues;
   readonly campaign = signal<MissionBaseCampaign | null>(null);
   readonly loadingCampaign = signal(true);
   readonly campaignError = signal('');
-  readonly selectedEnvironment = signal<EnvironmentMedia>(environments[1]);
-  readonly selectedGalleryItem = signal<GalleryMedia>(galleryItems[0]);
-  readonly galleryTab = signal<GalleryTab>('photo');
+  readonly showContributionActions = signal(false);
   readonly heroPaused = signal(false);
-  readonly activeLayer = signal<Layer | null>(null);
+  readonly selectedProject = signal<ProjectPair>(projectPairs[0]);
+  readonly comparePosition = signal(52);
+  readonly selectedExploreItem = signal<ExploreMedia>(exploreItems[0]);
   readonly pixLoading = signal(false);
   readonly pixError = signal('');
   readonly pixSuccess = signal('');
@@ -54,9 +54,6 @@ export class AppComponent implements OnInit {
   readonly selectedValue = signal(100);
   readonly customValue = signal('');
   readonly selectedStageId = signal('');
-  readonly actionNotice = signal('');
-  readonly prefersReducedMotion = signal(false);
-  private layerTrigger: HTMLElement | null = null;
 
   readonly visibleStages = computed(() => {
     const stages = this.campaign()?.stages ?? [];
@@ -68,41 +65,47 @@ export class AppComponent implements OnInit {
     return stages.find((stage) => stage.id === this.selectedStageId()) ?? stages.find((stage) => stage.current) ?? stages[0] ?? null;
   });
 
-  readonly heroStage = computed(() => {
+  readonly currentStage = computed(() => {
     const stages = this.visibleStages();
-    return stages.find((stage) => stage.current) ?? stages.find((stage) => stage.name.toLowerCase().includes('reforma')) ?? stages[0] ?? null;
+    return stages.find((stage) => stage.current) ?? stages[0] ?? null;
   });
 
-  readonly galleryByTab = computed(() => this.galleryItems.filter((item) => item.type === this.galleryTab()));
-
-  readonly raisedPercentRaw = computed(() => {
-    const stage = this.heroStage();
-    if (!stage?.goalCents || stage.goalCents <= 0) {
-      return null;
-    }
-    return (Number(stage.raisedCents || 0) / stage.goalCents) * 100;
-  });
-
-  readonly progressWidth = computed(() => {
-    const percent = this.raisedPercentRaw();
-    return percent === null ? 0 : Math.max(0, Math.min(100, percent));
-  });
-
-  readonly remainingPercent = computed(() => {
-    const percent = this.raisedPercentRaw();
-    return percent === null ? null : Math.max(0, Math.ceil(100 - percent));
-  });
+  readonly campaignPercent = computed(() => Math.max(0, Math.min(100, Number(this.campaign()?.percent ?? 0))));
 
   ngOnInit(): void {
-    const reducedMotion = this.document.defaultView?.matchMedia('(prefers-reduced-motion: reduce)').matches ?? false;
-    this.prefersReducedMotion.set(reducedMotion);
     this.loadCampaign();
   }
 
+  ngAfterViewInit(): void {
+    const win = this.document.defaultView;
+    if (!win || !this.visionSection?.nativeElement || !('IntersectionObserver' in win)) {
+      return;
+    }
+
+    if (win.location.hash && win.location.hash !== '#inicio') {
+      this.showContributionActions.set(true);
+    }
+
+    this.contributionObserver = new win.IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          this.showContributionActions.set(true);
+          this.contributionObserver?.disconnect();
+        }
+      },
+      { rootMargin: '-18% 0px -45% 0px', threshold: 0.2 },
+    );
+    this.contributionObserver.observe(this.visionSection.nativeElement);
+  }
+
+  ngOnDestroy(): void {
+    this.contributionObserver?.disconnect();
+  }
+
   @HostListener('document:keydown.escape')
-  closeLayerByEscape(): void {
-    if (this.activeLayer()) {
-      this.closeLayer();
+  clearPixFeedback(): void {
+    if (this.pixResult()) {
+      this.resetPixFeedback();
     }
   }
 
@@ -124,55 +127,44 @@ export class AppComponent implements OnInit {
     });
   }
 
-  selectEnvironment(environment: EnvironmentMedia): void {
-    this.selectedEnvironment.set(environment);
-  }
-
-  moveGallery(direction: 1 | -1): void {
-    const items = this.galleryByTab();
-    if (!items.length) {
+  toggleHeroVideo(): void {
+    const video = this.heroVideo?.nativeElement;
+    if (!video) {
       return;
     }
-    const currentIndex = items.findIndex((item) => item.id === this.selectedGalleryItem().id);
-    const nextIndex = (currentIndex + direction + items.length) % items.length;
-    this.selectedGalleryItem.set(items[nextIndex]);
+
+    void video.play();
+    this.heroPaused.set(false);
   }
 
-  moveEnvironment(direction: 1 | -1): void {
-    const scenic = environments.filter((item) => item.id !== 'caminho');
-    const currentIndex = scenic.findIndex((item) => item.id === this.selectedEnvironment().id);
-    const nextIndex = (currentIndex + direction + scenic.length) % scenic.length;
-    this.selectEnvironment(scenic[nextIndex]);
+  selectProject(project: ProjectPair): void {
+    this.selectedProject.set(project);
+    this.comparePosition.set(52);
   }
 
-  toggleHeroVideo(): void {
-    const next = !this.heroPaused();
-    this.heroPaused.set(next);
-    for (const video of [this.heroDesktop?.nativeElement, this.heroMobile?.nativeElement]) {
-      if (!video) {
-        continue;
-      }
-      if (next) {
-        video.pause();
-      } else {
-        void video.play();
-      }
+  moveProject(direction: 1 | -1): void {
+    const currentIndex = projectPairs.findIndex((project) => project.id === this.selectedProject().id);
+    const nextIndex = (currentIndex + direction + projectPairs.length) % projectPairs.length;
+    this.selectProject(projectPairs[nextIndex]);
+  }
+
+  setComparePosition(value: string | number): void {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) {
+      this.comparePosition.set(Math.max(8, Math.min(92, parsed)));
     }
   }
 
-  openLayer(layer: Layer, event?: Event): void {
-    this.layerTrigger = event?.currentTarget instanceof HTMLElement ? event.currentTarget : null;
-    this.activeLayer.set(layer);
-    if (layer === 'contribute') {
-      this.resetPixFeedback();
-    }
-    window.setTimeout(() => this.layerClose?.nativeElement.focus(), 0);
+  selectExploreItem(item: ExploreMedia): void {
+    this.selectedExploreItem.set(item);
   }
 
-  closeLayer(): void {
-    this.activeLayer.set(null);
-    this.layerTrigger?.focus();
-    this.layerTrigger = null;
+  scrollToContribution(): void {
+    this.showContributionActions.set(true);
+    this.contributionSection?.nativeElement.scrollIntoView({
+      behavior: this.document.defaultView?.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+      block: 'start',
+    });
   }
 
   resetPixFeedback(): void {
@@ -182,24 +174,10 @@ export class AppComponent implements OnInit {
     this.pixQrCode.set('');
   }
 
-  openPix(stage?: MissionBaseStage, event?: Event): void {
-    this.openLayer('contribute', event);
-    if (stage) {
-      this.selectedStageId.set(stage.id);
-    }
-  }
-
-  contributeToHero(event?: Event): void {
-    this.openPix(this.heroStage() ?? undefined, event);
-  }
-
-  closePix(): void {
-    this.closeLayer();
-  }
-
   selectValue(value: number): void {
     this.selectedValue.set(value);
     this.customValue.set('');
+    this.resetPixFeedback();
   }
 
   async generatePix(): Promise<void> {
@@ -244,14 +222,6 @@ export class AppComponent implements OnInit {
     });
   }
 
-  setGalleryTab(tab: GalleryTab): void {
-    this.galleryTab.set(tab);
-    const first = this.galleryByTab()[0];
-    if (first) {
-      this.selectedGalleryItem.set(first);
-    }
-  }
-
   async copyPix(): Promise<void> {
     const payload = this.pixResult()?.pixPayload;
     if (!payload) {
@@ -276,13 +246,6 @@ export class AppComponent implements OnInit {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
   }
 
-  formatDate(value?: string | null): string {
-    if (!value) {
-      return 'Atualização em preparação';
-    }
-    return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium' }).format(new Date(value));
-  }
-
   stagePercent(stage: MissionBaseStage): number {
     if (!stage.goalCents || stage.goalCents <= 0) {
       return 0;
@@ -297,42 +260,6 @@ export class AppComponent implements OnInit {
     return `${this.formatCurrency(stage.raisedCents)} de ${this.formatCurrency(stage.goalCents)}`;
   }
 
-  heroMetaText(): string {
-    const stage = this.heroStage();
-    if (!stage?.goalCents || stage.goalCents <= 0) {
-      return 'Meta em definição';
-    }
-    const remaining = this.remainingPercent();
-    if (remaining === 0) {
-      return 'Meta alcançada';
-    }
-    return `Faltam ${remaining}% para alcançar a meta`;
-  }
-
-  heroStageName(): string {
-    return this.heroStage()?.name ?? 'Reforma';
-  }
-
-  layerTitle(): string {
-    switch (this.activeLayer()) {
-      case 'vision':
-        return 'A visão';
-      case 'gallery':
-        return 'Fotos e vídeos';
-      case 'contribute':
-        return 'Contribuir';
-      case 'progress':
-        return 'Acompanhar';
-      default:
-        return '';
-    }
-  }
-
-  currentGalleryIndex(): number {
-    const items = this.galleryByTab();
-    return Math.max(0, items.findIndex((item) => item.id === this.selectedGalleryItem().id)) + 1;
-  }
-
   statusLabel(status: MissionBaseStage['status']): string {
     switch (status) {
       case 'CONCLUIDA':
@@ -342,13 +269,5 @@ export class AppComponent implements OnInit {
       case 'EM_BREVE':
         return 'Em breve';
     }
-  }
-
-  showActionNotice(kind: 'serve' | 'pray'): void {
-    this.actionNotice.set(
-      kind === 'serve'
-        ? 'O fluxo para voluntariado será configurado em breve. Por enquanto, fale com a liderança para servir na Base.'
-        : 'Obrigado por se posicionar em oração. A lista de intercessão será configurada em breve.',
-    );
   }
 }

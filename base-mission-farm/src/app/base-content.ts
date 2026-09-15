@@ -1,12 +1,20 @@
-export type EnvironmentMedia = {
+export type ProjectPair = {
   id: string;
+  index: string;
   name: string;
   description: string;
-  image: string;
-  alt: string;
+  details: string[];
+  before: {
+    src: string;
+    alt: string;
+  };
+  after: {
+    src: string;
+    alt: string;
+  };
 };
 
-export type GalleryMedia = {
+export type ExploreMedia = {
   id: string;
   type: 'photo' | 'video';
   name: string;
@@ -16,108 +24,88 @@ export type GalleryMedia = {
   alt: string;
 };
 
-export const environments: EnvironmentMedia[] = [
+export const projectPairs: ProjectPair[] = [
   {
-    id: 'caminho',
-    name: 'Caminho e jardim',
-    description: 'A chegada revela um espaço simples, aberto e pronto para receber pessoas.',
-    image: 'assets/base/photos/caminho-jardim.jpeg',
-    alt: 'Caminho em meio ao jardim da Base Mission Farm',
+    id: 'corredor',
+    index: '01',
+    name: 'Corredor de acolhimento',
+    description: 'O caminho simples ganha estrutura, luz e circulação para receber pessoas com dignidade.',
+    details: ['fluxo claro', 'acabamento funcional', 'acolhimento desde a chegada'],
+    before: {
+      src: 'assets/base/project/before-corridor.jpeg',
+      alt: 'Corredor atual da Base Mission Farm antes da reforma',
+    },
+    after: {
+      src: 'assets/base/project/after-corridor.jpeg',
+      alt: 'Projeto visual do corredor reformado da Base Mission Farm',
+    },
   },
   {
-    id: 'patio',
-    name: 'Construções e pátio',
-    description: 'Estruturas existentes apontam para serviço, encontros e preparação.',
-    image: 'assets/base/photos/construcoes-patio.jpeg',
-    alt: 'Construções e pátio no terreno da Base Mission Farm',
-  },
-  {
-    id: 'varanda',
-    name: 'Varanda interior',
-    description: 'Ambientes cobertos que preservam a sensação de acolhimento e comunidade.',
-    image: 'assets/base/photos/varanda-interior.jpeg',
-    alt: 'Varanda interna da Base Mission Farm',
-  },
-  {
-    id: 'interno',
-    name: 'Ambiente interno',
-    description: 'Espaços simples que podem apoiar conversas, ensino e cuidado.',
-    image: 'assets/base/photos/ambiente-interno.jpeg',
-    alt: 'Ambiente interno de uma das construções da Base Mission Farm',
-  },
-  {
-    id: 'entrada',
-    name: 'Entrada',
-    description: 'Um ponto de chegada para quem vai ser formado, servido e enviado.',
-    image: 'assets/base/photos/entrada.jpeg',
-    alt: 'Entrada do terreno da Base Mission Farm',
-  },
-  {
-    id: 'detalhe',
-    name: 'Terra e detalhe',
-    description: 'A beleza real está no começo: gente, terra, oração e propósito.',
-    image: 'assets/base/photos/detalhe-terreno.jpeg',
-    alt: 'Detalhe do terreno da Base Mission Farm',
+    id: 'dormitorio',
+    index: '02',
+    name: 'Dormitório missionário',
+    description: 'Um ambiente preparado para descanso, formação e convivência durante os períodos de missão.',
+    details: ['8 lugares', '4 beliches', 'banheiro privativo', 'ventilação cruzada'],
+    before: {
+      src: 'assets/base/project/before-dormitory.jpeg',
+      alt: 'Dormitório atual da Base Mission Farm antes da reforma',
+    },
+    after: {
+      src: 'assets/base/project/after-dormitory.jpeg',
+      alt: 'Projeto visual do dormitório reformado da Base Mission Farm',
+    },
   },
 ];
 
-export const galleryItems: GalleryMedia[] = [
+export const exploreItems: ExploreMedia[] = [
   {
-    id: 'caminho',
-    type: 'photo',
-    name: 'Caminho e jardim',
-    caption: 'A chegada pela área verde da Base.',
-    src: 'assets/base/photos/caminho-jardim.jpeg',
-    alt: 'Caminho e jardim da Base Mission Farm',
+    id: 'walkthrough',
+    type: 'video',
+    name: 'Caminhada pelo terreno',
+    caption: 'Um registro real do que já existe e do espaço que será preparado.',
+    src: 'assets/base/videos/caminhada-terreno.mp4',
+    poster: 'assets/base/photos/caminho-jardim.jpeg',
+    alt: 'Vídeo de caminhada pela Base Mission Farm',
   },
   {
-    id: 'patio',
+    id: 'courtyard',
     type: 'photo',
     name: 'Construções e pátio',
-    caption: 'Área comum com construções existentes.',
+    caption: 'Estruturas existentes para encontros, cuidado e serviço.',
     src: 'assets/base/photos/construcoes-patio.jpeg',
-    alt: 'Pátio e construções da Base Mission Farm',
+    alt: 'Construções e pátio do terreno da Base Mission Farm',
   },
   {
-    id: 'varanda',
+    id: 'porch',
     type: 'photo',
     name: 'Varanda interior',
-    caption: 'Entrada coberta da casa e varanda.',
+    caption: 'Um lugar de transição entre casa, comunidade e missão.',
     src: 'assets/base/photos/varanda-interior.jpeg',
-    alt: 'Varanda interna da Base Mission Farm',
+    alt: 'Varanda interior da Base Mission Farm',
   },
   {
-    id: 'ambiente-interno',
+    id: 'interior',
     type: 'photo',
     name: 'Ambiente interno',
-    caption: 'Espaço interno existente na casa.',
+    caption: 'Espaços que serão organizados para ensino, escuta e preparo.',
     src: 'assets/base/photos/ambiente-interno.jpeg',
     alt: 'Ambiente interno da Base Mission Farm',
   },
   {
-    id: 'entrada',
+    id: 'arrival',
     type: 'photo',
     name: 'Entrada',
-    caption: 'Uma das entradas do terreno.',
+    caption: 'A primeira imagem de quem chega para ser formado e enviado.',
     src: 'assets/base/photos/entrada.jpeg',
     alt: 'Entrada da Base Mission Farm',
   },
   {
-    id: 'detalhe',
+    id: 'detail',
     type: 'photo',
-    name: 'Detalhes do terreno',
-    caption: 'Registros reais dos espaços da Base.',
+    name: 'Terra e detalhes',
+    caption: 'O começo concreto de uma visão que está sendo construída.',
     src: 'assets/base/photos/detalhe-terreno.jpeg',
     alt: 'Detalhe do terreno da Base Mission Farm',
-  },
-  {
-    id: 'caminhada',
-    type: 'video',
-    name: 'Caminhada pelo terreno',
-    caption: 'Vídeo real de caminhada pela Base.',
-    src: 'assets/base/videos/caminhada-terreno.mp4',
-    poster: 'assets/base/photos/caminho-jardim.jpeg',
-    alt: 'Vídeo de caminhada pelo terreno da Base Mission Farm',
   },
 ];
 

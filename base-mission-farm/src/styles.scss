@@ -1,65 +1,65 @@
 @font-face {
-  font-family: "Lora";
+  font-family: 'Lora';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url("/base/assets/base/fonts/lora-400.ttf") format("truetype");
+  src: url('/base/assets/base/fonts/lora-400.woff2') format('woff2');
 }
 
 @font-face {
-  font-family: "Lora";
+  font-family: 'Lora';
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url("/base/assets/base/fonts/lora-500.ttf") format("truetype");
+  src: url('/base/assets/base/fonts/lora-500.ttf') format('truetype');
 }
 
 @font-face {
-  font-family: "Lora";
+  font-family: 'Lora';
   font-style: normal;
   font-weight: 600;
   font-display: swap;
-  src: url("/base/assets/base/fonts/lora-600.ttf") format("truetype");
+  src: url('/base/assets/base/fonts/lora-600.ttf') format('truetype');
 }
 
 @font-face {
-  font-family: "Lora";
+  font-family: 'Lora';
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url("/base/assets/base/fonts/lora-700.ttf") format("truetype");
+  src: url('/base/assets/base/fonts/lora-700.ttf') format('truetype');
 }
 
 @font-face {
-  font-family: "Sora";
+  font-family: 'Sora';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url("/base/assets/base/fonts/sora-400.ttf") format("truetype");
+  src: url('/base/assets/base/fonts/sora-400.woff2') format('woff2');
 }
 
 @font-face {
-  font-family: "Sora";
+  font-family: 'Sora';
   font-style: normal;
   font-weight: 600;
   font-display: swap;
-  src: url("/base/assets/base/fonts/sora-600.ttf") format("truetype");
+  src: url('/base/assets/base/fonts/sora-600.woff2') format('woff2');
 }
 
 @font-face {
-  font-family: "Sora";
+  font-family: 'Sora';
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url("/base/assets/base/fonts/sora-700.ttf") format("truetype");
+  src: url('/base/assets/base/fonts/sora-700.woff2') format('woff2');
 }
 
 @font-face {
-  font-family: "Sora";
+  font-family: 'Sora';
   font-style: normal;
   font-weight: 800;
   font-display: swap;
-  src: url("/base/assets/base/fonts/sora-800.ttf") format("truetype");
+  src: url('/base/assets/base/fonts/sora-800.ttf') format('truetype');
 }
 
 :root {
@@ -76,8 +76,10 @@
   --ink: #101513;
   --line-dark: rgb(242 234 220 / 0.18);
   --line-light: rgb(16 38 29 / 0.16);
-  --font-ui: "Sora", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-title: "Lora", Georgia, "Times New Roman", serif;
+  --font-ui:
+    'Sora', Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    sans-serif;
+  --font-title: 'Lora', Georgia, 'Times New Roman', serif;
 }
 
 * {
@@ -111,7 +113,11 @@ body {
   background: var(--base-green-deep);
   color: var(--cloud);
   font-family: var(--font-ui);
-  text-rendering: geometricPrecision;
+  font-kerning: normal;
+  font-synthesis-weight: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 button,
@@ -127,4 +133,30 @@ a {
 
 a {
   color: inherit;
+}
+
+.static-projects {
+  max-width: 1100px;
+  margin: auto;
+  padding: 24px;
+}
+
+.static-comparison {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+
+  figure {
+    margin: 0;
+  }
+
+  img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  figcaption {
+    margin-top: 12px;
+  }
 }

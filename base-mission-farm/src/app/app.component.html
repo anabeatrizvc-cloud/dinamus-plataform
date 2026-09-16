@@ -47,16 +47,28 @@
 
 <main>
   <section #hero id="base" class="hero" aria-labelledby="hero-title">
+    <img
+      class="hero-media hero-poster"
+      src="assets/base/photos/drone-current-horizontal.jpg"
+      alt=""
+      loading="eager"
+      fetchpriority="high"
+    />
     <video
       #heroVideo
-      class="hero-media"
+      class="hero-media hero-video"
+      [class.ready]="heroFrameReady()"
       [muted]="true"
+      muted
       loop
       playsinline
-      preload="none"
+      preload="auto"
       poster="assets/base/photos/drone-current-horizontal.jpg"
       aria-label="Vista aérea atual da propriedade"
       (play)="heroPlaying.set(true)"
+      (playing)="heroFrameReady.set(true)"
+      (emptied)="heroFrameReady.set(false)"
+      (error)="heroFrameReady.set(false)"
       (pause)="heroPlaying.set(false)"
     >
       <source src="assets/base/videos/drone-current-horizontal.mp4" type="video/mp4" />

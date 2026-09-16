@@ -36,7 +36,7 @@ async function fullViewportHero(page: Page) {
     .toBeCloseTo(viewport.height, 0);
   const hero = await page.locator('.hero').boundingBox();
   expect(hero).toMatchObject({ x: 0, y: 0, width: viewport.width });
-  expect(await page.locator('.hero-media').boundingBox()).toEqual(hero);
+  expect(await page.locator('.hero-video').boundingBox()).toEqual(hero);
   const vision = await page.locator('#visao').boundingBox();
   expect(vision!.y).toBeCloseTo(viewport.height, 0);
   await expect(page.locator('.floating-contribute')).toBeHidden();

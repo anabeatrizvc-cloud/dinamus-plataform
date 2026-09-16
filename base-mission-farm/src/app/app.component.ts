@@ -74,6 +74,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly menuOpen = signal(false);
   readonly contributionRevealed = signal(false);
   readonly heroPlaying = signal(false);
+  readonly heroFrameReady = signal(false);
   readonly transformationPlaying = signal(false);
   readonly transformationStarted = signal(false);
   readonly projectPairs = projectPairs;
@@ -124,6 +125,9 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit(): void {
+    this.syncHeroHeight();
+    this.document.defaultView?.addEventListener('resize', this.syncHeroHeight);
+    this.document.defaultView?.visualViewport?.addEventListener('resize', this.syncHeroHeight);
     const hero = this.hero()?.nativeElement;
     const trigger = this.contributionTrigger()?.nativeElement;
     this.observer = new IntersectionObserver(
@@ -151,7 +155,18 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.observer?.disconnect();
+    this.document.defaultView?.removeEventListener('resize', this.syncHeroHeight);
+    this.document.defaultView?.visualViewport?.removeEventListener('resize', this.syncHeroHeight);
   }
+
+  private readonly syncHeroHeight = (): void => {
+    const viewport = this.document.defaultView;
+    if (!viewport || (viewport.visualViewport && viewport.visualViewport.scale !== 1)) return;
+    this.hero()?.nativeElement.style.setProperty(
+      '--hero-height',
+      `${Math.ceil(viewport.innerHeight)}px`,
+    );
+  };
 
   @HostListener('document:keydown.escape')
   closeOnEscape(): void {

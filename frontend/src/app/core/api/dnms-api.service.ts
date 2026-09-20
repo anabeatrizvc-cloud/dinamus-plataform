@@ -138,8 +138,8 @@ export class DnmsApiService {
     return this.http.put<MissionBaseCampaign>(`${this.baseUrl}/admin/mission-base`, payload);
   }
 
-  resetMissionBase(confirmation: string) {
-    return this.http.post<MissionBaseCampaign>(`${this.baseUrl}/admin/mission-base/reset`, { confirmation });
+  resetMissionBase(confirmation: string, version: number) {
+    return this.http.post<MissionBaseCampaign>(`${this.baseUrl}/admin/mission-base/reset`, { confirmation, version });
   }
 
   requestPrayer(payload: PrayerRequestPayload) {

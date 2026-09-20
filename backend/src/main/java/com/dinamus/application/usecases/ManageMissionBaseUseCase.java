@@ -2,6 +2,8 @@ package com.dinamus.application.usecases;
 
 import com.dinamus.adapters.out.payment.MissionBasePixProperties;
 import com.dinamus.application.ports.ContentRepository;
+import com.dinamus.application.ports.AuditPort;
+import com.dinamus.domain.model.MissionBaseConflictException;
 import com.dinamus.domain.model.MissionBaseCampaign;
 import com.dinamus.domain.model.MissionBaseStage;
 import jakarta.inject.Singleton;
@@ -22,15 +24,18 @@ import java.util.UUID;
 @Singleton
 public class ManageMissionBaseUseCase {
     private static final String CAMPAIGN_ID = "current";
-    private static final Set<String> VALID_STATUSES = Set.of("EM_BREVE", "EM_ANDAMENTO", "CONCLUIDA");
+    private static final Set<String> FRONT_IDS = Set.of("aquisicao", "revitalizacao");
+    private static final long MAX_MONEY_CENTS = 100_000_000_000_000L;
     private static final long MAX_PIX_AMOUNT_CENTS = 100_000_000_00L;
 
     private final ContentRepository repository;
     private final MissionBasePixProperties pixProperties;
+    private final AuditPort audit;
 
-    public ManageMissionBaseUseCase(ContentRepository repository, MissionBasePixProperties pixProperties) {
+    public ManageMissionBaseUseCase(ContentRepository repository, MissionBasePixProperties pixProperties, AuditPort audit) {
         this.repository = repository;
         this.pixProperties = pixProperties;
+        this.audit = audit;
     }
 
     public CampaignView publicCampaign() {
@@ -42,79 +47,53 @@ public class ManageMissionBaseUseCase {
         return view(currentCampaign(), false);
     }
 
-    public CampaignView update(String title, String description, boolean active, String currentStageId, List<StageUpdate> updates) {
+    public CampaignView update(String title, String description, boolean active, long version, List<StageUpdate> updates, String actor) {
         MissionBaseCampaign current = currentCampaign();
-        String now = Instant.now().toString();
-        List<MissionBaseStage> stages = current.stages().stream()
-            .map(stage -> {
-                StageUpdate update = updates.stream()
-                    .filter(item -> item.id().equals(stage.id()))
-                    .findFirst()
-                    .orElse(new StageUpdate(stage.id(), stage.goalCents(), stage.raisedCents(), stage.status(), stage.visible()));
-                validateMoney(update.goalCents(), "A meta não pode ser negativa.");
-                validateMoney(update.raisedCents(), "O valor arrecadado não pode ser negativo.");
-                validateStatus(update.status());
-                return new MissionBaseStage(
-                    stage.id(),
-                    stage.name(),
-                    stage.description(),
-                    update.goalCents(),
-                    update.raisedCents(),
-                    update.status(),
-                    stage.icon(),
-                    stage.sortOrder(),
-                    stage.id().equals(currentStageId),
-                    update.visible()
-                );
-            })
-            .sorted(Comparator.comparingInt(MissionBaseStage::sortOrder))
-            .toList();
-
-        if (stages.stream().noneMatch(MissionBaseStage::current)) {
-            throw new IllegalArgumentException("Defina a etapa atual da Base Missionária.");
+        if (version != current.version()) throw new MissionBaseConflictException();
+        if (updates == null || updates.size() != 2 || updates.stream().anyMatch(java.util.Objects::isNull)
+            || !updates.stream().map(StageUpdate::id).collect(java.util.stream.Collectors.toSet()).equals(FRONT_IDS)) {
+            throw new IllegalArgumentException("Informe somente Aquisição e Revitalização, sem duplicatas.");
         }
-
+        String now = Instant.now().toString();
+        List<MissionBaseStage> stages = current.stages().stream().map(stage -> {
+            StageUpdate update = updates.stream().filter(item -> stage.id().equals(item.id())).findFirst().orElseThrow();
+            validateMoney(update.goalCents(), "A meta não pode ser negativa.");
+            validateMoney(update.raisedCents(), "O valor destinado não pode ser negativo.");
+            if (update.sortOrder() < 0 || update.sortOrder() > 100) throw new IllegalArgumentException("Ordem inválida.");
+            String name = normalizeText(update.name(), "Informe o título da frente.");
+            String purpose = normalizeText(update.description(), "Informe o propósito da frente.");
+            if (name.length() > 80 || purpose.length() > 360) throw new IllegalArgumentException("Texto da frente muito longo.");
+            boolean changed = !name.equals(stage.name()) || !purpose.equals(stage.description())
+                || update.goalCents() != stage.goalCents() || update.raisedCents() != stage.raisedCents()
+                || update.visible() != stage.visible() || update.sortOrder() != stage.sortOrder();
+            return new MissionBaseStage(stage.id(), name, purpose, update.goalCents(), update.raisedCents(),
+                stage.status(), stage.icon(), update.sortOrder(), stage.current(), update.visible(),
+                changed ? now : stage.updatedAt(), changed ? actor : stage.updatedBy());
+        }).sorted(Comparator.comparingInt(MissionBaseStage::sortOrder)).toList();
         MissionBaseCampaign saved = repository.saveMissionBaseCampaign(new MissionBaseCampaign(
-            CAMPAIGN_ID,
-            normalizeText(title, "Informe o título da campanha."),
-            normalizeText(description, "Informe a descrição da campanha."),
-            active,
-            stages,
-            current.createdAt(),
-            now
-        ));
+            CAMPAIGN_ID, normalizeText(title, "Informe o título da campanha."),
+            normalizeText(description, "Informe a descrição da campanha."), active, stages,
+            current.createdAt() == null ? now : current.createdAt(), now, version + 1, current.legacyStages()
+        ), version);
+        audit.record(actor, "mission-base.updated", saved.id());
+        stages.stream().filter(stage -> now.equals(stage.updatedAt()))
+            .forEach(stage -> audit.record(actor, "mission-base.front.updated", stage.id()));
         return view(saved, false);
     }
 
-    public CampaignView reset(String confirmation) {
-        if (!"ZERAR".equals(confirmation)) {
-            throw new IllegalArgumentException("Digite ZERAR para confirmar a operação.");
-        }
+    public CampaignView reset(String confirmation, long version, String actor) {
+        if (!"ZERAR".equals(confirmation)) throw new IllegalArgumentException("Digite ZERAR para confirmar a operação.");
         MissionBaseCampaign current = currentCampaign();
+        if (version != current.version()) throw new MissionBaseConflictException();
         String now = Instant.now().toString();
-        List<MissionBaseStage> resetStages = current.stages().stream()
-            .map(stage -> new MissionBaseStage(
-                stage.id(),
-                stage.name(),
-                stage.description(),
-                stage.goalCents(),
-                0,
-                stage.status(),
-                stage.icon(),
-                stage.sortOrder(),
-                stage.current(),
-                stage.visible()
-            ))
-            .toList();
+        List<MissionBaseStage> stages = current.stages().stream().map(stage -> new MissionBaseStage(
+            stage.id(), stage.name(), stage.description(), stage.goalCents(), 0, stage.status(), stage.icon(),
+            stage.sortOrder(), stage.current(), stage.visible(), now, actor)).toList();
         MissionBaseCampaign saved = repository.saveMissionBaseCampaign(new MissionBaseCampaign(
-            current.id(),
-            current.title(),
-            current.description(),
-            current.active(),
-            resetStages,
-            current.createdAt(),
-            now
-        ));
+            current.id(), current.title(), current.description(), current.active(), stages,
+            current.createdAt() == null ? now : current.createdAt(), now, version + 1, current.legacyStages()
+        ), version);
+        audit.record(actor, "mission-base.allocations.reset", saved.id());
         return view(saved, false);
     }
 
@@ -128,7 +107,7 @@ public class ManageMissionBaseUseCase {
             throw new IllegalArgumentException("A Base Missionária não está recebendo contribuições no momento.");
         }
 
-        MissionBaseStage stage = campaign.stages().stream()
+        MissionBaseStage stage = java.util.stream.Stream.concat(campaign.stages().stream(), campaign.legacyStages().stream())
             .filter(item -> item.id().equals(stageId) && item.visible())
             .findFirst()
             .orElseThrow(() -> new IllegalArgumentException("Finalidade de contribuição inválida."));
@@ -139,28 +118,44 @@ public class ManageMissionBaseUseCase {
     }
 
     private MissionBaseCampaign currentCampaign() {
-        MissionBaseCampaign campaign = repository.findMissionBaseCampaign().orElseGet(this::defaultCampaign);
-        if (campaign.stages() == null || campaign.stages().isEmpty()) {
-            campaign = defaultCampaign();
+        return migrate(repository.findMissionBaseCampaign().orElseGet(this::defaultCampaign));
+    }
+
+    // Reads project the old stages; only an explicit versioned save persists the preserved legacy snapshot.
+    private MissionBaseCampaign migrate(MissionBaseCampaign campaign) {
+        List<MissionBaseStage> original = campaign.stages() == null ? List.of() : campaign.stages();
+        List<MissionBaseStage> archive = campaign.legacyStages() == null ? List.of() : campaign.legacyStages();
+        if (original.size() == 2 && original.stream().map(MissionBaseStage::id)
+            .collect(java.util.stream.Collectors.toSet()).equals(FRONT_IDS)) {
+            return new MissionBaseCampaign(campaign.id(), campaign.title(), campaign.description(), campaign.active(),
+                original, campaign.createdAt(), campaign.updatedAt(), campaign.version(), archive);
         }
-        return campaign;
+        List<MissionBaseStage> defaults = defaultCampaign().stages();
+        MissionBaseStage acquisition = original.stream().filter(stage -> "aquisicao".equals(stage.id()))
+            .findFirst().orElse(defaults.get(0));
+        List<MissionBaseStage> works = original.stream()
+            .filter(stage -> Set.of("reforma", "construcao", "revitalizacao").contains(stage.id())).toList();
+        MissionBaseStage revitalization = new MissionBaseStage("revitalizacao", "Revitalização", defaults.get(1).description(),
+            works.stream().map(MissionBaseStage::goalCents).reduce(0L, Math::addExact),
+            works.stream().map(MissionBaseStage::raisedCents).reduce(0L, Math::addExact),
+            "EM_BREVE", "tool", 2, false, works.isEmpty() || works.stream().anyMatch(MissionBaseStage::visible),
+            works.isEmpty() ? null : campaign.updatedAt(), null);
+        MissionBaseStage adapted = new MissionBaseStage(acquisition.id(), acquisition.name(), acquisition.description(),
+            acquisition.goalCents(), acquisition.raisedCents(), acquisition.status(), acquisition.icon(), 1, true,
+            acquisition.visible(), acquisition.updatedAt() == null && original.contains(acquisition) ? campaign.updatedAt() : acquisition.updatedAt(),
+            acquisition.updatedBy());
+        return new MissionBaseCampaign(campaign.id(), campaign.title(), campaign.description(), campaign.active(),
+            List.of(adapted, revitalization), campaign.createdAt(), campaign.updatedAt(), campaign.version(),
+            archive.isEmpty() ? List.copyOf(original) : archive);
     }
 
     private MissionBaseCampaign defaultCampaign() {
-        String now = Instant.now().toString();
-        return new MissionBaseCampaign(
-            CAMPAIGN_ID,
-            "Um lugar para o avanço do Reino.",
-            "Estamos construindo uma base missionária para servir, alcançar e transformar vidas através do Evangelho.",
-            true,
+        return new MissionBaseCampaign(CAMPAIGN_ID, "Um lugar para o avanço do Reino.",
+            "Estamos construindo uma base missionária para servir, alcançar e transformar vidas através do Evangelho.", true,
             List.of(
-                new MissionBaseStage("aquisicao", "Aquisição", "Aquisição do espaço destinado à Base Missionária.", 0, 0, "EM_ANDAMENTO", "key", 1, true, true),
-                new MissionBaseStage("reforma", "Reforma", "Adequação da estrutura existente para servir pessoas com excelência.", 0, 0, "EM_BREVE", "tool", 2, false, true),
-                new MissionBaseStage("construcao", "Construção", "Construção e finalização dos ambientes necessários para a missão.", 0, 0, "EM_BREVE", "building", 3, false, true)
-            ),
-            now,
-            now
-        );
+                new MissionBaseStage("aquisicao", "Aquisição", "Garantir o lugar para as próximas gerações.", 0, 0, "EM_ANDAMENTO", "key", 1, true, true),
+                new MissionBaseStage("revitalizacao", "Revitalização", "Transformar estruturas em vidas.", 0, 0, "EM_BREVE", "tool", 2, false, true)
+            ), null, null);
     }
 
     private CampaignView view(MissionBaseCampaign campaign, boolean onlyVisible) {
@@ -168,8 +163,8 @@ public class ManageMissionBaseUseCase {
             .filter(stage -> !onlyVisible || stage.visible())
             .sorted(Comparator.comparingInt(MissionBaseStage::sortOrder))
             .toList();
-        long totalGoal = stages.stream().mapToLong(MissionBaseStage::goalCents).sum();
-        long totalRaised = stages.stream().mapToLong(MissionBaseStage::raisedCents).sum();
+        long totalGoal = stages.stream().map(MissionBaseStage::goalCents).reduce(0L, Math::addExact);
+        long totalRaised = stages.stream().map(MissionBaseStage::raisedCents).reduce(0L, Math::addExact);
         List<StageView> stageViews = stages.stream()
             .map(stage -> new StageView(
                 stage.id(),
@@ -183,7 +178,9 @@ public class ManageMissionBaseUseCase {
                 stage.icon(),
                 stage.sortOrder(),
                 stage.current(),
-                stage.visible()
+                stage.visible(),
+                stage.goalCents() > 0 ? Math.max(0, stage.goalCents() - stage.raisedCents()) : null,
+                stage.updatedAt(), onlyVisible ? null : stage.updatedBy()
             ))
             .toList();
         return new CampaignView(
@@ -196,28 +193,21 @@ public class ManageMissionBaseUseCase {
             percent(totalRaised, totalGoal),
             totalGoal > 0 && totalRaised > totalGoal,
             stageViews,
-            campaign.updatedAt()
+            campaign.updatedAt(), campaign.version()
         );
     }
 
-    private int percent(long raisedCents, long goalCents) {
+    private double percent(long raisedCents, long goalCents) {
         if (goalCents <= 0) {
             return 0;
         }
-        long value = Math.round((raisedCents * 100.0) / goalCents);
-        return (int) Math.max(0, Math.min(100, value));
+        return BigDecimal.valueOf(raisedCents).multiply(BigDecimal.valueOf(100))
+            .divide(BigDecimal.valueOf(goalCents), 2, RoundingMode.HALF_UP).doubleValue();
     }
 
     private void validateMoney(long value, String message) {
-        if (value < 0) {
-            throw new IllegalArgumentException(message);
-        }
-    }
-
-    private void validateStatus(String status) {
-        if (!VALID_STATUSES.contains(status)) {
-            throw new IllegalArgumentException("Status de etapa inválido.");
-        }
+        if (value < 0) throw new IllegalArgumentException(message);
+        if (value > MAX_MONEY_CENTS) throw new IllegalArgumentException("Valor financeiro acima do limite permitido.");
     }
 
     private String normalizeText(String value, String message) {
@@ -311,7 +301,7 @@ public class ManageMissionBaseUseCase {
         return "%04X".formatted(crc);
     }
 
-    public record StageUpdate(String id, long goalCents, long raisedCents, String status, boolean visible) {
+    public record StageUpdate(String id, String name, String description, long goalCents, long raisedCents, boolean visible, int sortOrder) {
     }
 
     public record CampaignView(
@@ -321,10 +311,11 @@ public class ManageMissionBaseUseCase {
         boolean active,
         long totalGoalCents,
         long totalRaisedCents,
-        int percent,
+        double percent,
         boolean goalExceeded,
         List<StageView> stages,
-        String updatedAt
+        String updatedAt,
+        long version
     ) {
     }
 
@@ -334,13 +325,16 @@ public class ManageMissionBaseUseCase {
         String description,
         long goalCents,
         long raisedCents,
-        int percent,
+        double percent,
         boolean goalExceeded,
         String status,
         String icon,
         int sortOrder,
         boolean current,
-        boolean visible
+        boolean visible,
+        Long remainingCents,
+        String updatedAt,
+        String updatedBy
     ) {
     }
 

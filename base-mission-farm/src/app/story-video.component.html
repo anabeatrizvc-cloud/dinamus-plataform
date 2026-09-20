@@ -1,0 +1,99 @@
+<div
+  #player
+  class="player"
+  [class.started]="started()"
+  [class.playing]="playing()"
+>
+  <video
+    #video
+    [poster]="poster()"
+    [muted]="muted()"
+    playsinline
+    preload="none"
+    [attr.aria-label]="title()"
+    (play)="onPlay()"
+    (pause)="playing.set(false)"
+    (ended)="playing.set(false)"
+    (timeupdate)="updateTime()"
+    (loadedmetadata)="updateTime()"
+    (error)="failed.set(true)"
+  ></video>
+  @if (!started() || failed()) {
+    <div class="poster-caption">
+      <button
+        class="poster-play"
+        type="button"
+        (click)="toggle()"
+        [attr.aria-label]="
+          (failed() ? 'Tentar novamente: ' : 'Reproduzir: ') + title()
+        "
+        [title]="'Reproduzir ' + title()"
+      >
+        @if (failed()) {
+          <svg lucideRotateCcw aria-hidden="true"></svg>
+        } @else {
+          <svg lucidePlay aria-hidden="true"></svg>
+        }
+      </button>
+      <span>{{ title() }}</span>
+      @if (durationLabel()) {
+        <small>{{ durationLabel() }}</small>
+      }
+    </div>
+  }
+  @if (started()) {
+    <div class="video-controls" [attr.aria-label]="'Controles de ' + title()">
+      <button
+        type="button"
+        (click)="toggle()"
+        [attr.aria-label]="(playing() ? 'Pausar: ' : 'Reproduzir: ') + title()"
+        [title]="playing() ? 'Pausar' : 'Reproduzir'"
+      >
+        @if (playing()) {
+          <svg lucidePause aria-hidden="true"></svg>
+        } @else {
+          <svg lucidePlay aria-hidden="true"></svg>
+        }
+      </button>
+      <input
+        type="range"
+        min="0"
+        [max]="duration() || 1"
+        step="0.1"
+        [value]="elapsed()"
+        [disabled]="!duration()"
+        (input)="seek($event)"
+        [attr.aria-label]="'Posição de ' + title()"
+        [attr.aria-valuetext]="time(elapsed()) + ' de ' + time(duration())"
+      />
+      <output>{{ time(elapsed()) }}</output>
+      <button
+        type="button"
+        (click)="toggleSound()"
+        [attr.aria-label]="muted() ? 'Ativar som' : 'Silenciar'"
+        [title]="muted() ? 'Ativar som' : 'Silenciar'"
+      >
+        @if (muted()) {
+          <svg lucideVolumeX aria-hidden="true"></svg>
+        } @else {
+          <svg lucideVolume2 aria-hidden="true"></svg>
+        }
+      </button>
+      @if (canFullscreen()) {
+        <button
+          type="button"
+          (click)="fullscreen()"
+          aria-label="Tela cheia"
+          title="Tela cheia"
+        >
+          <svg lucideMaximize aria-hidden="true"></svg>
+        </button>
+      }
+    </div>
+  }
+  @if (failed()) {
+    <p class="video-error" role="status">
+      Não foi possível reproduzir. Tente novamente.
+    </p>
+  }
+</div>

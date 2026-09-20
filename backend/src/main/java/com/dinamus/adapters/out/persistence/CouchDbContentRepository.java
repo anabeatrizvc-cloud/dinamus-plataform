@@ -9,6 +9,7 @@ import com.dinamus.domain.model.EventSummary;
 import com.dinamus.domain.model.FirstVisit;
 import com.dinamus.domain.model.GrowthGroup;
 import com.dinamus.domain.model.MissionBaseCampaign;
+import com.dinamus.domain.model.MissionBaseConflictException;
 import com.dinamus.domain.model.PrayerRequest;
 import com.dinamus.domain.model.UserAccount;
 import io.micronaut.context.annotation.Requires;
@@ -78,13 +79,53 @@ public class CouchDbContentRepository implements ContentRepository {
 
     @Override
     public Optional<MissionBaseCampaign> findMissionBaseCampaign() {
-        return request("GET", documentUri("mission-base-campaign", "current"), "").flatMap(this::readMissionBaseDocument);
+        return missionBaseDocument().map(CouchMissionBaseDocument::payload);
     }
 
     @Override
-    public MissionBaseCampaign saveMissionBaseCampaign(MissionBaseCampaign campaign) {
-        saveDocument("mission-base-campaign", campaign.id(), campaign);
-        return campaign;
+    public MissionBaseCampaign saveMissionBaseCampaign(MissionBaseCampaign campaign, long expectedVersion) {
+        Optional<CouchMissionBaseDocument> current = missionBaseDocument();
+        if (current.map(doc -> doc.payload().version()).orElse(0L) != expectedVersion) throw new MissionBaseConflictException();
+        try {
+            Map<String, Object> document = new java.util.HashMap<>();
+            document.put("_id", "mission-base-campaign:" + campaign.id());
+            document.put("type", "mission-base-campaign");
+            document.put("payload", campaign);
+            current.ifPresent(doc -> document.put("_rev", doc._rev()));
+            HttpResponse<String> response = missionBaseRequest("PUT", objectMapper.writeValueAsString(document));
+            if (response.statusCode() == 409) throw new MissionBaseConflictException();
+            if (response.statusCode() < 200 || response.statusCode() >= 300) throw new IllegalStateException("Could not save mission base campaign");
+            return campaign;
+        } catch (java.io.IOException exception) {
+            throw new IllegalStateException("Could not serialize mission base campaign", exception);
+        }
+    }
+
+    private Optional<CouchMissionBaseDocument> missionBaseDocument() {
+        HttpResponse<String> response = missionBaseRequest("GET", "");
+        if (response.statusCode() == 404) return Optional.empty();
+        if (response.statusCode() != 200) throw new IllegalStateException("Could not read mission base campaign");
+        try {
+            CouchMissionBaseDocument document = objectMapper.readValue(response.body(), Argument.of(CouchMissionBaseDocument.class));
+            if (document.payload() == null) throw new IllegalStateException("Invalid mission base document");
+            return Optional.of(document);
+        } catch (java.io.IOException exception) {
+            throw new IllegalStateException("Invalid mission base document", exception);
+        }
+    }
+
+    private HttpResponse<String> missionBaseRequest(String method, String body) {
+        try {
+            HttpRequest request = HttpRequest.newBuilder(URI.create(documentUri("mission-base-campaign", "current")))
+                .timeout(Duration.ofSeconds(5)).header("Authorization", "Basic " + credentials())
+                .header("Content-Type", "application/json").method(method, HttpRequest.BodyPublishers.ofString(body)).build();
+            return client.send(request, HttpResponse.BodyHandlers.ofString());
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Mission base request interrupted", exception);
+        } catch (java.io.IOException exception) {
+            throw new IllegalStateException("Mission base storage unavailable", exception);
+        }
     }
 
     @Override
@@ -188,14 +229,6 @@ public class CouchDbContentRepository implements ContentRepository {
     private Optional<CouchRevisionDocument> readRevisionDocument(String body) {
         try {
             return Optional.of(objectMapper.readValue(body, Argument.of(CouchRevisionDocument.class)));
-        } catch (Exception exception) {
-            return Optional.empty();
-        }
-    }
-
-    private Optional<MissionBaseCampaign> readMissionBaseDocument(String body) {
-        try {
-            return Optional.ofNullable(objectMapper.readValue(body, Argument.of(CouchMissionBaseDocument.class)).payload());
         } catch (Exception exception) {
             return Optional.empty();
         }

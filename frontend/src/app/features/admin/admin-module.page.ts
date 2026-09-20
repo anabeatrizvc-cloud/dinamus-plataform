@@ -36,7 +36,6 @@ import {
   MemberSummary,
   MissionBaseCampaign,
   MissionBaseCampaignPayload,
-  MissionBaseStageStatus,
   Role,
 } from '../../core/models/platform.models';
 
@@ -53,11 +52,13 @@ type MissionStageDraft = {
   description: string;
   goalCents: number;
   raisedCents: number;
-  status: MissionBaseStageStatus;
   visible: boolean;
-  current: boolean;
+  sortOrder: number;
   percent: number;
   goalExceeded: boolean;
+  remainingCents: number | null;
+  updatedAt: string | null;
+  updatedBy: string | null;
 };
 
 @Component({
@@ -107,6 +108,7 @@ export class AdminModulePage implements OnInit {
   readonly editingId = signal<string | null>(null);
   readonly isSaving = signal(false);
   readonly isLoadingMissionBase = signal(false);
+  readonly missionConflict = signal(false);
   readonly feedback = signal('');
   readonly selectedEcoLessonId = signal<string | null>(null);
   readonly selectedPhoto = signal<EcoAttendance | null>(null);
@@ -148,7 +150,6 @@ export class AdminModulePage implements OnInit {
     title: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(120)]],
     description: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(360)]],
     active: [true],
-    currentStageId: [''],
     resetConfirmation: [''],
   });
 
@@ -287,9 +288,20 @@ export class AdminModulePage implements OnInit {
   }
 
   saveMissionBase() {
+    if (this.isSaving() || !this.missionBase()) return;
     this.missionBaseForm.markAllAsTouched();
     if (this.missionBaseForm.invalid) {
-      this.feedback.set('Preencha título, descrição e etapa atual da Base Missionária.');
+      this.feedback.set('Preencha título e descrição da Base Missionária.');
+      return;
+    }
+
+    const invalid = this.missionStageDrafts().some(stage =>
+      !Number.isSafeInteger(stage.goalCents) || stage.goalCents < 0 || stage.goalCents > 100_000_000_000_000 ||
+      !Number.isSafeInteger(stage.raisedCents) || stage.raisedCents < 0 || stage.raisedCents > 100_000_000_000_000 ||
+      !Number.isInteger(stage.sortOrder) || stage.sortOrder < 0 || stage.sortOrder > 100 ||
+      stage.name.trim().length < 3 || stage.name.length > 80 || stage.description.trim().length < 3 || stage.description.length > 360);
+    if (invalid || this.missionStageDrafts().length !== 2) {
+      this.feedback.set('Confira os títulos, propósitos, ordens e valores das duas frentes. Valores negativos não são permitidos.');
       return;
     }
 
@@ -298,13 +310,15 @@ export class AdminModulePage implements OnInit {
       title: form.title,
       description: form.description,
       active: form.active,
-      currentStageId: form.currentStageId,
+      version: this.missionBase()!.version,
       stages: this.missionStageDrafts().map((stage) => ({
         id: stage.id,
+        name: stage.name,
+        description: stage.description,
         goalCents: stage.goalCents,
         raisedCents: stage.raisedCents,
-        status: stage.status,
         visible: stage.visible,
+        sortOrder: stage.sortOrder,
       })),
     };
 
@@ -315,30 +329,31 @@ export class AdminModulePage implements OnInit {
         this.isSaving.set(false);
         this.feedback.set('Base Missionária atualizada com sucesso.');
       },
-      error: () => this.fail('Não foi possível salvar a Base Missionária. Confira metas e status.'),
+      error: (error) => this.missionBaseFailed(error),
     });
   }
 
   resetMissionBase() {
+    if (this.isSaving() || !this.missionBase()) return;
     const confirmation = this.missionBaseForm.controls.resetConfirmation.value;
     if (confirmation !== 'ZERAR') {
-      this.feedback.set('Digite ZERAR para confirmar o reset dos valores arrecadados.');
+      this.feedback.set('Digite ZERAR para confirmar o reset dos valores destinados.');
       return;
     }
 
     this.isSaving.set(true);
-    this.api.resetMissionBase(confirmation).subscribe({
+    this.api.resetMissionBase(confirmation, this.missionBase()!.version).subscribe({
       next: (campaign) => {
         this.applyMissionBase(campaign);
         this.missionBaseForm.controls.resetConfirmation.setValue('');
         this.isSaving.set(false);
-        this.feedback.set('Valores arrecadados zerados. Metas, textos e status foram preservados.');
+        this.feedback.set('Valores destinados zerados. Metas, textos e histórico foram preservados.');
       },
-      error: () => this.fail('Não foi possível zerar os dados da Base Missionária.'),
+      error: (error) => this.missionBaseFailed(error),
     });
   }
 
-  updateMissionStage(stageId: string, field: 'goalCents' | 'raisedCents' | 'status' | 'visible', value: string | boolean) {
+  updateMissionStage(stageId: string, field: 'goalCents' | 'raisedCents' | 'name' | 'description' | 'visible' | 'sortOrder', value: string | boolean) {
     this.missionStageDrafts.update((stages) =>
       stages.map((stage) => {
         if (stage.id !== stageId) {
@@ -347,7 +362,7 @@ export class AdminModulePage implements OnInit {
         if (field === 'goalCents' || field === 'raisedCents') {
           return { ...stage, [field]: this.reaisToCents(String(value)) };
         }
-        return { ...stage, [field]: value };
+        return { ...stage, [field]: field === 'sortOrder' ? Number(value) : value };
       }),
     );
   }
@@ -356,14 +371,20 @@ export class AdminModulePage implements OnInit {
     return `${Math.max(0, Math.min(100, percent))}%`;
   }
 
-  missionStageStatusLabel(status: MissionBaseStageStatus) {
-    if (status === 'CONCLUIDA') {
-      return 'Concluída';
-    }
-    if (status === 'EM_ANDAMENTO') {
-      return 'Em andamento';
-    }
-    return 'Em breve';
+  reloadMissionBase() {
+    if (this.missionBase() && !window.confirm('Recarregar os dados publicados e descartar as edições não salvas?')) return;
+    this.loadMissionBase();
+  }
+
+  private missionBaseFailed(error: { status?: number }) {
+    this.missionConflict.set(error.status === 409);
+    this.fail(error.status === 409
+      ? 'Outra pessoa alterou a Base. Suas edições não foram enviadas. Recarregue os dados antes de salvar novamente.'
+      : 'Não foi possível salvar a Base Missionária. Suas edições foram mantidas.');
+  }
+
+  missionUpdatedAt(value: string | null) {
+    return value ? new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(value)) : 'Sem alterações registradas';
   }
 
   formatCurrency(cents: number) {
@@ -635,12 +656,12 @@ export class AdminModulePage implements OnInit {
   }
 
   private applyMissionBase(campaign: MissionBaseCampaign) {
+    this.missionConflict.set(false);
     this.missionBaseState.set(campaign);
     this.missionBaseForm.patchValue({
       title: campaign.title,
       description: campaign.description,
       active: campaign.active,
-      currentStageId: campaign.stages.find((stage) => stage.current)?.id ?? campaign.stages[0]?.id ?? '',
     });
     this.missionStageDrafts.set(
       campaign.stages.map((stage) => ({
@@ -649,20 +670,19 @@ export class AdminModulePage implements OnInit {
         description: stage.description,
         goalCents: stage.goalCents,
         raisedCents: stage.raisedCents,
-        status: stage.status,
         visible: stage.visible,
-        current: stage.current,
+        sortOrder: stage.sortOrder,
         percent: stage.percent,
         goalExceeded: stage.goalExceeded,
+        remainingCents: stage.remainingCents ?? null,
+        updatedAt: stage.updatedAt ?? null,
+        updatedBy: stage.updatedBy ?? null,
       })),
     );
   }
 
   private reaisToCents(value: string) {
-    const parsed = Number(value.replace(/[^\d,.]/g, '').replace(',', '.'));
-    if (!Number.isFinite(parsed) || parsed < 0) {
-      return 0;
-    }
+    const parsed = Number(value.replace(',', '.'));
     return Math.round(parsed * 100);
   }
 

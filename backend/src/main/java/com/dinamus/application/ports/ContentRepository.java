@@ -24,7 +24,7 @@ public interface ContentRepository {
 
     Optional<MissionBaseCampaign> findMissionBaseCampaign();
 
-    MissionBaseCampaign saveMissionBaseCampaign(MissionBaseCampaign campaign);
+    MissionBaseCampaign saveMissionBaseCampaign(MissionBaseCampaign campaign, long expectedVersion);
 
     List<EcoLesson> listEcoLessons();
 

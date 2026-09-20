@@ -80,27 +80,29 @@ public class AdminController {
     }
 
     @Put("/mission-base")
-    public MissionBaseDtos.CampaignResponse updateMissionBase(@Valid @Body MissionBaseDtos.CampaignRequest request) {
+    public MissionBaseDtos.CampaignResponse updateMissionBase(@Valid @Body MissionBaseDtos.CampaignRequest request, Principal principal) {
         return MissionBaseDtos.from(manageMissionBase.update(
             request.title(),
             request.description(),
             request.active(),
-            request.currentStageId(),
+            request.version(),
             request.stages().stream()
                 .map(stage -> new ManageMissionBaseUseCase.StageUpdate(
                     stage.id(),
-                    stage.goalCents(),
+                    stage.name(),
+                    stage.description(),
+                    stage.goalCents() == null ? 0 : stage.goalCents(),
                     stage.raisedCents(),
-                    stage.status(),
-                    stage.visible()
+                    stage.visible(),
+                    stage.sortOrder()
                 ))
-                .toList()
+                .toList(), principal.getName()
         ));
     }
 
     @Post("/mission-base/reset")
-    public MissionBaseDtos.CampaignResponse resetMissionBase(@Valid @Body MissionBaseDtos.ResetRequest request) {
-        return MissionBaseDtos.from(manageMissionBase.reset(request.confirmation()));
+    public MissionBaseDtos.CampaignResponse resetMissionBase(@Valid @Body MissionBaseDtos.ResetRequest request, Principal principal) {
+        return MissionBaseDtos.from(manageMissionBase.reset(request.confirmation(), request.version(), principal.getName()));
     }
 
     @Get("/eco/lessons")

@@ -1,0 +1,120 @@
+:host {
+  display: block;
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+  font-family: "Sora", sans-serif;
+}
+.player {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  background: #07100d;
+}
+video {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+}
+button,
+input,
+output {
+  font: inherit;
+}
+button {
+  display: grid;
+  place-items: center;
+  color: #f8f5ef;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+}
+button:hover {
+  background: #ffffff1a;
+}
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid #f8f5ef;
+  outline-offset: -3px;
+}
+svg {
+  width: 20px;
+  height: 20px;
+}
+.poster-caption {
+  position: absolute;
+  inset: auto 0 0;
+  padding: 70px 12px 20px;
+  background: linear-gradient(transparent, #07100dcc);
+  display: grid;
+  justify-items: center;
+  gap: 7px;
+  color: #f8f5ef;
+  text-align: center;
+  pointer-events: none;
+  font-size: 14px;
+}
+.poster-play {
+  width: 60px;
+  height: 60px;
+  border: 2px solid #f8f5ef;
+  border-radius: 50%;
+  background: #07100d80;
+  margin-bottom: 12px;
+  pointer-events: auto;
+  svg {
+    width: 26px;
+    height: 26px;
+    fill: currentColor;
+  }
+}
+small {
+  font-size: 12px;
+}
+.video-controls {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  background: #07100dee;
+}
+input {
+  min-width: 0;
+  width: 100%;
+  height: 44px;
+  accent-color: #c55a39;
+}
+output {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+.video-error {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: #07100dee;
+  color: #f8f5ef;
+  padding: 10px;
+  margin: 0;
+  font-size: 12px;
+}
+.player:fullscreen {
+  video {
+    object-fit: contain;
+  }
+  .video-controls {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}

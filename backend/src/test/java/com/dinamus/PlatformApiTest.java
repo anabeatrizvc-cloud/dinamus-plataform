@@ -118,6 +118,9 @@ class PlatformApiTest {
 
         assertEquals("convidado@dinamus.local", session.user().email());
         assertTrue(session.user().roles().contains("MEMBRO"));
+        HttpClientResponseException denied = assertThrows(HttpClientResponseException.class, () ->
+            client.toBlocking().exchange(HttpRequest.GET("/api/v1/admin/mission-base").bearerAuth(session.accessToken()), String.class));
+        assertEquals(HttpStatus.FORBIDDEN, denied.getStatus());
     }
 
     @Test
@@ -243,7 +246,7 @@ class PlatformApiTest {
             HttpRequest.GET("/api/v1/mission-base"),
             MissionBaseDtos.CampaignResponse.class
         );
-        assertEquals(3, publicCampaign.stages().size());
+        assertEquals(2, publicCampaign.stages().size());
         assertEquals(0, publicCampaign.percent());
 
         MissionBaseDtos.PixResponse pix = client.toBlocking().retrieve(
@@ -275,11 +278,10 @@ class PlatformApiTest {
                 "title", "Um lugar para o avanço do Reino.",
                 "description", "Campanha administrada pela igreja para acompanhar cada etapa da Base Missionária.",
                 "active", true,
-                "currentStageId", "reforma",
+                "version", publicCampaign.version(),
                 "stages", List.of(
-                    Map.of("id", "aquisicao", "goalCents", 10000, "raisedCents", 15000, "status", "CONCLUIDA", "visible", true),
-                    Map.of("id", "reforma", "goalCents", 0, "raisedCents", 0, "status", "EM_ANDAMENTO", "visible", true),
-                    Map.of("id", "construcao", "goalCents", 30000, "raisedCents", 0, "status", "EM_BREVE", "visible", true)
+                    Map.of("id", "aquisicao", "name", "Aquisição", "description", "Aquisição da propriedade", "goalCents", 10000, "raisedCents", 15000, "sortOrder", 1, "visible", true),
+                    Map.of("id", "revitalizacao", "name", "Revitalização", "description", "Preparação dos ambientes", "goalCents", 30000, "raisedCents", 0, "sortOrder", 2, "visible", true)
                 )
             )).bearerAuth(admin.accessToken()),
             MissionBaseDtos.CampaignResponse.class
@@ -287,12 +289,16 @@ class PlatformApiTest {
 
         assertEquals(15000, updated.totalRaisedCents());
         assertEquals(40000, updated.totalGoalCents());
-        assertEquals(38, updated.percent());
-        assertTrue(updated.stages().stream().anyMatch(stage -> stage.id().equals("aquisicao") && stage.percent() == 100 && stage.goalExceeded()));
-        assertTrue(updated.stages().stream().anyMatch(stage -> stage.id().equals("reforma") && stage.percent() == 0 && stage.current()));
+        assertEquals(37.5, updated.percent());
+        assertTrue(updated.stages().stream().anyMatch(stage -> stage.id().equals("aquisicao") && stage.percent() == 150 && stage.goalExceeded() && stage.remainingCents() == 0));
+        assertTrue(updated.stages().stream().allMatch(stage -> "admin-local".equals(stage.updatedBy())));
+        assertEquals(publicCampaign.version() + 1, updated.version());
+        HttpClientResponseException stale = assertThrows(HttpClientResponseException.class, () ->
+            client.toBlocking().exchange(HttpRequest.POST("/api/v1/admin/mission-base/reset", Map.of("confirmation", "ZERAR", "version", publicCampaign.version())).bearerAuth(admin.accessToken()), String.class));
+        assertEquals(HttpStatus.CONFLICT, stale.getStatus());
 
         MissionBaseDtos.CampaignResponse reset = client.toBlocking().retrieve(
-            HttpRequest.POST("/api/v1/admin/mission-base/reset", Map.of("confirmation", "ZERAR")).bearerAuth(admin.accessToken()),
+            HttpRequest.POST("/api/v1/admin/mission-base/reset", Map.of("confirmation", "ZERAR", "version", updated.version())).bearerAuth(admin.accessToken()),
             MissionBaseDtos.CampaignResponse.class
         );
 

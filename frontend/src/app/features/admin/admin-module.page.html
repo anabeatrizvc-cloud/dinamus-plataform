@@ -209,20 +209,20 @@
         <article class="surface mission-admin-loading" role="status" aria-live="polite">
           <svg class="spin" lucideLoaderCircle aria-hidden="true"></svg>
           <strong>Carregando campanha</strong>
-          <span>Buscando metas e etapas...</span>
+          <span>Buscando metas e destinações...</span>
         </article>
       } @else if (missionBase(); as campaign) {
         <section class="member-summary-grid" aria-label="Resumo da Base Missionária">
           <article class="surface mini-stat">
             <strong>{{ formatCurrency(campaign.totalRaisedCents) }}</strong>
-            <span>arrecadado</span>
+            <span>destinado confirmado</span>
           </article>
           <article class="surface mini-stat">
             <strong>{{ formatCurrency(campaign.totalGoalCents) }}</strong>
             <span>meta total</span>
           </article>
           <article class="surface mini-stat">
-            <strong>{{ campaign.percent }}%</strong>
+            <strong>{{ campaign.totalGoalCents > 0 ? campaign.percent + '%' : 'Meta em definição' }}</strong>
             <span>progresso</span>
           </article>
           <article class="surface mini-stat">
@@ -251,48 +251,49 @@
               <textarea formControlName="description" rows="4"></textarea>
             </label>
 
-            <label class="field">
-              <span>Etapa atual</span>
-              <select formControlName="currentStageId">
-                @for (stage of missionStageDrafts(); track stage.id) {
-                  <option [value]="stage.id">{{ stage.name }}</option>
-                }
-              </select>
-            </label>
-
             <div class="role-row">
               <label><input type="checkbox" formControlName="active" /> Campanha ativa</label>
             </div>
 
-            <button class="dnms-button" type="submit" [disabled]="isSaving()">
+            <button class="dnms-button" type="submit" [disabled]="isSaving() || missionConflict()">
               <svg lucidePlus aria-hidden="true"></svg>
               {{ isSaving() ? 'Salvando' : 'Salvar Base Missionária' }}
             </button>
+            @if (missionConflict()) {
+              <button class="dnms-button secondary" type="button" (click)="reloadMissionBase()">
+                <svg lucideRotateCcw aria-hidden="true"></svg>Recarregar dados
+              </button>
+            }
           </form>
 
-          <section class="mission-stage-editor" aria-label="Etapas da Base Missionária">
+          <section class="mission-stage-editor" aria-label="Frentes da Base Missionária">
             @for (stage of missionStageDrafts(); track stage.id) {
-              <article class="surface mission-admin-stage" [class.current]="missionBaseForm.controls.currentStageId.value === stage.id">
+              <article class="surface mission-admin-stage" [attr.aria-label]="stage.id">
                 <header>
                   <span>
                     @if (stage.id === 'aquisicao') {
                       <svg lucideKeyRound aria-hidden="true"></svg>
-                    } @else if (stage.id === 'reforma') {
-                      <svg lucideHammer aria-hidden="true"></svg>
                     } @else {
-                      <svg lucideMapPinned aria-hidden="true"></svg>
+                      <svg lucideHammer aria-hidden="true"></svg>
                     }
                   </span>
                   <div>
-                    <p>{{ missionStageStatusLabel(stage.status) }}</p>
+                    <p>{{ stage.visible ? 'Visível' : 'Oculta' }}</p>
                     <h2>{{ stage.name }}</h2>
                   </div>
                 </header>
-                <p class="stage-description">{{ stage.description }}</p>
+                <label class="field">
+                  <span>Título público</span>
+                  <input [value]="stage.name" maxlength="80" (input)="updateMissionStage(stage.id, 'name', $any($event.target).value)" />
+                </label>
+                <label class="field">
+                  <span>Propósito</span>
+                  <input [value]="stage.description" maxlength="360" (input)="updateMissionStage(stage.id, 'description', $any($event.target).value)" />
+                </label>
 
                 <div class="form-row">
                   <label class="field">
-                    <span>Meta da etapa</span>
+                    <span>Meta da frente (R$)</span>
                     <input
                       type="number"
                       min="0"
@@ -302,7 +303,7 @@
                     />
                   </label>
                   <label class="field">
-                    <span>Arrecadado confirmado</span>
+                    <span>Destinado confirmado (R$)</span>
                     <input
                       type="number"
                       min="0"
@@ -315,12 +316,8 @@
 
                 <div class="form-row">
                   <label class="field">
-                    <span>Status</span>
-                    <select [value]="stage.status" (change)="updateMissionStage(stage.id, 'status', $any($event.target).value)">
-                      <option value="EM_BREVE">Em breve</option>
-                      <option value="EM_ANDAMENTO">Em andamento</option>
-                      <option value="CONCLUIDA">Concluída</option>
-                    </select>
+                    <span>Ordem</span>
+                    <input type="number" min="0" max="100" step="1" [value]="stage.sortOrder" (input)="updateMissionStage(stage.id, 'sortOrder', $any($event.target).value)" />
                   </label>
                   <div class="mission-stage-toggle">
                     <label>
@@ -337,7 +334,8 @@
                 <div class="mission-progress-line" aria-hidden="true">
                   <i [style.width]="missionBaseProgressWidth(stage.percent)"></i>
                 </div>
-                <small>{{ stage.percent }}% publicado atualmente</small>
+                <small>{{ stage.remainingCents === null ? 'Meta em definição' : stage.percent + '% destinado · Restante: ' + formatCurrency(stage.remainingCents) }} (publicado)</small>
+                <small>{{ missionUpdatedAt(stage.updatedAt) }}{{ stage.updatedBy ? ' · ' + stage.updatedBy : '' }}</small>
               </article>
             }
           </section>
@@ -346,23 +344,23 @@
         <section class="surface mission-reset-card" [formGroup]="missionBaseForm" aria-label="Zerar dados de contribuição">
           <div>
             <span>Zerar dados de teste</span>
-            <h2>Resetar valores arrecadados</h2>
-            <p>Preserva textos, metas, status, Pix e configuração da campanha. Apenas os valores confirmados voltam para zero.</p>
+            <h2>Resetar valores destinados</h2>
+            <p>Preserva textos, metas, histórico, Pix e configuração da campanha. Apenas os valores destinados voltam para zero.</p>
           </div>
           <label class="field">
             <span>Digite ZERAR para confirmar</span>
             <input formControlName="resetConfirmation" autocomplete="off" />
           </label>
-          <button class="dnms-button secondary" type="button" [disabled]="isSaving()" (click)="resetMissionBase()">
+          <button class="dnms-button secondary" type="button" [disabled]="isSaving() || missionConflict()" (click)="resetMissionBase()">
             <svg lucideRotateCcw aria-hidden="true"></svg>
-            Zerar arrecadação
+            Zerar destinações
           </button>
         </section>
       } @else {
         <article class="surface empty-state">
           <svg lucideMapPinned aria-hidden="true"></svg>
           <h2>Base Missionária indisponível</h2>
-          <p>Recarregue a página para tentar buscar as informações novamente.</p>
+          <button class="dnms-button secondary" type="button" (click)="reloadMissionBase()">Tentar novamente</button>
         </article>
       }
     </section>

@@ -75,8 +75,12 @@ public class InMemoryContentRepository implements ContentRepository {
     }
 
     @Override
-    public MissionBaseCampaign saveMissionBaseCampaign(MissionBaseCampaign campaign) {
-        missionBaseCampaign.set(campaign);
+    public MissionBaseCampaign saveMissionBaseCampaign(MissionBaseCampaign campaign, long expectedVersion) {
+        MissionBaseCampaign current = missionBaseCampaign.get();
+        if ((current == null ? 0 : current.version()) != expectedVersion
+            || !missionBaseCampaign.compareAndSet(current, campaign)) {
+            throw new com.dinamus.domain.model.MissionBaseConflictException();
+        }
         return campaign;
     }
 

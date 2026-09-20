@@ -1,7 +1,15 @@
 <a class="skip-link" href="#visao">Ir para o conteúdo</a>
-<header class="site-header" [class.solid]="contributionRevealed() || menuOpen()">
+<header
+  class="site-header"
+  [class.solid]="contributionRevealed() || menuOpen()"
+>
   <div class="header-inner">
-    <a class="brand" href="#base" aria-label="Base Mission Farm" (click)="menuOpen.set(false)">
+    <a
+      class="brand"
+      href="#base"
+      aria-label="Base Mission Farm"
+      (click)="menuOpen.set(false)"
+    >
       <img
         class="brand-art"
         src="assets/base/brand/logo-base-horizontal.svg"
@@ -11,22 +19,28 @@
         fetchpriority="high"
       />
     </a>
-    <nav id="site-nav" class="site-nav" [class.open]="menuOpen()" aria-label="Navegação da Base">
+    <nav
+      id="site-nav"
+      class="site-nav"
+      [class.open]="menuOpen()"
+      aria-label="Navegação da Base"
+    >
       <a href="#base" (click)="menuOpen.set(false)">A Base</a>
       <a href="#visao" (click)="menuOpen.set(false)">A visão</a>
       <a href="#ambientes" (click)="menuOpen.set(false)">Antes e depois</a>
       <a href="#explore" (click)="menuOpen.set(false)">Explore a Base</a>
     </nav>
-    <a
+    <button
       class="floating-contribute"
-      href="#contribuicao"
+      type="button"
+      [disabled]="campaign()?.active === false"
       [class.visible]="contributionRevealed()"
       [attr.tabindex]="contributionRevealed() ? 0 : -1"
       [attr.aria-hidden]="!contributionRevealed()"
-      (click)="menuOpen.set(false)"
+      (click)="openContribution()"
     >
       Quero contribuir <svg lucideArrowUpRight aria-hidden="true"></svg>
-    </a>
+    </button>
     <button
       class="icon-button menu-button"
       type="button"
@@ -62,7 +76,7 @@
       muted
       loop
       playsinline
-      preload="auto"
+      [attr.preload]="heroPreload"
       poster="assets/base/photos/drone-current-horizontal.jpg"
       aria-label="Vista aérea atual da propriedade"
       (play)="heroPlaying.set(true)"
@@ -71,7 +85,10 @@
       (error)="heroFrameReady.set(false)"
       (pause)="heroPlaying.set(false)"
     >
-      <source src="assets/base/videos/drone-current-horizontal.mp4" type="video/mp4" />
+      <source
+        src="assets/base/videos/drone-current-horizontal.mp4"
+        type="video/mp4"
+      />
     </video>
     <div class="hero-shade" aria-hidden="true"></div>
     <div class="hero-inner">
@@ -79,8 +96,10 @@
         <p class="eyebrow">Base Mission Farm</p>
         <h1 id="hero-title">Faça parte<br />dessa história.</h1>
         <p class="hero-description">
-          Mais que um lugar.<br />Uma geração sendo preparada<br /><span class="desktop-copy"
-            >para servir, onde vidas se encontram<br />com o propósito de Deus.</span
+          Mais que um lugar.<br />Uma geração sendo preparada<br /><span
+            class="desktop-copy"
+            >para servir, onde vidas se encontram<br />com o propósito de
+            Deus.</span
           >
         </p>
       </div>
@@ -91,9 +110,15 @@
         class="icon-button hero-play"
         type="button"
         [attr.aria-label]="
-          heroPlaying() ? 'Pausar vídeo do terreno' : 'Reproduzir vídeo do terreno'
+          heroPlaying()
+            ? 'Pausar vídeo do terreno'
+            : 'Reproduzir vídeo do terreno'
         "
-        [title]="heroPlaying() ? 'Pausar vídeo do terreno' : 'Reproduzir vídeo do terreno'"
+        [title]="
+          heroPlaying()
+            ? 'Pausar vídeo do terreno'
+            : 'Reproduzir vídeo do terreno'
+        "
         (click)="toggleHero()"
       >
         @if (heroPlaying()) {
@@ -111,90 +136,149 @@
         <div class="section-heading">
           <div>
             <p class="eyebrow">O que Deus colocou diante de nós</p>
-            <h2 id="vision-title">Do que existe hoje<br />ao que estamos construindo.</h2>
+            <h2 id="vision-title">
+              Do que existe hoje<br />ao que estamos construindo.
+            </h2>
           </div>
           <p class="section-intro">
-            O mesmo lugar.<br />Mais vidas. Mais formação.<br />Mais para o Seu Reino.
+            O mesmo lugar.<br />Mais vidas. Mais formação.<br />Mais para o Seu
+            Reino.
           </p>
         </div>
-        <div class="aerial-comparison">
-          <figure class="aerial-today">
-            <div class="aerial-frame">
-              <img
-                src="assets/base/photos/drone-current-vertical.jpg"
-                width="480"
-                height="848"
-                alt="Vista aérea real da Base hoje, com a casa e o terreno existentes"
-                loading="lazy"
-              /><span class="media-label">Hoje</span>
-            </div>
-            <figcaption>O lugar como ele é hoje.</figcaption>
-          </figure>
-          <button
-            type="button"
-            class="transformation-action"
-            [attr.aria-label]="
-              transformationPlaying() ? 'Pausar transformação' : 'Ver a transformação'
-            "
-            aria-controls="transformation-video"
-            (click)="toggleTransformation()"
+        <div class="vision-media">
+          <div class="aerial-comparison">
+            <figure class="aerial-today">
+              <div class="aerial-frame">
+                <img
+                  src="assets/base/photos/drone-current-vertical.jpg"
+                  width="480"
+                  height="848"
+                  alt="Vista aérea real da Base hoje, com a casa e o terreno existentes"
+                  loading="lazy"
+                />
+                <span class="media-label">Hoje</span>
+              </div>
+              <figcaption>O lugar como ele é hoje.</figcaption>
+            </figure>
+            <button
+              type="button"
+              class="transformation-action"
+              aria-label="Ver a transformação"
+              aria-controls="transformations"
+              (click)="playTransformation()"
+            >
+              <span class="play-ring"
+                ><svg lucidePlay aria-hidden="true"></svg
+              ></span>
+              <strong>Ver a transformação</strong><small>7 s</small>
+            </button>
+            <figure class="aerial-future">
+              <div class="aerial-frame">
+                <img
+                  src="assets/base/project/aerial-future.jpg"
+                  width="480"
+                  height="848"
+                  alt="Visão aérea do projeto futuro da Base"
+                  loading="lazy"
+                />
+                <span class="media-label future-label">A visão</span>
+              </div>
+              <figcaption>O que estamos construindo juntos.</figcaption>
+            </figure>
+          </div>
+          <section
+            id="transformations"
+            class="transformations"
+            aria-labelledby="transformations-title"
           >
-            <span class="play-ring">
-              @if (transformationPlaying()) {
-                <svg lucidePause aria-hidden="true"></svg>
-              } @else {
-                <svg lucidePlay aria-hidden="true"></svg>
+            <h3 id="transformations-title">Transformações</h3>
+            <div
+              #transformationRail
+              class="transformation-rail"
+              role="region"
+              aria-label="Vídeos de transformação"
+              tabindex="0"
+              (scroll)="transformationScrolled()"
+              (keydown)="transformationKey($event)"
+            >
+              @for (item of transformations; track item.id) {
+                <div
+                  class="transformation-item"
+                  role="group"
+                  [attr.aria-label]="item.title"
+                >
+                  <base-story-video
+                    #transformationPlayer
+                    [src]="item.src"
+                    [poster]="item.poster"
+                    [title]="item.title"
+                    [durationLabel]="item.durationLabel"
+                  />
+                </div>
               }
-            </span>
-            <strong>{{
-              transformationPlaying() ? 'Pausar transformação' : 'Ver a transformação'
-            }}</strong
-            ><small>7 s</small>
-          </button>
-          <figure class="aerial-future">
-            <div class="aerial-frame">
-              <video
-                #transformationVideo
-                id="transformation-video"
-                [muted]="true"
-                playsinline
-                preload="none"
-                [controls]="transformationStarted()"
-                poster="assets/base/project/aerial-future.jpg"
-                aria-label="Transformação aérea do projeto da Base, de aproximadamente sete segundos"
-                (play)="transformationPlaying.set(true)"
-                (pause)="transformationPlaying.set(false)"
-                (ended)="transformationPlaying.set(false)"
-              >
-                <source src="assets/base/videos/final-project.webm" type="video/webm" />
-                <source src="assets/base/videos/final-project.mp4" type="video/mp4" />
-              </video>
-              <span class="media-label future-label">A visão</span>
             </div>
-            <figcaption>O que estamos construindo juntos.</figcaption>
-          </figure>
+            <div class="transformation-navigation">
+              <button
+                type="button"
+                class="icon-button"
+                aria-label="Transformação anterior"
+                title="Transformação anterior"
+                [disabled]="transformationIndex() === 0"
+                (click)="moveTransformation(-1)"
+              >
+                <svg lucideChevronLeft aria-hidden="true"></svg>
+              </button>
+              <span aria-live="polite"
+                >{{ transformationIndex() + 1 }} /
+                {{ transformations.length }}</span
+              >
+              <button
+                type="button"
+                class="icon-button"
+                aria-label="Próxima transformação"
+                title="Próxima transformação"
+                [disabled]="
+                  transformationIndex() === transformations.length - 1
+                "
+                (click)="moveTransformation(1)"
+              >
+                <svg lucideChevronRight aria-hidden="true"></svg>
+              </button>
+            </div>
+          </section>
         </div>
       </div>
     </section>
 
-    <section id="ambientes" class="projects section" aria-labelledby="projects-title">
+    <section
+      id="ambientes"
+      class="projects section"
+      aria-labelledby="projects-title"
+    >
       <div class="section-inner">
         <div class="section-heading">
           <div>
             <p class="eyebrow">Transformação real</p>
             <h2 id="projects-title">
-              <span class="desktop-copy">De onde estamos.<br />Para o que Deus nos chamou.</span
-              ><span class="mobile-copy">O que existe.<br />O que pode nascer.</span>
+              <span class="desktop-copy"
+                >De onde estamos.<br />Para o que Deus nos chamou.</span
+              ><span class="mobile-copy"
+                >O que existe.<br />O que pode nascer.</span
+              >
             </h2>
           </div>
           <p class="section-intro">
-            Cada ambiente restaurado é uma vida alcançada.<br />Veja como espaços que antes estavam
-            em ruínas estão sendo transformados para servir a uma nova geração.
+            Cada ambiente restaurado é uma vida alcançada.<br />Veja como
+            espaços que antes estavam em ruínas estão sendo transformados para
+            servir a uma nova geração.
           </p>
         </div>
         <div class="project-grid">
           @for (pair of projectPairs; track pair.id) {
-            <article class="project-pair" [attr.aria-labelledby]="pair.id + '-title'">
+            <article
+              class="project-pair"
+              [attr.aria-labelledby]="pair.id + '-title'"
+            >
               <div class="paired-images">
                 <figure>
                   <img
@@ -214,17 +298,23 @@
                     height="1024"
                     loading="lazy"
                   />
-                  <figcaption class="media-label future-label">A visão</figcaption>
+                  <figcaption class="media-label future-label">
+                    A visão
+                  </figcaption>
                 </figure>
               </div>
               <h3 [id]="pair.id + '-title'">
-                {{ pair.id === 'corredor' ? 'Corredor principal' : 'Dormitório missionário' }}
+                {{
+                  pair.id === "corredor"
+                    ? "Corredor principal"
+                    : "Dormitório missionário"
+                }}
               </h3>
               <p>
                 {{
-                  pair.id === 'corredor'
-                    ? 'De estruturas desgastadas a um ambiente que acolhe e inspira.'
-                    : '8 pessoas · 4 beliches · banheiro privativo'
+                  pair.id === "corredor"
+                    ? "De estruturas desgastadas a um ambiente que acolhe e inspira."
+                    : "8 pessoas · 4 beliches · banheiro privativo"
                 }}
               </p>
               <details>
@@ -235,7 +325,9 @@
                     <li>{{ detail }}</li>
                   }
                 </ul>
-                <a [href]="pair.after.src" target="_blank" rel="noopener">Ver projeto completo</a>
+                <a [href]="pair.after.src" target="_blank" rel="noopener"
+                  >Ver projeto completo</a
+                >
               </details>
             </article>
           }
@@ -247,7 +339,11 @@
       </div>
     </section>
 
-    <section id="explore" class="explore section" aria-labelledby="explore-title">
+    <section
+      id="explore"
+      class="explore section"
+      aria-labelledby="explore-title"
+    >
       <div class="section-inner">
         <div class="section-heading">
           <div>
@@ -255,24 +351,27 @@
             <h2 id="explore-title">Explore a Base.</h2>
           </div>
           <p class="section-intro">
-            Casa, encontros e caminhos.<br />Um lugar para formar, servir e enviar.
+            Casa, encontros e caminhos.<br />Um lugar para formar, servir e
+            enviar.
           </p>
         </div>
         <figure class="gallery">
           <div class="gallery-frame">
             @for (item of [selectedExploreItem()]; track item.id) {
-              @if (item.type === 'video') {
-                <video
-                  controls
-                  playsinline
-                  preload="none"
-                  [poster]="item.poster"
-                  [attr.aria-label]="item.alt"
-                >
-                  <source [src]="item.src" type="video/mp4" />
-                </video>
+              @if (item.type === "video") {
+                <base-story-video
+                  [src]="item.src"
+                  [poster]="item.poster!"
+                  [title]="item.name"
+                />
               } @else {
-                <img [src]="item.src" [alt]="item.alt" loading="lazy" width="1200" height="800" />
+                <img
+                  [src]="item.src"
+                  [alt]="item.alt"
+                  loading="lazy"
+                  width="1200"
+                  height="800"
+                />
               }
             }
           </div>
@@ -310,157 +409,208 @@
               [class.active]="selectedExploreItem().id === item.id"
               (click)="selectExploreItem(item)"
             >
-              <img [src]="item.poster || item.src" alt="" width="120" height="80" loading="lazy" />
+              <img
+                [src]="item.poster || item.src"
+                alt=""
+                width="120"
+                height="80"
+                loading="lazy"
+              />
             </button>
           }
         </div>
       </div>
     </section>
 
-    <section id="contribuicao" class="contribution section" aria-labelledby="contribution-title">
+    <section
+      id="contribuicao"
+      class="contribution section"
+      aria-labelledby="contribution-title"
+    >
       <div class="section-inner contribution-inner">
         <p class="eyebrow">Juntos, mais longe</p>
         <h2 id="contribution-title">Agora, faça parte<br />dessa história.</h2>
-        <p class="contribution-intro">
-          Depois de conhecer o lugar e a visão, sua contribuição ajuda essa história a continuar.
-        </p>
-        <ul class="mission-values" aria-label="Propósito da Base">
-          <li>
-            <svg lucideBookOpen aria-hidden="true"></svg><strong>Formação</strong
-            ><span>Que transforma</span>
-          </li>
-          <li>
-            <svg lucideUsersRound aria-hidden="true"></svg><strong>Comunidade</strong
-            ><span>Que acolhe</span>
-          </li>
-          <li>
-            <svg lucideSprout aria-hidden="true"></svg><strong>Serviço</strong
-            ><span>Que envia</span>
-          </li>
-          <li>
-            <svg lucideGlobe aria-hidden="true"></svg><strong>Impacto</strong
-            ><span>Que alcança</span>
-          </li>
-        </ul>
         @if (loadingCampaign()) {
-          <p role="status">Carregando etapas...</p>
+          <p class="feedback" role="status">Carregando metas...</p>
         } @else if (campaignError()) {
           <p class="feedback error" role="alert">{{ campaignError() }}</p>
-          <button type="button" class="secondary-action" (click)="loadCampaign()">
+          <button
+            type="button"
+            class="secondary-action"
+            (click)="loadCampaign()"
+          >
             Tentar novamente
           </button>
         } @else {
-          <div class="progress-list" aria-label="Progresso da Base">
+          <div
+            class="progress-list"
+            aria-label="Destinação dos recursos da Base"
+          >
             @for (stage of visibleStages(); track stage.id) {
-              <article class="progress-row">
-                <h3>{{ stage.name }}</h3>
-                <p>{{ stageMeta(stage) }}</p>
-                @if (stage.goalCents > 0) {
-                  <div
-                    class="progress-track"
-                    role="progressbar"
-                    [attr.aria-label]="stage.name"
-                    [attr.aria-valuenow]="stagePercent(stage)"
-                    aria-valuemin="0"
-                    aria-valuemax="100"
-                  >
-                    <span [style.width.%]="stagePercent(stage)"></span>
+              <article
+                class="progress-row"
+                [attr.aria-labelledby]="stage.id + '-heading'"
+              >
+                <div class="front-heading">
+                  @if (stage.id === "aquisicao") {
+                    <svg lucideSprout aria-hidden="true"></svg>
+                  } @else {
+                    <svg lucideHammer aria-hidden="true"></svg>
+                  }
+                  <div>
+                    <h3 [id]="stage.id + '-heading'">{{ stage.name }}</h3>
+                    <p>{{ stage.description }}</p>
                   </div>
+                </div>
+                <div
+                  class="progress-track"
+                  role="progressbar"
+                  [attr.aria-label]="stage.name"
+                  [attr.aria-valuenow]="
+                    stage.goalCents > 0 ? stagePercent(stage) : null
+                  "
+                  aria-valuemin="0"
+                  aria-valuemax="100"
+                  [attr.aria-valuetext]="
+                    stage.goalCents > 0
+                      ? formatPercent(stage.percent) + '% destinado'
+                      : 'Meta em definição'
+                  "
+                >
+                  <span
+                    [style.width.%]="
+                      stage.goalCents > 0 ? stagePercent(stage) : 0
+                    "
+                  ></span>
+                </div>
+                <div class="front-figures">
+                  @if (stage.goalCents > 0) {
+                    <p class="front-percentage">
+                      {{ formatPercent(stage.percent) }}% destinado
+                    </p>
+                    <dl>
+                      <div>
+                        <dt>Meta</dt>
+                        <dd>{{ formatCurrency(stage.goalCents) }}</dd>
+                      </div>
+                      <div>
+                        <dt>Destinado confirmado</dt>
+                        <dd>{{ formatCurrency(stage.raisedCents) }}</dd>
+                      </div>
+                      <div>
+                        <dt>Restante</dt>
+                        <dd>{{ formatCurrency(stage.remainingCents) }}</dd>
+                      </div>
+                    </dl>
+                    @if (stage.goalExceeded) {
+                      <p class="goal-exceeded">Meta superada</p>
+                    }
+                  } @else {
+                    <p class="undefined-goal">Meta em definição</p>
+                    <p>Aguardando dados</p>
+                    @if (stage.raisedCents > 0) {
+                      <p>
+                        Destinado confirmado:
+                        {{ formatCurrency(stage.raisedCents) }}
+                      </p>
+                    }
+                  }
+                </div>
+                @if (stage.updatedAt) {
+                  <p class="updated-at">
+                    Atualizado em {{ updatedAtLabel(stage.updatedAt) }}
+                  </p>
                 }
               </article>
             } @empty {
-              <p>As etapas de contribuição ainda não estão disponíveis.</p>
+              <p class="feedback">As metas ainda não estão disponíveis.</p>
             }
           </div>
-          @if (updatedAtLabel()) {
-            <p class="updated-at">Atualizado em {{ updatedAtLabel() }}</p>
-          }
-          @if (campaign()?.active && visibleStages().length) {
-            <div class="payment-heading">Via PIX</div>
-            <form class="pix-form" (ngSubmit)="generatePix()">
-              <h3>Contribua via PIX</h3>
-              <p class="payment-description">Base Mission Farm</p>
-              <fieldset [disabled]="pixLoading()">
-                <legend>Etapa da contribuição</legend>
-                <div class="stage-chooser">
-                  @for (stage of visibleStages(); track stage.id) {
-                    <label [class.active]="selectedStage()?.id === stage.id"
-                      ><input
-                        type="radio"
-                        name="stage"
-                        [value]="stage.id"
-                        [checked]="selectedStage()?.id === stage.id"
-                        (change)="setSelectedStage(stage.id)"
-                      />{{ stage.name }}</label
-                    >
-                  }
-                </div>
-                <div class="value-shortcuts" aria-label="Valores sugeridos">
-                  @for (value of contributionValues; track value) {
-                    <button
-                      type="button"
-                      [attr.aria-pressed]="currentAmountCents() === value * 100"
-                      (click)="selectValue(value)"
-                    >
-                      {{ formatCurrency(value * 100) }}
-                    </button>
-                  }
-                </div>
-                <label class="text-field"
-                  ><span>Outro valor (R$)</span
-                  ><input
-                    name="amount"
-                    type="text"
-                    inputmode="decimal"
-                    autocomplete="off"
-                    aria-label="Outro valor"
-                    placeholder="0,00"
-                    [ngModel]="customValue()"
-                    (ngModelChange)="customValue.set($event); resetPixFeedback()"
-                /></label>
-                <button class="primary-action" type="submit" [disabled]="pixLoading()">
-                  {{ pixLoading() ? 'Gerando Pix...' : 'Gerar Pix'
-                  }}<svg lucideArrowUpRight aria-hidden="true"></svg>
-                </button>
-              </fieldset>
-              @if (pixError()) {
-                <p class="feedback error" role="alert">{{ pixError() }}</p>
-              }
-              @if (pixSuccess()) {
-                <p class="feedback success" role="status">{{ pixSuccess() }}</p>
-              }
-              @if (pixResult()) {
-                <div class="pix-result">
-                  @if (pixQrCode()) {
-                    <img
-                      [src]="pixQrCode()"
-                      alt="QR Code Pix para contribuição da Base Mission Farm"
-                      width="240"
-                      height="240"
-                    />
-                  }
-                  <div>
-                    <strong
-                      >{{ pixResult()?.stageName }} ·
-                      {{ formatCurrency(pixResult()?.amountCents) }}</strong
-                    >
-                    <p class="pix-txid">Identificação: {{ pixResult()?.txid }}</p>
-                    <label class="text-field"
-                      ><span>Código Pix copia e cola</span
-                      ><textarea readonly [value]="pixResult()?.pixPayload"></textarea></label
-                    ><button type="button" class="secondary-action" (click)="copyPix()">
-                      <svg lucideCopy aria-hidden="true"></svg>Copiar código Pix
-                    </button>
-                  </div>
-                </div>
-              }
-            </form>
-          } @else if (visibleStages().length) {
-            <p>Contribuições temporariamente indisponíveis.</p>
-          }
         }
-        <p class="closing-signature">Formar · Servir · Enviar</p>
+        <div class="contribution-response">
+          <p>Cada contribuição sustenta a visão como um todo.</p>
+          <p class="allocation-note">
+            Os recursos são direcionados entre Aquisição e Revitalização
+            conforme as prioridades da Base.
+          </p>
+          <button
+            class="primary-action"
+            type="button"
+            (click)="openContribution()"
+            [disabled]="campaign()?.active === false"
+          >
+            Quero contribuir <svg lucideArrowUpRight aria-hidden="true"></svg>
+          </button>
+          <p class="contribution-methods">
+            {{
+              campaign()?.active === false
+                ? "Contribuições temporariamente indisponíveis."
+                : "Oferta avulsa ou contribuição mensal."
+            }}
+          </p>
+        </div>
       </div>
     </section>
   </div>
 </main>
+
+<dialog
+  #contributionDialog
+  class="contribution-dialog"
+  aria-labelledby="drawer-title"
+  (cancel)="closeContribution($event)"
+  (click)="backdropClick($event)"
+  (keydown)="trapContributionFocus($event)"
+>
+  <div class="sheet-handle" aria-hidden="true"></div>
+  <header class="drawer-header">
+    <img
+      src="assets/base/brand/logo-base-horizontal.svg"
+      width="176"
+      height="46"
+      alt="Base Mission Farm"
+    />
+    <button
+      type="button"
+      class="icon-button"
+      aria-label="Fechar contribuição"
+      title="Fechar contribuição"
+      (click)="closeContribution()"
+      autofocus
+    >
+      <svg lucideX aria-hidden="true"></svg>
+    </button>
+  </header>
+  <h2 id="drawer-title">Como você quer contribuir?</h2>
+  <a
+    class="one-time-offer"
+    [href]="offerCheckout"
+    target="_blank"
+    rel="noopener noreferrer"
+  >
+    <span
+      ><strong>Oferta avulsa</strong
+      ><small>Escolha livremente o valor</small></span
+    >
+    <svg lucideArrowRight aria-hidden="true"></svg>
+  </a>
+  <h3 class="monthly-heading">Contribuição mensal</h3>
+  <ul class="supporter-list">
+    @for (plan of supporterCheckouts; track plan.url) {
+      <li>
+        <a
+          [href]="plan.url"
+          target="_blank"
+          rel="noopener noreferrer"
+          [attr.aria-label]="
+            'Mantenedor: ' + formatCurrency(plan.cents) + ' por mês'
+          "
+        >
+          <span>{{ formatCurrency(plan.cents) }}</span
+          ><svg lucideArrowRight aria-hidden="true"></svg>
+        </a>
+      </li>
+    }
+  </ul>
+  <p class="drawer-note">A contribuição sustenta a visão como um todo.</p>
+</dialog>

@@ -120,6 +120,9 @@ export interface MissionBaseStage {
   sortOrder: number;
   current: boolean;
   visible: boolean;
+  remainingCents?: number | null;
+  updatedAt?: string | null;
+  updatedBy?: string | null;
 }
 
 export interface MissionBaseCampaign {
@@ -132,22 +135,25 @@ export interface MissionBaseCampaign {
   percent: number;
   goalExceeded: boolean;
   stages: MissionBaseStage[];
-  updatedAt: string;
+  updatedAt?: string | null;
+  version: number;
 }
 
 export interface MissionBaseStagePayload {
   id: string;
+  name: string;
+  description: string;
   goalCents: number;
   raisedCents: number;
-  status: MissionBaseStageStatus;
   visible: boolean;
+  sortOrder: number;
 }
 
 export interface MissionBaseCampaignPayload {
   title: string;
   description: string;
   active: boolean;
-  currentStageId: string;
+  version: number;
   stages: MissionBaseStagePayload[];
 }
 

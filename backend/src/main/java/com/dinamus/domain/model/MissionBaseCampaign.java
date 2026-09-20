@@ -12,6 +12,12 @@ public record MissionBaseCampaign(
     boolean active,
     List<MissionBaseStage> stages,
     String createdAt,
-    String updatedAt
+    String updatedAt,
+    long version,
+    List<MissionBaseStage> legacyStages
 ) {
+    public MissionBaseCampaign(String id, String title, String description, boolean active,
+                               List<MissionBaseStage> stages, String createdAt, String updatedAt) {
+        this(id, title, description, active, stages, createdAt, updatedAt, 0, List.of());
+    }
 }

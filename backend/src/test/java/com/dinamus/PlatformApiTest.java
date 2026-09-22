@@ -126,20 +126,22 @@ class PlatformApiTest {
     @Test
     void publicEcoAttendanceCanBeRegisteredAndValidatedByAdmin() {
         EcoLesson lesson = client.toBlocking().retrieve(HttpRequest.GET("/api/v1/eco/lesson"), EcoLesson.class);
-        assertEquals("eco-2026-09-15", lesson.id());
-        assertEquals("2026-09-15", lesson.lessonDate());
+        assertEquals("eco-2026-09-22", lesson.id());
+        assertEquals("2026-09-22", lesson.lessonDate());
 
         EcoAttendance created = client.toBlocking().retrieve(
             HttpRequest.POST("/api/v1/eco/attendance", Map.of(
                 "name", "Aluno Eco",
                 "phone", "(81) 99949-9159",
-                "lessonDate", "2026-09-15",
+                "lessonDate", "2026-09-22",
                 "photoDataUrl", samplePhoto()
             )),
             EcoAttendance.class
         );
 
         assertEquals("PENDING", created.status());
+        assertEquals(lesson.id(), created.lessonId());
+        assertEquals(lesson.lessonDate(), created.lessonDate());
         assertEquals("(81) 99949-9159", created.phone());
 
         AuthDtos.LoginResponse admin = login();
@@ -152,6 +154,8 @@ class PlatformApiTest {
         assertTrue(lessons.stream().anyMatch(item -> item.id().equals("eco-2026-09-01")));
         assertTrue(lessons.stream().anyMatch(item -> item.id().equals("eco-2026-09-08")));
         assertTrue(lessons.stream().anyMatch(item -> item.id().equals("eco-2026-09-15")));
+        assertEquals(5, lessons.size());
+        assertEquals(lesson, lessons.getFirst());
 
         List<EcoAttendance> attendances = client.toBlocking().retrieve(
             HttpRequest.GET("/api/v1/admin/eco/lessons/" + lesson.id() + "/attendances").bearerAuth(admin.accessToken()),
@@ -214,7 +218,7 @@ class PlatformApiTest {
         );
 
         assertTrue(summary.contains("Aluno Lote Eco"));
-        assertTrue(summary.contains("\"4\""));
+        assertTrue(summary.contains("\"Aluno Lote Eco\",\"(81) 99988-7766\",\"5\",\"1\",\"4\""));
     }
 
     @Test
@@ -223,11 +227,31 @@ class PlatformApiTest {
             client.toBlocking().exchange(HttpRequest.POST("/api/v1/eco/attendance", Map.of(
                 "name", "Aluno Eco",
                 "phone", "8133344444",
-                "lessonDate", "2026-09-15",
+                "lessonDate", "2026-09-22",
                 "photoDataUrl", samplePhoto()
             )))
         );
 
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
+    }
+
+    @Test
+    void previousEcoLessonRemainsReadableButRejectsNewAttendance() {
+        AuthDtos.LoginResponse admin = login();
+        List<EcoAttendance> previous = client.toBlocking().retrieve(
+            HttpRequest.GET("/api/v1/admin/eco/lessons/eco-2026-09-15/attendances").bearerAuth(admin.accessToken()),
+            Argument.listOf(EcoAttendance.class)
+        );
+        assertTrue(previous.stream().allMatch(attendance -> attendance.lessonId().equals("eco-2026-09-15")));
+
+        HttpClientResponseException exception = assertThrows(HttpClientResponseException.class, () ->
+            client.toBlocking().exchange(HttpRequest.POST("/api/v1/eco/attendance", Map.of(
+                "name", "Aluno Aula Anterior",
+                "phone", "81999887755",
+                "lessonDate", "2026-09-15",
+                "photoDataUrl", samplePhoto()
+            )))
+        );
         assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
     }
 

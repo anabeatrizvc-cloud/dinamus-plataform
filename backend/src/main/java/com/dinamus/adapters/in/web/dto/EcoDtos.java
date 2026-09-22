@@ -14,7 +14,7 @@ public final class EcoDtos {
     public record EcoAttendanceRequest(
         @NotBlank @Size(min = 3, max = 90) String name,
         @NotBlank @Size(min = 10, max = 20) String phone,
-        @NotBlank @Pattern(regexp = "2026-08-25|2026-09-01|2026-09-08|2026-09-15") String lessonDate,
+        @NotBlank @Pattern(regexp = "2026-08-25|2026-09-01|2026-09-08|2026-09-15|2026-09-22") String lessonDate,
         @NotBlank @Size(min = 120, max = 1_500_000) String photoDataUrl
     ) {
     }

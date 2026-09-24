@@ -1,5 +1,6 @@
 <a class="skip-link" href="#visao">Ir para o conteúdo</a>
 <header
+  #siteHeader
   class="site-header"
   [class.solid]="contributionRevealed() || menuOpen()"
 >
@@ -37,6 +38,8 @@
       [class.visible]="contributionRevealed()"
       [attr.tabindex]="contributionRevealed() ? 0 : -1"
       [attr.aria-hidden]="!contributionRevealed()"
+      [attr.aria-expanded]="contributionExpanded()"
+      aria-controls="donation-options"
       (click)="openContribution()"
     >
       Quero contribuir <svg lucideArrowUpRight aria-hidden="true"></svg>
@@ -94,14 +97,7 @@
     <div class="hero-inner">
       <div class="hero-copy">
         <p class="eyebrow">Base Mission Farm</p>
-        <h1 id="hero-title">Faça parte<br />dessa história.</h1>
-        <p class="hero-description">
-          Mais que um lugar.<br />Uma geração sendo preparada<br /><span
-            class="desktop-copy"
-            >para servir, onde vidas se encontram<br />com o propósito de
-            Deus.</span
-          >
-        </p>
+        <h1 id="hero-title">Faça parte<br />dessa história</h1>
       </div>
       <a class="discover-link" href="#visao"
         >Conheça a Base <svg lucideArrowDown aria-hidden="true"></svg
@@ -137,13 +133,9 @@
           <div>
             <p class="eyebrow">O que Deus colocou diante de nós</p>
             <h2 id="vision-title">
-              Do que existe hoje<br />ao que estamos construindo.
+              Do que existe hoje<br />ao que estamos construindo
             </h2>
           </div>
-          <p class="section-intro">
-            O mesmo lugar.<br />Mais vidas. Mais formação.<br />Mais para o Seu
-            Reino.
-          </p>
         </div>
         <div class="vision-media">
           <div class="aerial-comparison">
@@ -158,7 +150,6 @@
                 />
                 <span class="media-label">Hoje</span>
               </div>
-              <figcaption>O lugar como ele é hoje.</figcaption>
             </figure>
             <button
               type="button"
@@ -183,7 +174,6 @@
                 />
                 <span class="media-label future-label">A visão</span>
               </div>
-              <figcaption>O que estamos construindo juntos.</figcaption>
             </figure>
           </div>
           <section
@@ -261,17 +251,12 @@
             <p class="eyebrow">Transformação real</p>
             <h2 id="projects-title">
               <span class="desktop-copy"
-                >De onde estamos.<br />Para o que Deus nos chamou.</span
+                >De onde estamos<br />Para o que Deus nos chamou</span
               ><span class="mobile-copy"
-                >O que existe.<br />O que pode nascer.</span
+                >O que existe<br />O que pode nascer</span
               >
             </h2>
           </div>
-          <p class="section-intro">
-            Cada ambiente restaurado é uma vida alcançada.<br />Veja como
-            espaços que antes estavam em ruínas estão sendo transformados para
-            servir a uma nova geração.
-          </p>
         </div>
         <div class="project-grid">
           @for (pair of projectPairs; track pair.id) {
@@ -279,6 +264,13 @@
               class="project-pair"
               [attr.aria-labelledby]="pair.id + '-title'"
             >
+              <h3 [id]="pair.id + '-title'">
+                {{
+                  pair.id === "corredor"
+                    ? "Corredor principal"
+                    : "Dormitório missionário"
+                }}
+              </h3>
               <div class="paired-images">
                 <figure>
                   <img
@@ -303,39 +295,9 @@
                   </figcaption>
                 </figure>
               </div>
-              <h3 [id]="pair.id + '-title'">
-                {{
-                  pair.id === "corredor"
-                    ? "Corredor principal"
-                    : "Dormitório missionário"
-                }}
-              </h3>
-              <p>
-                {{
-                  pair.id === "corredor"
-                    ? "De estruturas desgastadas a um ambiente que acolhe e inspira."
-                    : "8 pessoas · 4 beliches · banheiro privativo"
-                }}
-              </p>
-              <details>
-                <summary>Conheça o projeto</summary>
-                <p>{{ pair.description }}</p>
-                <ul>
-                  @for (detail of pair.details; track detail) {
-                    <li>{{ detail }}</li>
-                  }
-                </ul>
-                <a [href]="pair.after.src" target="_blank" rel="noopener"
-                  >Ver projeto completo</a
-                >
-              </details>
             </article>
           }
         </div>
-        <blockquote>
-          <p>“O mesmo Deus que começou esta obra, é fiel pra completá-la.”</p>
-          <cite>Filipenses 1:6</cite>
-        </blockquote>
       </div>
     </section>
 
@@ -348,12 +310,8 @@
         <div class="section-heading">
           <div>
             <p class="eyebrow">Conheça o lugar</p>
-            <h2 id="explore-title">Explore a Base.</h2>
+            <h2 id="explore-title">Explore a Base</h2>
           </div>
-          <p class="section-intro">
-            Casa, encontros e caminhos.<br />Um lugar para formar, servir e
-            enviar.
-          </p>
         </div>
         <figure class="gallery">
           <div class="gallery-frame">
@@ -378,7 +336,6 @@
           <figcaption class="gallery-footer">
             <div>
               <h3>{{ selectedExploreItem().name }}</h3>
-              <p>{{ selectedExploreItem().caption }}</p>
             </div>
             <span class="gallery-position">{{ galleryPosition() }}</span
             ><button
@@ -429,9 +386,54 @@
     >
       <div class="section-inner contribution-inner">
         <p class="eyebrow">Juntos, mais longe</p>
-        <h2 id="contribution-title">Agora, faça parte<br />dessa história.</h2>
+        <h2 id="contribution-title">Faça parte dessa história</h2>
+        <div #panorama id="panorama-geral" class="panorama">
+          <h3>Panorama geral</h3>
+          <details
+            #donationOptions
+            id="donation-options"
+            class="donation-options"
+            [hidden]="campaign()?.active === false"
+            [open]="contributionExpanded()"
+            (toggle)="contributionExpanded.set(donationOptions.open)"
+          >
+            <summary>Opções de contribuição</summary>
+            <div class="donation-methods">
+              <a
+                class="one-time-offer"
+                [href]="offerCheckout"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <span
+                  ><strong>Oferta avulsa</strong
+                  ><small>Escolha livremente o valor</small></span
+                >
+                <svg lucideArrowRight aria-hidden="true"></svg>
+              </a>
+              <h3 class="monthly-heading">Contribuição mensal</h3>
+              <ul class="supporter-list">
+                @for (plan of supporterCheckouts; track plan.url) {
+                  <li>
+                    <a
+                      [href]="plan.url"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      [attr.aria-label]="
+                        'Mantenedor: ' + formatCurrency(plan.cents) + ' por mês'
+                      "
+                    >
+                      <span>{{ formatCurrency(plan.cents) }}</span>
+                      <svg lucideArrowRight aria-hidden="true"></svg>
+                    </a>
+                  </li>
+                }
+              </ul>
+            </div>
+          </details>
+        </div>
         @if (loadingCampaign()) {
-          <p class="feedback" role="status">Carregando metas...</p>
+          <p class="feedback" role="status">Carregando metas</p>
         } @else if (campaignError()) {
           <p class="feedback error" role="alert">{{ campaignError() }}</p>
           <button
@@ -458,8 +460,10 @@
                     <svg lucideHammer aria-hidden="true"></svg>
                   }
                   <div>
-                    <h3 [id]="stage.id + '-heading'">{{ stage.name }}</h3>
-                    <p>{{ stage.description }}</p>
+                    <h3 [id]="stage.id + '-heading'">
+                      {{ shortLabel(stage.name) }}
+                    </h3>
+                    <p>{{ shortLabel(stage.description) }}</p>
                   </div>
                 </div>
                 <div
@@ -523,94 +527,32 @@
                 }
               </article>
             } @empty {
-              <p class="feedback">As metas ainda não estão disponíveis.</p>
+              <p class="feedback">As metas ainda não estão disponíveis</p>
             }
           </div>
         }
         <div class="contribution-response">
-          <p>Cada contribuição sustenta a visão como um todo.</p>
           <p class="allocation-note">
             Os recursos são direcionados entre Aquisição e Revitalização
-            conforme as prioridades da Base.
+            conforme as prioridades da Base
           </p>
           <button
             class="primary-action"
             type="button"
             (click)="openContribution()"
             [disabled]="campaign()?.active === false"
+            [attr.aria-expanded]="contributionExpanded()"
+            aria-controls="donation-options"
           >
             Quero contribuir <svg lucideArrowUpRight aria-hidden="true"></svg>
           </button>
-          <p class="contribution-methods">
-            {{
-              campaign()?.active === false
-                ? "Contribuições temporariamente indisponíveis."
-                : "Oferta avulsa ou contribuição mensal."
-            }}
-          </p>
+          @if (campaign()?.active === false) {
+            <p class="contribution-methods">
+              Contribuições temporariamente indisponíveis
+            </p>
+          }
         </div>
       </div>
     </section>
   </div>
 </main>
-
-<dialog
-  #contributionDialog
-  class="contribution-dialog"
-  aria-labelledby="drawer-title"
-  (cancel)="closeContribution($event)"
-  (click)="backdropClick($event)"
-  (keydown)="trapContributionFocus($event)"
->
-  <div class="sheet-handle" aria-hidden="true"></div>
-  <header class="drawer-header">
-    <img
-      src="assets/base/brand/logo-base-horizontal.svg"
-      width="176"
-      height="46"
-      alt="Base Mission Farm"
-    />
-    <button
-      type="button"
-      class="icon-button"
-      aria-label="Fechar contribuição"
-      title="Fechar contribuição"
-      (click)="closeContribution()"
-      autofocus
-    >
-      <svg lucideX aria-hidden="true"></svg>
-    </button>
-  </header>
-  <h2 id="drawer-title">Como você quer contribuir?</h2>
-  <a
-    class="one-time-offer"
-    [href]="offerCheckout"
-    target="_blank"
-    rel="noopener noreferrer"
-  >
-    <span
-      ><strong>Oferta avulsa</strong
-      ><small>Escolha livremente o valor</small></span
-    >
-    <svg lucideArrowRight aria-hidden="true"></svg>
-  </a>
-  <h3 class="monthly-heading">Contribuição mensal</h3>
-  <ul class="supporter-list">
-    @for (plan of supporterCheckouts; track plan.url) {
-      <li>
-        <a
-          [href]="plan.url"
-          target="_blank"
-          rel="noopener noreferrer"
-          [attr.aria-label]="
-            'Mantenedor: ' + formatCurrency(plan.cents) + ' por mês'
-          "
-        >
-          <span>{{ formatCurrency(plan.cents) }}</span
-          ><svg lucideArrowRight aria-hidden="true"></svg>
-        </a>
-      </li>
-    }
-  </ul>
-  <p class="drawer-note">A contribuição sustenta a visão como um todo.</p>
-</dialog>

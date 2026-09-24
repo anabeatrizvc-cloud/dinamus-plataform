@@ -73,15 +73,17 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   );
   private readonly heroVideo =
     viewChild<ElementRef<HTMLVideoElement>>("heroVideo");
-  private readonly contributionDialog =
-    viewChild.required<ElementRef<HTMLDialogElement>>("contributionDialog");
+  private readonly siteHeader =
+    viewChild.required<ElementRef<HTMLElement>>("siteHeader");
+  private readonly panorama =
+    viewChild.required<ElementRef<HTMLElement>>("panorama");
+  private readonly donationOptions =
+    viewChild.required<ElementRef<HTMLDetailsElement>>("donationOptions");
   private readonly transformationRail =
     viewChild.required<ElementRef<HTMLElement>>("transformationRail");
   private readonly transformationPlayers = viewChildren<StoryVideoComponent>(
     "transformationPlayer",
   );
-  private drawerTrigger?: HTMLElement;
-  private drawerScroll = 0;
   private motionQuery?: MediaQueryList;
   private readonly onMotionChange = () => {
     if (this.motionQuery?.matches) this.heroVideo()?.nativeElement.pause();
@@ -97,7 +99,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
       .connection?.saveData
       ? "none"
       : "auto";
-  readonly drawerOpen = signal(false);
+  readonly contributionExpanded = signal(false);
   readonly transformationIndex = signal(0);
   readonly transformations = transformationVideos;
   readonly projectPairs = projectPairs;
@@ -176,7 +178,6 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
       "resize",
       this.syncHeroHeight,
     );
-    if (this.drawerOpen()) this.closeContribution();
   }
 
   private readonly syncHeroHeight = (): void => {
@@ -213,7 +214,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
         this.loadingCampaign.set(false);
       },
       error: () => {
-        this.campaignError.set("Não foi possível carregar as metas agora.");
+        this.campaignError.set("Não foi possível carregar as metas agora");
         this.loadingCampaign.set(false);
       },
     });
@@ -279,58 +280,36 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   openContribution(): void {
-    this.drawerTrigger = this.document.activeElement as HTMLElement;
-    this.drawerScroll = window.scrollY;
+    if (this.campaign()?.active === false) return;
+    const viewport = this.document.defaultView;
+    if (!viewport) return;
     this.menuOpen.set(false);
-    this.document.querySelectorAll("video").forEach((video) => video.pause());
-    this.document.body.style.position = "fixed";
-    this.document.body.style.top = `-${this.drawerScroll}px`;
-    this.document.body.style.width = "100%";
-    this.drawerOpen.set(true);
-    this.contributionDialog().nativeElement.showModal();
-  }
+    const panorama = this.panorama().nativeElement;
+    const options = this.donationOptions().nativeElement;
+    const offset =
+      this.siteHeader().nativeElement.getBoundingClientRect().bottom + 16;
+    const bounds = panorama.getBoundingClientRect();
+    // Capture the destination before expansion changes Safari's scroll anchoring.
+    const targetTop = Math.max(0, viewport.scrollY + bounds.top - offset);
+    const alreadyHere =
+      bounds.top < viewport.innerHeight - 120 && bounds.bottom > offset;
 
-  closeContribution(event?: Event): void {
-    event?.preventDefault();
-    if (!this.drawerOpen()) return;
-    this.contributionDialog().nativeElement.close();
-    this.drawerOpen.set(false);
-    this.document.body.style.position = "";
-    this.document.body.style.top = "";
-    this.document.body.style.width = "";
-    window.scrollTo({ top: this.drawerScroll, behavior: "instant" });
-    this.drawerTrigger?.focus({ preventScroll: true });
-  }
-
-  backdropClick(event: MouseEvent): void {
-    const dialog = this.contributionDialog().nativeElement;
-    if (event.target !== dialog) return;
-    const bounds = dialog.getBoundingClientRect();
-    if (
-      event.clientX < bounds.left ||
-      event.clientX > bounds.right ||
-      event.clientY < bounds.top ||
-      event.clientY > bounds.bottom
-    )
-      this.closeContribution();
-  }
-
-  trapContributionFocus(event: KeyboardEvent): void {
-    if (event.key !== "Tab") return;
-    const dialog = this.contributionDialog().nativeElement;
-    const controls = Array.from(
-      dialog.querySelectorAll<HTMLElement>("button:not([disabled]), a[href]"),
-    );
-    const first = controls[0];
-    const last = controls[controls.length - 1];
-    const active = this.document.activeElement;
-    if (event.shiftKey && active === first) {
-      event.preventDefault();
-      last?.focus();
-    } else if (!event.shiftKey && active === last) {
-      event.preventDefault();
-      first?.focus();
+    // Open synchronously so the first checkout is focusable without interrupting the scroll.
+    options.open = true;
+    this.contributionExpanded.set(true);
+    if (!alreadyHere) {
+      viewport.scrollTo({
+        top: targetTop,
+        behavior: this.motionQuery?.matches ? "instant" : "smooth",
+      });
     }
+    options
+      .querySelector<HTMLElement>("a[href]")
+      ?.focus({ preventScroll: true });
+  }
+
+  shortLabel(value: string | null | undefined): string {
+    return (value ?? "").trimEnd().replace(/[.\u2026]+$/u, "");
   }
 
   selectExploreItem(item: ExploreMedia): void {

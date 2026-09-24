@@ -32,7 +32,9 @@ test('preserves the hero and the approved narrative, with no fundraising in the 
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/base/', { waitUntil: 'domcontentloaded' });
-  await expect(page.locator('h1')).toHaveText('Faça partedessa história.');
+  await expect(page.locator('h1')).toHaveText('Faça partedessa história');
+  await expect(page.locator('.hero-description, .section-intro')).toHaveCount(0);
+  await expect(page.locator('#contribution-title')).toHaveText('Faça parte dessa história');
   await fullHero(page);
   await expect(page.locator('.hero')).not.toContainText(/Pix|contribuir|meta|arrecadação/i);
   await expect(page.locator('.hero [role="progressbar"]')).toHaveCount(0);
@@ -65,11 +67,19 @@ test('preserves the hero and the approved narrative, with no fundraising in the 
     await capture(page, info.outputPath(id + '.png'));
   }
   await expect(page.locator('.paired-images img')).toHaveCount(4);
+  await expect(page.locator('.project-pair .paired-images ~ *, .project-pair details')).toHaveCount(
+    0,
+  );
+  await expect(page.locator('#ambientes')).not.toContainText(/Projeto completo/i);
   await expect(page.locator('#contribuicao .progress-row')).toHaveCount(2);
   await expect(page.locator('#contribuicao .primary-action')).toHaveCount(1);
-  await expect(page.locator('#contribuicao')).not.toContainText(
-    /49,90|99,90|Gerar Pix|Reforma|Construção/,
-  );
+  await expect(page.locator('#donation-options')).not.toHaveAttribute('open');
+  await expect(page.locator('.one-time-offer')).toBeHidden();
+  await expect(page.locator('#contribuicao')).not.toContainText(/Gerar Pix|Reforma|Construção/);
+  const shortCopy = await page
+    .locator('h1, h2, h3, p, figcaption, button, summary')
+    .allTextContents();
+  expect(shortCopy.filter((text) => /[.\u2026]$/.test(text.trim()))).toEqual([]);
   await page.getByRole('link', { name: 'Base Mission Farm', exact: true }).click();
   await expect(page.locator('.floating-contribute')).toBeHidden();
   expect(errors).toEqual([]);
@@ -138,39 +148,48 @@ test('two transformations load on demand, preserve vertical proportions, move an
   }
 });
 
-test('contribution drawer or bottom sheet traps focus, closes and restores scroll and trigger', async ({
+test('both contribution buttons open inline options, respect the header and focus the first checkout', async ({
   page,
 }, info) => {
+  let popups = 0;
+  page.on('popup', () => popups++);
   await page.goto('/base/', { waitUntil: 'domcontentloaded' });
-  await goTo(page, '#contribuicao');
-  const trigger = page.locator('#contribuicao .primary-action');
-  await trigger.scrollIntoViewIfNeeded();
+  await goTo(page, '#visao');
+  const options = page.locator('#donation-options');
+  const offer = options.locator('.one-time-offer');
+  const headerCta = page.locator('.floating-contribute');
+  await headerCta.click();
+  await expect(options).toHaveAttribute('open');
+  await expect(offer).toBeFocused();
+  await expect(offer).toBeInViewport();
+  const header = (await page.locator('.site-header').boundingBox())!;
+  const panorama = (await page.locator('#panorama-geral').boundingBox())!;
+  expect(panorama.y).toBeCloseTo(header.height + 16, 0);
+  await expect(page.locator('dialog, [role="dialog"]')).toHaveCount(0);
+  expect(await page.locator('body').evaluate((el) => getComputedStyle(el).position)).not.toBe(
+    'fixed',
+  );
+  await capture(page, info.outputPath('contribution-inline.png'));
+  await page.keyboard.press('Tab');
+  await expect(options.locator('.supporter-list a').first()).toBeFocused();
+  await options.locator('summary').click();
+  await expect(options).not.toHaveAttribute('open');
+  await expect(headerCta).toHaveAttribute('aria-expanded', 'false');
   const scroll = await page.evaluate(() => scrollY);
-  await trigger.click();
-  const dialog = page.getByRole('dialog', { name: 'Como você quer contribuir?' });
-  await expect(dialog).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Fechar contribuição' })).toBeFocused();
-  for (let i = 0; i < 12; i++) {
-    await page.keyboard.press('Tab');
-    expect(await dialog.evaluate((el) => el.contains(document.activeElement))).toBe(true);
-  }
-  await capture(page, info.outputPath('contribution-layer.png'));
-  const bounds = await dialog.boundingBox();
-  const viewport = page.viewportSize()!;
-  expect(bounds!.x + bounds!.width).toBeCloseTo(viewport.width, 0);
-  expect(bounds!.y + bounds!.height).toBeCloseTo(viewport.height, 0);
-  if (viewport.width <= 760) expect(bounds!.y).toBeGreaterThan(30);
-  else expect(bounds!.width).toBeLessThan(600);
-  await page.keyboard.press('Escape');
-  await expect(dialog).not.toBeVisible();
-  await expect(trigger).toBeFocused();
+  await headerCta.click();
+  await expect(offer).toBeFocused();
   expect(await page.evaluate(() => scrollY)).toBeCloseTo(scroll, 0);
-  await trigger.click();
-  await page.getByRole('button', { name: 'Fechar contribuição' }).click();
-  await expect(trigger).toBeFocused();
-  await trigger.click();
-  await page.mouse.click(5, 5);
-  await expect(dialog).not.toBeVisible();
+
+  await options.locator('summary').click();
+  await page.locator('#contribuicao .primary-action').click();
+  await expect(options).toHaveAttribute('open');
+  await expect(offer).toBeFocused();
+  await expect(offer).toBeInViewport();
+  expect((await page.locator('#panorama-geral').boundingBox())!.y).toBeGreaterThanOrEqual(
+    header.height,
+  );
+  await capture(page, info.outputPath('contribution-from-footer.png'));
+  expect(popups).toBe(0);
   await noOverflow(page);
 });
 
@@ -189,11 +208,13 @@ test('six exact general checkouts open protected external tabs without calling P
   await page.goto('/base/', { waitUntil: 'domcontentloaded' });
   await goTo(page, '#visao');
   await page.locator('.floating-contribute').click();
-  const links = page.locator('dialog a');
+  const links = page.locator('#donation-options a');
   expect(
     await links.evaluateAll((nodes) => nodes.map((node) => node.getAttribute('href'))),
   ).toEqual(checkoutUrls);
-  await expect(page.locator('dialog input, dialog select, dialog canvas')).toHaveCount(0);
+  await expect(
+    page.locator('#donation-options input, #donation-options select, #donation-options canvas'),
+  ).toHaveCount(0);
   for (const link of await links.all()) {
     await expect(link).toHaveAttribute('rel', 'noopener noreferrer');
     await expect(link).toHaveAttribute('target', '_blank');
@@ -207,6 +228,96 @@ test('six exact general checkouts open protected external tabs without calling P
     await popup.close();
   }
   expect(pixCalls).toBe(0);
+});
+
+test('contribution scrolls smoothly by default and also works from the mobile menu', async ({
+  page,
+}) => {
+  await page.goto('/base/', { waitUntil: 'domcontentloaded' });
+  await goTo(page, '#visao');
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  const scrollCalls: ScrollToOptions[] = [];
+  await page.exposeFunction('recordBaseScroll', (options: ScrollToOptions) =>
+    scrollCalls.push(options),
+  );
+  await page.evaluate(() => {
+    const viewport = window as typeof window & {
+      recordBaseScroll: (options: ScrollToOptions) => void;
+    };
+    const original = window.scrollTo.bind(window);
+    window.scrollTo = (optionsOrX: ScrollToOptions | number, y?: number) => {
+      if (typeof optionsOrX === 'number') original(optionsOrX, y ?? 0);
+      else {
+        viewport.recordBaseScroll(optionsOrX);
+        original(optionsOrX);
+      }
+    };
+  });
+  if (page.viewportSize()!.width <= 760) {
+    await page.getByRole('button', { name: 'Abrir menu', exact: true }).click();
+    await expect(page.locator('.site-nav')).toBeVisible();
+  }
+  await page.locator('.floating-contribute').click();
+  await expect(page.locator('.one-time-offer')).toBeFocused();
+  await expect
+    .poll(() =>
+      page.locator('#panorama-geral').evaluate((el) => {
+        const headerBottom = document.querySelector('.site-header')!.getBoundingClientRect().bottom;
+        return Math.abs(el.getBoundingClientRect().top - headerBottom - 16);
+      }),
+    )
+    .toBeLessThan(2);
+  expect(scrollCalls).toHaveLength(1);
+  expect(scrollCalls[0].behavior).toBe('smooth');
+  await expect(page.locator('.site-nav')).not.toHaveClass(/open/);
+});
+
+test('panoramic gallery keeps every image, video, navigation and indicator', async ({
+  page,
+}, info) => {
+  await page.goto('/base/', { waitUntil: 'domcontentloaded' });
+  await goTo(page, '#explore');
+  await expect(page.locator('.gallery-thumbs button')).toHaveCount(7);
+  const position = page.locator('.gallery-position');
+  await expect(position).toHaveText('2 / 7');
+  await page.getByRole('button', { name: 'Próxima mídia', exact: true }).click();
+  await expect(position).toHaveText('3 / 7');
+  await page.getByRole('button', { name: 'Mídia anterior', exact: true }).click();
+  await expect(position).toHaveText('2 / 7');
+  for (let i = 0; i < 7; i++) {
+    const thumb = page.locator('.gallery-thumbs button').nth(i);
+    const source = await thumb.locator('img').getAttribute('src');
+    await thumb.click();
+    await expect(thumb).toHaveAttribute('aria-pressed', 'true');
+    await expect(position).toHaveText(`${i + 1} / 7`);
+    const frame = page.locator('.gallery-frame');
+    if (i === 0 || i === 6) {
+      await expect(frame.locator('video')).toHaveAttribute('poster', source!);
+      await expect(frame.locator('video')).not.toHaveAttribute('src');
+    } else {
+      await expect(frame.locator('img')).toHaveAttribute('src', source!);
+      await frame.locator('img').evaluate((image: HTMLImageElement) => image.decode());
+      await expect(frame.locator('img')).toHaveCSS('object-fit', 'cover');
+    }
+    await noOverflow(page);
+  }
+  await page.locator('.gallery-thumbs button').nth(1).click();
+  await goTo(page, '#explore');
+  await capture(page, info.outputPath('panoramic-gallery.png'));
+});
+
+test('inactive campaigns keep donation options unavailable', async ({ page }) => {
+  await page.route('**/api/v1/mission-base', (route) =>
+    route.fulfill({ json: { ...campaign, active: false } }),
+  );
+  await page.goto('/base/', { waitUntil: 'domcontentloaded' });
+  await goTo(page, '#contribuicao');
+  await expect(page.locator('.floating-contribute')).toBeDisabled();
+  await expect(page.locator('#contribuicao .primary-action')).toBeDisabled();
+  await expect(page.locator('#donation-options')).toBeHidden();
+  await expect(page.locator('.contribution-methods')).toHaveText(
+    'Contribuições temporariamente indisponíveis',
+  );
 });
 
 test('independent financial bars preserve excess and undefined states and allow retry', async ({
@@ -258,7 +369,7 @@ test('independent financial bars preserve excess and undefined states and allow 
   await capture(page, info.outputPath('undefined-goals.png'));
 });
 
-test('Sora really renders all functional UI, including custom video controls and contribution layer', async ({
+test('Sora really renders all functional UI, including custom video controls and inline contribution', async ({
   page,
   browserName,
 }, info) => {
@@ -276,7 +387,7 @@ test('Sora really renders all functional UI, including custom video controls and
     await document.fonts.ready;
     const selectors = [
       '.site-nav a',
-      '.hero-description',
+      '#transformations-title',
       '.discover-link',
       '.eyebrow',
       '.primary-action',
@@ -288,7 +399,8 @@ test('Sora really renders all functional UI, including custom video controls and
       '.one-time-offer small',
       '.monthly-heading',
       '.supporter-list a',
-      '.drawer-note',
+      '#panorama-geral h3',
+      '#donation-options summary',
       '.video-controls',
       '.video-controls button',
       '.video-controls input',
@@ -306,12 +418,31 @@ test('Sora really renders all functional UI, including custom video controls and
         family: getComputedStyle(document.querySelector(selector)!).fontFamily,
       })),
       editorial: getComputedStyle(document.querySelector('h1')!).fontFamily,
+      fallbacks: Array.from(document.querySelectorAll('base-root *'))
+        .filter(
+          (el) =>
+            !el.closest('h1, h2') &&
+            Array.from(el.childNodes).some(
+              (node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim(),
+            ),
+        )
+        .filter(
+          (el) =>
+            !getComputedStyle(el).fontFamily.startsWith('Sora') &&
+            !getComputedStyle(el).fontFamily.startsWith('"Sora"'),
+        )
+        .map((el) => ({
+          tag: el.tagName,
+          text: el.textContent,
+          font: getComputedStyle(el).fontFamily,
+        })),
     };
   });
   expect(fontProof.loaded).toBe(true);
   for (const element of fontProof.elements)
     expect(element.family.split(',')[0].replaceAll('"', '').replaceAll("'", '')).toBe('Sora');
   expect(fontProof.editorial).toContain('Lora');
+  expect(fontProof.fallbacks).toEqual([]);
   await writeFile(info.outputPath('computed-fonts.json'), JSON.stringify(fontProof, null, 2));
   await info.attach('computed-fonts.json', {
     path: info.outputPath('computed-fonts.json'),
@@ -327,7 +458,11 @@ test('Sora really renders all functional UI, including custom video controls and
       '.one-time-offer strong',
       '.monthly-heading',
       '.supporter-list a span',
-      '.drawer-note',
+      '#panorama-geral > h3',
+      '#donation-options summary',
+      '.front-heading h3',
+      '.front-figures dd',
+      '.allocation-note',
     ]) {
       const { nodeId } = await cdp.send('DOM.querySelector', { nodeId: root.nodeId, selector });
       const result = await cdp.send('CSS.getPlatformFontsForNode', { nodeId });
@@ -366,6 +501,14 @@ test('small, landscape and wide viewports preserve full-height hero without over
     const brand = await page.locator('.brand').boundingBox();
     const cta = await page.locator('.floating-contribute').boundingBox();
     expect(brand!.x + brand!.width).toBeLessThanOrEqual(cta!.x);
+    await noOverflow(page);
+    await goTo(page, '#explore');
+    const frame = (await page.locator('.gallery-frame').boundingBox())!;
+    expect(frame.width / frame.height).toBeCloseTo(viewport.width <= 760 ? 16 / 9 : 21 / 9, 1);
+    await noOverflow(page);
+    await page.locator('.floating-contribute').click();
+    await expect(page.locator('.one-time-offer')).toBeFocused();
+    await expect(page.locator('.one-time-offer')).toBeInViewport();
     await noOverflow(page);
   }
 });

@@ -1,6 +1,6 @@
 :host {
   display: block;
-  font-family: var(--font-ui);
+  font-family: "Sora", sans-serif;
   letter-spacing: 0;
   --section-green: #091a13;
   --accent: #c55a39;
@@ -11,6 +11,10 @@ input,
 textarea,
 select {
   font: inherit;
+}
+a,
+a:visited {
+  color: #fff;
 }
 button,
 summary {
@@ -45,10 +49,8 @@ figure {
   margin: 0;
 }
 h1,
-h2,
-blockquote,
-.closing-signature {
-  font-family: var(--font-title);
+h2 {
+  font-family: "Lora", serif;
   font-weight: 400;
 }
 h2 {
@@ -223,7 +225,8 @@ h3 {
   align-items: center;
 }
 .hero-copy {
-  padding-bottom: 20px;
+  // Preserve the desktop title position after removing the subtitle.
+  padding-bottom: 138px;
 }
 .eyebrow {
   position: relative;
@@ -248,11 +251,6 @@ h3 {
 .hero h1 {
   font-size: 44px;
   line-height: 1.14;
-}
-.hero-description {
-  margin-top: 22px;
-  font-size: 15px;
-  line-height: 1.6;
 }
 .discover-link {
   position: absolute;
@@ -283,18 +281,7 @@ h3 {
   padding: 72px 48px;
 }
 .section-heading {
-  display: grid;
-  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
-  align-items: end;
-  gap: 48px;
   margin-bottom: 34px;
-}
-.section-intro {
-  max-width: 380px;
-  justify-self: end;
-  font-size: 13px;
-  line-height: 1.6;
-  color: var(--muted);
 }
 .aerial-comparison {
   display: grid;
@@ -320,11 +307,6 @@ h3 {
   img {
     object-fit: cover;
   }
-}
-.aerial-comparison figcaption {
-  margin-top: 10px;
-  font-size: 12px;
-  color: var(--muted);
 }
 .media-label {
   position: absolute;
@@ -381,6 +363,10 @@ h3 {
 .projects {
   background: #08170f;
 }
+.projects .section-inner,
+.explore .section-inner {
+  max-width: 1440px;
+}
 .projects h2 {
   font-size: 37px;
 }
@@ -411,54 +397,16 @@ h3 {
   min-width: 0;
   h3 {
     text-transform: uppercase;
-    margin: 14px 0 6px;
-  }
-  > p,
-  details {
-    font-size: 12px;
-    line-height: 1.65;
-    color: var(--muted);
-  }
-  details {
-    margin-top: 12px;
-  }
-  summary {
-    width: fit-content;
-    min-height: 36px;
-    padding-top: 8px;
-    color: var(--cloud);
-  }
-  details p {
-    margin: 8px 0;
-  }
-  ul {
-    padding-left: 20px;
-  }
-}
-blockquote {
-  margin: 40px 0 0;
-  padding: 24px 12px;
-  border-top: 2px solid var(--accent);
-  border-bottom: 1px solid var(--line-dark);
-  text-align: center;
-  font-size: 19px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 22px;
-  p {
-    font-style: italic;
-  }
-  cite {
-    font: 11px var(--font-ui);
-    white-space: nowrap;
+    margin: 0 0 12px;
   }
 }
 .explore {
   background: #0e2118;
 }
 .gallery-frame {
-  aspect-ratio: 16 / 8;
+  width: 100%;
+  aspect-ratio: 21 / 9;
+  overflow: hidden;
   background: #06110c;
   img,
   video {
@@ -467,6 +415,10 @@ blockquote {
     height: 100%;
     object-fit: contain;
   }
+  img {
+    object-fit: cover;
+    object-position: center;
+  }
 }
 .gallery-footer {
   display: grid;
@@ -474,12 +426,6 @@ blockquote {
   align-items: center;
   gap: 16px;
   padding: 20px 0;
-  p {
-    font-size: 12px;
-    line-height: 1.6;
-    color: var(--muted);
-    margin-top: 6px;
-  }
 }
 .gallery-position {
   font-size: 12px;
@@ -524,18 +470,8 @@ blockquote {
       url("/base/assets/base/photos/varanda-interior.jpeg") center right / cover;
   }
 }
-.contribution-inner {
-  padding-right: max(36%, 48px);
-}
 .contribution h2 {
   font-size: 48px;
-}
-.contribution-intro {
-  margin: 22px 0 28px;
-  max-width: 570px;
-  font-size: 14px;
-  line-height: 1.65;
-  color: var(--muted);
 }
 .progress-list {
   display: grid;
@@ -696,7 +632,8 @@ blockquote {
   border-left: 1px solid var(--line-dark);
 }
 #transformations-title {
-  font: 400 28px var(--font-title);
+  font-size: 18px;
+  font-weight: 600;
   margin-bottom: 18px;
 }
 .transformation-rail {
@@ -718,44 +655,29 @@ blockquote {
 .contribution-inner {
   padding-right: max(24%, 48px);
 }
-.contribution-dialog {
-  position: fixed;
-  inset: 0 0 0 auto;
-  margin: 0;
-  padding: 30px 32px 40px;
-  width: min(480px, 100%);
-  height: 100dvh;
-  max-height: 100dvh;
-  max-width: 100%;
-  border: 0;
-  border-left: 1px solid var(--line-dark);
-  color: var(--cloud);
-  background: #082319;
-  font-family: var(--font-ui);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  &::backdrop {
-    background: rgb(0 0 0 / 0.55);
-    backdrop-filter: blur(3px);
-  }
-  h2 {
-    font-size: 38px;
-    line-height: 1.16;
-    margin: 28px 0 32px;
+.panorama {
+  margin-top: 36px;
+  scroll-margin-top: calc(112px + env(safe-area-inset-top));
+  > h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 16px;
   }
 }
-.drawer-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-  img {
-    width: 176px;
-    height: auto;
+.donation-options {
+  border-block: 1px solid var(--line-dark);
+  summary {
+    min-height: 52px;
+    padding: 16px 0;
+    font-size: 13px;
+    color: #fff;
+  }
+  summary::marker {
+    color: #fff;
   }
 }
-.sheet-handle {
-  display: none;
+.donation-methods {
+  padding: 8px 0 24px;
 }
 .one-time-offer {
   display: flex;
@@ -811,47 +733,9 @@ blockquote {
     background: rgb(255 255 255 / 0.05);
   }
 }
-.drawer-note {
-  border-top: 2px solid var(--accent);
-  padding-top: 22px;
-  margin-top: 34px;
-  font-size: 12px;
-  line-height: 1.6;
-  text-align: center;
-}
 @media (max-width: 760px) {
-  .contribution-dialog {
-    inset: auto 0 0;
-    width: 100%;
-    height: auto;
-    max-height: calc(100dvh - env(safe-area-inset-top) - 40px);
-    padding: 52px 24px calc(24px + env(safe-area-inset-bottom));
-    border: 1px solid var(--line-dark);
-    border-bottom: 0;
-    border-radius: 24px 24px 0 0;
-    h2 {
-      font-size: 32px;
-      margin: 8px 0 22px;
-      max-width: 300px;
-    }
-  }
-  .drawer-header img {
-    display: none;
-  }
-  .drawer-header .icon-button {
-    position: absolute;
-    right: 14px;
-    top: 14px;
-  }
-  .sheet-handle {
-    display: block;
-    position: absolute;
-    top: 16px;
-    left: calc(50% - 24px);
-    width: 48px;
-    height: 5px;
-    border-radius: 3px;
-    background: #92a99d;
+  .panorama {
+    scroll-margin-top: calc(100px + env(safe-area-inset-top));
   }
   .one-time-offer {
     min-height: 78px;
@@ -868,11 +752,6 @@ blockquote {
     min-height: 54px;
     font-size: 20px;
     padding-block: 10px;
-  }
-  .drawer-note {
-    margin-top: 24px;
-    padding-top: 18px;
-    font-size: 11px;
   }
 }
 @media (min-width: 1500px) {
@@ -907,9 +786,6 @@ blockquote {
   }
   .projects h2 {
     font-size: 32px;
-  }
-  .section-heading {
-    gap: 28px;
   }
   .vision-media {
     gap: 24px;
@@ -993,10 +869,6 @@ blockquote {
     font-size: 10px;
     margin-bottom: 18px;
   }
-  .hero-description {
-    font-size: 14px;
-    margin-top: 30px;
-  }
   .hero-shade {
     background:
       linear-gradient(
@@ -1042,9 +914,6 @@ blockquote {
     display: block;
     margin-bottom: 32px;
   }
-  .section-intro {
-    display: none;
-  }
   .vision-media {
     display: block;
   }
@@ -1056,10 +925,6 @@ blockquote {
     aspect-ratio: 480 / 650;
     border-radius: 3px;
   }
-  .aerial-comparison figcaption {
-    font-size: 10px;
-    line-height: 1.5;
-  }
   .transformation-action {
     display: none;
   }
@@ -1070,7 +935,7 @@ blockquote {
     border-top: 1px solid var(--accent);
   }
   #transformations-title {
-    font: 600 11px var(--font-ui);
+    font-size: 11px;
     text-transform: uppercase;
     margin-bottom: 20px;
     color: #e16b45;
@@ -1115,22 +980,8 @@ blockquote {
   .project-pair h3 {
     font-size: 12px;
   }
-  .project-pair > p {
-    font-size: 11px;
-  }
-  blockquote {
-    display: block;
-    margin-top: 32px;
-    padding: 26px 0;
-    font-size: 17px;
-    line-height: 1.6;
-    cite {
-      display: block;
-      margin-top: 10px;
-    }
-  }
   .gallery-frame {
-    aspect-ratio: 4 / 3;
+    aspect-ratio: 16 / 9;
   }
   .gallery-footer {
     grid-template-columns: minmax(0, 1fr) auto auto;
@@ -1148,10 +999,6 @@ blockquote {
   }
   .contribution h2 {
     font-size: 35px;
-  }
-  .contribution-intro {
-    margin: 48px 0 34px;
-    font-size: 14px;
   }
   .progress-list {
     margin-top: 34px;

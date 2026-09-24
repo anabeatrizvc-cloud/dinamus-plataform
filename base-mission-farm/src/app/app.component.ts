@@ -67,6 +67,10 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly api = inject(BaseApiService);
   private readonly document = inject(DOCUMENT);
   private observer?: IntersectionObserver;
+  private readonly gallery =
+    viewChild.required<ElementRef<HTMLElement>>("gallery");
+  private galleryTimer?: ReturnType<typeof setInterval>;
+  private galleryVisible = false;
   private readonly hero = viewChild<ElementRef<HTMLElement>>("hero");
   private readonly contributionTrigger = viewChild<ElementRef<HTMLElement>>(
     "contributionTrigger",
@@ -77,8 +81,10 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     viewChild.required<ElementRef<HTMLElement>>("siteHeader");
   private readonly panorama =
     viewChild.required<ElementRef<HTMLElement>>("panorama");
-  private readonly donationOptions =
-    viewChild.required<ElementRef<HTMLDetailsElement>>("donationOptions");
+  private readonly contributionDialog =
+    viewChild.required<ElementRef<HTMLDialogElement>>("contributionDialog");
+  private drawerScroll = 0;
+  private bodyStyles?: { position: string; top: string; width: string };
   private readonly transformationRail =
     viewChild.required<ElementRef<HTMLElement>>("transformationRail");
   private readonly transformationPlayers = viewChildren<StoryVideoComponent>(
@@ -86,8 +92,13 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   );
   private motionQuery?: MediaQueryList;
   private readonly onMotionChange = () => {
-    if (this.motionQuery?.matches) this.heroVideo()?.nativeElement.pause();
+    if (this.motionQuery?.matches) {
+      this.heroVideo()?.nativeElement.pause();
+      this.galleryPlaying.set(false);
+    }
   };
+  readonly activeSection = signal("base");
+  readonly galleryPlaying = signal(false);
   readonly menuOpen = signal(false);
   readonly contributionRevealed = signal(false);
   readonly heroPlaying = signal(false);
@@ -106,7 +117,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly offerCheckout = contributionCheckout;
   readonly supporterCheckouts = supporterCheckouts;
   readonly galleryItems: ExploreMedia[] = [
-    ...exploreItems,
+    ...exploreItems.filter((item) => item.id !== "arrival"),
     {
       id: "drone",
       type: "video",
@@ -147,12 +158,15 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
             this.heroVideo()?.nativeElement.pause();
           if (entry.target === trigger)
             this.contributionRevealed.set(entry.isIntersecting);
+          if (entry.target === this.gallery().nativeElement)
+            this.galleryVisible = entry.isIntersecting;
         }
       },
       { rootMargin: "-100px 0px -124px 0px", threshold: 0 },
     );
     if (hero) this.observer.observe(hero);
     if (trigger) this.observer.observe(trigger);
+    this.observer.observe(this.gallery().nativeElement);
     this.motionQuery = this.document.defaultView?.matchMedia(
       "(prefers-reduced-motion: reduce)",
     );
@@ -161,13 +175,29 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
       navigator as Navigator & { connection?: { saveData?: boolean } }
     ).connection?.saveData;
     if (!this.motionQuery?.matches && !saveData) {
+      this.galleryPlaying.set(true);
       void this.heroVideo()
         ?.nativeElement.play()
         .catch(() => this.heroPlaying.set(false));
     }
+    this.galleryTimer = setInterval(() => {
+      if (
+        !this.galleryPlaying() ||
+        !this.galleryVisible ||
+        this.document.hidden
+      )
+        return;
+      const photos = this.galleryItems.filter((item) => item.type === "photo");
+      const index = photos.findIndex(
+        (item) => item.id === this.selectedExploreItem().id,
+      );
+      this.selectedExploreItem.set(photos[(index + 1) % photos.length]);
+    }, 5000);
   }
 
   ngOnDestroy(): void {
+    if (this.contributionExpanded()) this.closeContribution();
+    clearInterval(this.galleryTimer);
     this.observer?.disconnect();
     this.motionQuery?.removeEventListener("change", this.onMotionChange);
     this.document.defaultView?.removeEventListener(
@@ -280,32 +310,77 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   openContribution(): void {
-    if (this.campaign()?.active === false) return;
+    if (this.campaign()?.active === false || this.contributionExpanded())
+      return;
     const viewport = this.document.defaultView;
     if (!viewport) return;
     this.menuOpen.set(false);
     const panorama = this.panorama().nativeElement;
-    const options = this.donationOptions().nativeElement;
     const offset =
       this.siteHeader().nativeElement.getBoundingClientRect().bottom + 16;
     const bounds = panorama.getBoundingClientRect();
-    // Capture the destination before expansion changes Safari's scroll anchoring.
     const targetTop = Math.max(0, viewport.scrollY + bounds.top - offset);
-    const alreadyHere =
-      bounds.top < viewport.innerHeight - 120 && bounds.bottom > offset;
-
-    // Open synchronously so the first checkout is focusable without interrupting the scroll.
-    options.open = true;
+    // Lock the page at the goals, not at the original contribution button.
+    viewport.scrollTo({ top: targetTop, behavior: "instant" });
+    this.drawerScroll = viewport.scrollY;
+    const style = this.document.body.style;
+    this.bodyStyles = {
+      position: style.position,
+      top: style.top,
+      width: style.width,
+    };
+    style.position = "fixed";
+    style.top = `-${this.drawerScroll}px`;
+    style.width = "100%";
+    this.document.querySelectorAll("video").forEach((video) => video.pause());
+    this.galleryPlaying.set(false);
     this.contributionExpanded.set(true);
-    if (!alreadyHere) {
-      viewport.scrollTo({
-        top: targetTop,
-        behavior: this.motionQuery?.matches ? "instant" : "smooth",
-      });
+    this.contributionDialog().nativeElement.showModal();
+  }
+
+  closeContribution(event?: Event): void {
+    event?.preventDefault();
+    if (!this.contributionExpanded()) return;
+    this.contributionDialog().nativeElement.close();
+    this.contributionExpanded.set(false);
+    Object.assign(this.document.body.style, this.bodyStyles);
+    this.bodyStyles = undefined;
+    this.document.defaultView?.scrollTo({
+      top: this.drawerScroll,
+      behavior: "instant",
+    });
+    this.panorama().nativeElement.focus({ preventScroll: true });
+  }
+
+  backdropClick(event: MouseEvent): void {
+    const dialog = this.contributionDialog().nativeElement;
+    if (event.target !== dialog) return;
+    const bounds = dialog.getBoundingClientRect();
+    if (
+      event.clientX < bounds.left ||
+      event.clientX > bounds.right ||
+      event.clientY < bounds.top ||
+      event.clientY > bounds.bottom
+    )
+      this.closeContribution();
+  }
+
+  trapContributionFocus(event: KeyboardEvent): void {
+    if (event.key !== "Tab") return;
+    const controls = Array.from(
+      this.contributionDialog().nativeElement.querySelectorAll<HTMLElement>(
+        "button:not([disabled]), summary, a[href]",
+      ),
+    ).filter((element) => element.getClientRects().length > 0);
+    const first = controls[0];
+    const last = controls[controls.length - 1];
+    if (event.shiftKey && this.document.activeElement === first) {
+      event.preventDefault();
+      last?.focus();
+    } else if (!event.shiftKey && this.document.activeElement === last) {
+      event.preventDefault();
+      first?.focus();
     }
-    options
-      .querySelector<HTMLElement>("a[href]")
-      ?.focus({ preventScroll: true });
   }
 
   shortLabel(value: string | null | undefined): string {
@@ -313,7 +388,23 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   selectExploreItem(item: ExploreMedia): void {
+    this.galleryPlaying.set(false);
     this.selectedExploreItem.set(item);
+  }
+  selectSection(id: string): void {
+    this.activeSection.set(id);
+    this.menuOpen.set(false);
+  }
+  galleryFocus(event: FocusEvent): void {
+    if (!(event.target as HTMLElement).closest(".gallery-toggle"))
+      this.galleryPlaying.set(false);
+  }
+  toggleGallery(): void {
+    this.galleryPlaying.update((playing) => !playing);
+    if (this.galleryPlaying() && this.selectedExploreItem().type === "video")
+      this.selectedExploreItem.set(
+        this.galleryItems.find((item) => item.type === "photo")!,
+      );
   }
   moveGallery(direction: 1 | -1): void {
     const current = this.galleryItems.findIndex(
@@ -336,20 +427,19 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     }).format(Number(cents ?? 0) / 100);
   }
   stagePercent(stage: MissionBaseStage): number {
-    return Math.max(0, Math.min(100, Number(stage.percent) || 0));
+    return Math.min(100, this.stageProgress(stage));
+  }
+  stageProgress(stage: MissionBaseStage): number {
+    const goal = Number(stage.goalCents);
+    const raised = Number(stage.raisedCents);
+    if (!Number.isFinite(goal) || goal <= 0 || !Number.isFinite(raised))
+      return 0;
+    const percent = (raised / goal) * 100;
+    return Number.isFinite(percent) ? Math.max(0, percent) : 0;
   }
   formatPercent(percent: number): string {
     return new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 2 }).format(
       percent,
     );
-  }
-  updatedAtLabel(value: string | null | undefined): string {
-    if (!value) return "";
-    return new Intl.DateTimeFormat("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      timeZone: "America/Recife",
-    }).format(new Date(value));
   }
 }

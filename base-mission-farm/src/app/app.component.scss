@@ -118,13 +118,20 @@ h3 {
     text-transform: uppercase;
     text-decoration: none;
     white-space: nowrap;
+    color: rgb(255 255 255 / 0.72);
+    &:visited {
+      color: rgb(255 255 255 / 0.72);
+    }
   }
-  a:hover {
-    color: #ef997d;
+  a:hover,
+  a:focus-visible,
+  a[aria-current] {
+    color: #fff;
+    text-shadow: 0 0 0.6px currentColor;
   }
 }
 .floating-contribute {
-  background: transparent;
+  background: var(--accent);
   color: var(--cloud);
   display: inline-flex;
   flex-shrink: 0;
@@ -135,6 +142,7 @@ h3 {
   padding: 8px 18px;
   border: 2px solid var(--accent);
   border-radius: 32px;
+  box-shadow: 0 3px 14px rgb(0 0 0 / 0.24);
   font-size: 13px;
   text-decoration: none;
   visibility: hidden;
@@ -147,7 +155,7 @@ h3 {
     opacity: 1;
   }
   &:hover {
-    background: var(--accent);
+    background: #b64d30;
   }
 }
 .icon-button {
@@ -418,11 +426,22 @@ h3 {
   img {
     object-fit: cover;
     object-position: center;
+    animation: gallery-reveal 650ms ease-out;
+  }
+}
+@keyframes gallery-reveal {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
 }
 .gallery-footer {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  grid-template-columns: minmax(0, 1fr) auto auto auto auto;
   align-items: center;
   gap: 16px;
   padding: 20px 0;
@@ -433,7 +452,7 @@ h3 {
 }
 .gallery-thumbs {
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 10px;
   button {
     padding: 3px;
@@ -479,7 +498,7 @@ h3 {
 }
 .progress-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 210px;
+  grid-template-columns: minmax(0, 1fr);
   column-gap: 24px;
   padding: 26px 0;
   border-bottom: 1px solid var(--line-dark);
@@ -505,8 +524,9 @@ h3 {
   }
 }
 .progress-track {
+  position: relative;
   grid-column: 1;
-  height: 22px;
+  height: 32px;
   margin-top: 22px;
   background: rgb(242 234 220 / 0.22);
   border: 1px solid rgb(242 234 220 / 0.3);
@@ -519,45 +539,16 @@ h3 {
     border-radius: inherit;
   }
 }
-.front-figures {
-  grid-column: 2;
-  grid-row: 1 / span 3;
-  align-self: center;
-  border-left: 1px solid var(--line-dark);
-  padding-left: 20px;
-  font-size: 12px;
-  line-height: 1.6;
-  p + p {
-    margin-top: 5px;
-    color: var(--muted);
-  }
-  .front-percentage,
-  .undefined-goal {
-    font-size: 14px;
-  }
-  dl {
-    margin: 10px 0 0;
-  }
-  dl div {
-    margin-top: 6px;
-  }
-  dt {
-    color: var(--muted);
-    font-size: 10px;
-  }
-  dd {
-    margin: 0;
-    overflow-wrap: anywhere;
-  }
-  .goal-exceeded {
-    color: #e8c2a9;
-  }
-}
-.updated-at {
-  grid-column: 1;
-  margin-top: 12px;
-  font-size: 10px;
-  color: var(--muted);
+.progress-label {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 13px;
+  line-height: 1;
+  font-weight: 600;
+  text-shadow: 0 1px 3px #06110c;
 }
 .contribution-response {
   margin-top: 28px;
@@ -664,22 +655,86 @@ h3 {
     margin-bottom: 16px;
   }
 }
-.donation-options {
-  border-block: 1px solid var(--line-dark);
-  summary {
-    min-height: 52px;
-    padding: 16px 0;
-    font-size: 13px;
-    color: #fff;
+.contribution-dialog {
+  position: fixed;
+  inset: 0 0 0 auto;
+  margin: 0;
+  padding: 30px 32px 40px;
+  width: min(480px, 100%);
+  height: 100dvh;
+  max-height: 100dvh;
+  max-width: 100%;
+  border: 0;
+  border-left: 1px solid var(--line-dark);
+  color: var(--cloud);
+  background: #082319;
+  font-family: "Sora", sans-serif;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  &::backdrop {
+    background: rgb(0 0 0 / 0.55);
+    backdrop-filter: blur(3px);
   }
-  summary::marker {
-    color: #fff;
+  h2 {
+    font-family: "Sora", sans-serif;
+    font-size: 24px;
+    line-height: 1.16;
+    margin: 28px 0 32px;
+  }
+}
+.drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  img {
+    width: 176px;
+    height: auto;
+  }
+}
+.sheet-handle {
+  display: none;
+}
+@media (max-width: 760px) {
+  .contribution-dialog {
+    inset: auto 0 0;
+    width: 100%;
+    height: auto;
+    max-height: calc(100dvh - env(safe-area-inset-top) - 40px);
+    padding: 52px 24px calc(24px + env(safe-area-inset-bottom));
+    border: 1px solid var(--line-dark);
+    border-bottom: 0;
+    border-radius: 24px 24px 0 0;
+    h2 {
+      font-size: 24px;
+      margin: 8px 0 22px;
+      max-width: 300px;
+    }
+  }
+  .drawer-header img {
+    display: none;
+  }
+  .drawer-header .icon-button {
+    position: absolute;
+    right: 14px;
+    top: 14px;
+  }
+  .sheet-handle {
+    display: block;
+    position: absolute;
+    top: 16px;
+    left: calc(50% - 24px);
+    width: 48px;
+    height: 5px;
+    border-radius: 3px;
+    background: #92a99d;
   }
 }
 .donation-methods {
   padding: 8px 0 24px;
 }
-.one-time-offer {
+.one-time-offer,
+.monthly-offer {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -704,17 +759,26 @@ h3 {
     background: #ad4a2e;
   }
 }
-.monthly-heading {
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  border-top: 1px solid #b7ab94;
-  padding-top: 22px;
-  margin: 28px 0 10px;
+.monthly-options {
+  margin-top: 16px;
+  > .monthly-offer {
+    padding: 18px 20px;
+    min-height: 90px;
+    list-style: none;
+    &::-webkit-details-marker {
+      display: none;
+    }
+    &::marker {
+      content: "";
+    }
+  }
+  &[open] > summary > svg {
+    transform: rotate(90deg);
+  }
 }
 .supporter-list {
   list-style: none;
-  margin: 0;
+  margin: 12px 0 0;
   padding: 0;
   li + li {
     border-top: 1px solid var(--line-dark);
@@ -732,21 +796,26 @@ h3 {
   a:hover {
     background: rgb(255 255 255 / 0.05);
   }
+  small {
+    font-size: 13px;
+    color: var(--muted);
+  }
 }
 @media (max-width: 760px) {
   .panorama {
     scroll-margin-top: calc(100px + env(safe-area-inset-top));
   }
-  .one-time-offer {
+  .one-time-offer,
+  .monthly-offer {
     min-height: 78px;
     padding: 15px 18px;
     strong {
       font-size: 20px;
     }
   }
-  .monthly-heading {
-    margin-top: 22px;
-    padding-top: 20px;
+  .monthly-options > .monthly-offer {
+    min-height: 78px;
+    padding: 15px 18px;
   }
   .supporter-list a {
     min-height: 54px;
@@ -984,7 +1053,7 @@ h3 {
     aspect-ratio: 16 / 9;
   }
   .gallery-footer {
-    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-columns: minmax(0, 1fr) auto auto auto;
     gap: 8px;
     div {
       grid-column: 1 / -1;
@@ -1021,27 +1090,8 @@ h3 {
     height: 42px;
   }
   .progress-track {
-    height: 24px;
+    height: 32px;
     margin-top: 24px;
-  }
-  .front-figures {
-    border-left: 0;
-    border-top: 1px solid var(--line-dark);
-    padding: 18px 0 0;
-    margin-top: 18px;
-    text-align: center;
-  }
-  .front-figures dl {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-  }
-  .front-figures dl div:last-child {
-    grid-column: 1 / -1;
-  }
-  .updated-at {
-    text-align: center;
-    margin-top: 12px;
   }
   .contribution-response {
     border-top: 2px solid var(--accent);

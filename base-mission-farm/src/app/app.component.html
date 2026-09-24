@@ -9,7 +9,7 @@
       class="brand"
       href="#base"
       aria-label="Base Mission Farm"
-      (click)="menuOpen.set(false)"
+      (click)="selectSection('base')"
     >
       <img
         class="brand-art"
@@ -26,10 +26,32 @@
       [class.open]="menuOpen()"
       aria-label="Navegação da Base"
     >
-      <a href="#base" (click)="menuOpen.set(false)">A Base</a>
-      <a href="#visao" (click)="menuOpen.set(false)">A visão</a>
-      <a href="#ambientes" (click)="menuOpen.set(false)">Antes e depois</a>
-      <a href="#explore" (click)="menuOpen.set(false)">Explore a Base</a>
+      <a
+        href="#base"
+        [attr.aria-current]="activeSection() === 'base' ? 'location' : null"
+        (click)="selectSection('base')"
+        >A Base</a
+      >
+      <a
+        href="#visao"
+        [attr.aria-current]="activeSection() === 'visao' ? 'location' : null"
+        (click)="selectSection('visao')"
+        >A visão</a
+      >
+      <a
+        href="#ambientes"
+        [attr.aria-current]="
+          activeSection() === 'ambientes' ? 'location' : null
+        "
+        (click)="selectSection('ambientes')"
+        >Antes e depois</a
+      >
+      <a
+        href="#explore"
+        [attr.aria-current]="activeSection() === 'explore' ? 'location' : null"
+        (click)="selectSection('explore')"
+        >Explore a Base</a
+      >
     </nav>
     <button
       class="floating-contribute"
@@ -313,68 +335,87 @@
             <h2 id="explore-title">Explore a Base</h2>
           </div>
         </div>
-        <figure class="gallery">
-          <div class="gallery-frame">
-            @for (item of [selectedExploreItem()]; track item.id) {
-              @if (item.type === "video") {
-                <base-story-video
-                  [src]="item.src"
-                  [poster]="item.poster!"
-                  [title]="item.name"
-                />
-              } @else {
-                <img
-                  [src]="item.src"
-                  [alt]="item.alt"
-                  loading="lazy"
-                  width="1200"
-                  height="800"
-                />
+        <div #gallery (focusin)="galleryFocus($event)">
+          <figure class="gallery">
+            <div class="gallery-frame">
+              @for (item of [selectedExploreItem()]; track item.id) {
+                @if (item.type === "video") {
+                  <base-story-video
+                    [src]="item.src"
+                    [poster]="item.poster!"
+                    [title]="item.name"
+                  />
+                } @else {
+                  <img
+                    [src]="item.src"
+                    [alt]="item.alt"
+                    loading="lazy"
+                    width="1200"
+                    height="800"
+                  />
+                }
               }
+            </div>
+            <figcaption class="gallery-footer">
+              <div>
+                <h3>{{ selectedExploreItem().name }}</h3>
+              </div>
+              <span class="gallery-position">{{ galleryPosition() }}</span>
+              <button
+                class="icon-button gallery-toggle"
+                type="button"
+                (click)="toggleGallery()"
+                [attr.aria-label]="
+                  galleryPlaying() ? 'Pausar galeria' : 'Reproduzir galeria'
+                "
+                [title]="
+                  galleryPlaying() ? 'Pausar galeria' : 'Reproduzir galeria'
+                "
+              >
+                @if (galleryPlaying()) {
+                  <svg lucidePause aria-hidden="true"></svg>
+                } @else {
+                  <svg lucidePlay aria-hidden="true"></svg>
+                }
+              </button>
+              <button
+                class="icon-button"
+                type="button"
+                aria-label="Mídia anterior"
+                title="Mídia anterior"
+                (click)="moveGallery(-1)"
+              >
+                <svg lucideChevronLeft aria-hidden="true"></svg></button
+              ><button
+                class="icon-button"
+                type="button"
+                aria-label="Próxima mídia"
+                title="Próxima mídia"
+                (click)="moveGallery(1)"
+              >
+                <svg lucideChevronRight aria-hidden="true"></svg>
+              </button>
+            </figcaption>
+          </figure>
+          <div class="gallery-thumbs" aria-label="Fotos e vídeos da Base">
+            @for (item of galleryItems; track item.id) {
+              <button
+                type="button"
+                [attr.aria-label]="item.name"
+                [attr.aria-pressed]="selectedExploreItem().id === item.id"
+                [class.active]="selectedExploreItem().id === item.id"
+                (click)="selectExploreItem(item)"
+              >
+                <img
+                  [src]="item.poster || item.src"
+                  alt=""
+                  width="120"
+                  height="80"
+                  loading="lazy"
+                />
+              </button>
             }
           </div>
-          <figcaption class="gallery-footer">
-            <div>
-              <h3>{{ selectedExploreItem().name }}</h3>
-            </div>
-            <span class="gallery-position">{{ galleryPosition() }}</span
-            ><button
-              class="icon-button"
-              type="button"
-              aria-label="Mídia anterior"
-              title="Mídia anterior"
-              (click)="moveGallery(-1)"
-            >
-              <svg lucideChevronLeft aria-hidden="true"></svg></button
-            ><button
-              class="icon-button"
-              type="button"
-              aria-label="Próxima mídia"
-              title="Próxima mídia"
-              (click)="moveGallery(1)"
-            >
-              <svg lucideChevronRight aria-hidden="true"></svg>
-            </button>
-          </figcaption>
-        </figure>
-        <div class="gallery-thumbs" aria-label="Fotos e vídeos da Base">
-          @for (item of galleryItems; track item.id) {
-            <button
-              type="button"
-              [attr.aria-label]="item.name"
-              [attr.aria-pressed]="selectedExploreItem().id === item.id"
-              [class.active]="selectedExploreItem().id === item.id"
-              (click)="selectExploreItem(item)"
-            >
-              <img
-                [src]="item.poster || item.src"
-                alt=""
-                width="120"
-                height="80"
-                loading="lazy"
-              />
-            </button>
-          }
         </div>
       </div>
     </section>
@@ -387,50 +428,8 @@
       <div class="section-inner contribution-inner">
         <p class="eyebrow">Juntos, mais longe</p>
         <h2 id="contribution-title">Faça parte dessa história</h2>
-        <div #panorama id="panorama-geral" class="panorama">
+        <div #panorama id="panorama-geral" class="panorama" tabindex="-1">
           <h3>Panorama geral</h3>
-          <details
-            #donationOptions
-            id="donation-options"
-            class="donation-options"
-            [hidden]="campaign()?.active === false"
-            [open]="contributionExpanded()"
-            (toggle)="contributionExpanded.set(donationOptions.open)"
-          >
-            <summary>Opções de contribuição</summary>
-            <div class="donation-methods">
-              <a
-                class="one-time-offer"
-                [href]="offerCheckout"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <span
-                  ><strong>Oferta avulsa</strong
-                  ><small>Escolha livremente o valor</small></span
-                >
-                <svg lucideArrowRight aria-hidden="true"></svg>
-              </a>
-              <h3 class="monthly-heading">Contribuição mensal</h3>
-              <ul class="supporter-list">
-                @for (plan of supporterCheckouts; track plan.url) {
-                  <li>
-                    <a
-                      [href]="plan.url"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      [attr.aria-label]="
-                        'Mantenedor: ' + formatCurrency(plan.cents) + ' por mês'
-                      "
-                    >
-                      <span>{{ formatCurrency(plan.cents) }}</span>
-                      <svg lucideArrowRight aria-hidden="true"></svg>
-                    </a>
-                  </li>
-                }
-              </ul>
-            </div>
-          </details>
         </div>
         @if (loadingCampaign()) {
           <p class="feedback" role="status">Carregando metas</p>
@@ -463,68 +462,24 @@
                     <h3 [id]="stage.id + '-heading'">
                       {{ shortLabel(stage.name) }}
                     </h3>
-                    <p>{{ shortLabel(stage.description) }}</p>
                   </div>
                 </div>
                 <div
                   class="progress-track"
                   role="progressbar"
                   [attr.aria-label]="stage.name"
-                  [attr.aria-valuenow]="
-                    stage.goalCents > 0 ? stagePercent(stage) : null
-                  "
+                  [attr.aria-valuenow]="stagePercent(stage)"
                   aria-valuemin="0"
                   aria-valuemax="100"
                   [attr.aria-valuetext]="
-                    stage.goalCents > 0
-                      ? formatPercent(stage.percent) + '% destinado'
-                      : 'Meta em definição'
+                    formatPercent(stageProgress(stage)) + '%'
                   "
                 >
-                  <span
-                    [style.width.%]="
-                      stage.goalCents > 0 ? stagePercent(stage) : 0
-                    "
-                  ></span>
+                  <span [style.width.%]="stagePercent(stage)"></span>
+                  <strong class="progress-label"
+                    >{{ formatPercent(stageProgress(stage)) }}%</strong
+                  >
                 </div>
-                <div class="front-figures">
-                  @if (stage.goalCents > 0) {
-                    <p class="front-percentage">
-                      {{ formatPercent(stage.percent) }}% destinado
-                    </p>
-                    <dl>
-                      <div>
-                        <dt>Meta</dt>
-                        <dd>{{ formatCurrency(stage.goalCents) }}</dd>
-                      </div>
-                      <div>
-                        <dt>Destinado confirmado</dt>
-                        <dd>{{ formatCurrency(stage.raisedCents) }}</dd>
-                      </div>
-                      <div>
-                        <dt>Restante</dt>
-                        <dd>{{ formatCurrency(stage.remainingCents) }}</dd>
-                      </div>
-                    </dl>
-                    @if (stage.goalExceeded) {
-                      <p class="goal-exceeded">Meta superada</p>
-                    }
-                  } @else {
-                    <p class="undefined-goal">Meta em definição</p>
-                    <p>Aguardando dados</p>
-                    @if (stage.raisedCents > 0) {
-                      <p>
-                        Destinado confirmado:
-                        {{ formatCurrency(stage.raisedCents) }}
-                      </p>
-                    }
-                  }
-                </div>
-                @if (stage.updatedAt) {
-                  <p class="updated-at">
-                    Atualizado em {{ updatedAtLabel(stage.updatedAt) }}
-                  </p>
-                }
               </article>
             } @empty {
               <p class="feedback">As metas ainda não estão disponíveis</p>
@@ -556,3 +511,74 @@
     </section>
   </div>
 </main>
+
+<dialog
+  #contributionDialog
+  id="donation-options"
+  class="contribution-dialog"
+  aria-labelledby="drawer-title"
+  (cancel)="closeContribution($event)"
+  (click)="backdropClick($event)"
+  (keydown)="trapContributionFocus($event)"
+>
+  <div class="sheet-handle" aria-hidden="true"></div>
+  <header class="drawer-header">
+    <img
+      src="assets/base/brand/logo-base-horizontal.svg"
+      width="176"
+      height="46"
+      alt="Base Mission Farm"
+    />
+    <button
+      type="button"
+      class="icon-button"
+      aria-label="Fechar contribuição"
+      title="Fechar contribuição"
+      (click)="closeContribution()"
+      autofocus
+    >
+      <svg lucideX aria-hidden="true"></svg>
+    </button>
+  </header>
+  <h2 id="drawer-title">Como você quer contribuir?</h2>
+  <div class="donation-methods">
+    <a
+      class="one-time-offer"
+      [href]="offerCheckout"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      <span
+        ><strong>Oferta avulsa</strong
+        ><small>Escolha livremente o valor</small></span
+      >
+      <svg lucideArrowRight aria-hidden="true"></svg>
+    </a>
+    <details class="monthly-options" open>
+      <summary class="monthly-offer">
+        <span
+          ><strong class="monthly-heading">Contribuição mensal</strong
+          ><small>Recorrência de cobrança mensal</small></span
+        >
+        <svg lucideChevronRight aria-hidden="true"></svg>
+      </summary>
+      <ul class="supporter-list">
+        @for (plan of supporterCheckouts; track plan.url) {
+          <li>
+            <a
+              [href]="plan.url"
+              target="_blank"
+              rel="noopener noreferrer"
+              [attr.aria-label]="
+                'Mantenedor: ' + formatCurrency(plan.cents) + ' por mês'
+              "
+            >
+              <span>{{ formatCurrency(plan.cents) }} <small>/ mês</small></span>
+              <svg lucideArrowRight aria-hidden="true"></svg>
+            </a>
+          </li>
+        }
+      </ul>
+    </details>
+  </div>
+</dialog>

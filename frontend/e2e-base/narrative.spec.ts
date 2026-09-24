@@ -148,48 +148,47 @@ test('two transformations load on demand, preserve vertical proportions, move an
   }
 });
 
-test('both contribution buttons open inline options, respect the header and focus the first checkout', async ({
+test('drawer contribution keeps current choices and leaves the goals visible after closing', async ({
   page,
 }, info) => {
-  let popups = 0;
-  page.on('popup', () => popups++);
   await page.goto('/base/', { waitUntil: 'domcontentloaded' });
   await goTo(page, '#visao');
-  const options = page.locator('#donation-options');
-  const offer = options.locator('.one-time-offer');
-  const headerCta = page.locator('.floating-contribute');
-  await headerCta.click();
-  await expect(options).toHaveAttribute('open');
-  await expect(offer).toBeFocused();
-  await expect(offer).toBeInViewport();
-  const header = (await page.locator('.site-header').boundingBox())!;
-  const panorama = (await page.locator('#panorama-geral').boundingBox())!;
-  expect(panorama.y).toBeCloseTo(header.height + 16, 0);
-  await expect(page.locator('dialog, [role="dialog"]')).toHaveCount(0);
-  expect(await page.locator('body').evaluate((el) => getComputedStyle(el).position)).not.toBe(
-    'fixed',
-  );
-  await capture(page, info.outputPath('contribution-inline.png'));
-  await page.keyboard.press('Tab');
-  await expect(options.locator('.supporter-list a').first()).toBeFocused();
-  await options.locator('summary').click();
-  await expect(options).not.toHaveAttribute('open');
-  await expect(headerCta).toHaveAttribute('aria-expanded', 'false');
-  const scroll = await page.evaluate(() => scrollY);
-  await headerCta.click();
-  await expect(offer).toBeFocused();
-  expect(await page.evaluate(() => scrollY)).toBeCloseTo(scroll, 0);
-
-  await options.locator('summary').click();
+  await page.locator('.floating-contribute').click();
+  const drawer = page.getByRole('dialog', { name: 'Como você quer contribuir?' });
+  const close = page.getByRole('button', { name: 'Fechar contribuição', exact: true });
+  await expect(drawer).toBeVisible();
+  await expect(close).toBeFocused();
+  await expect(page.locator('#contribuicao #donation-options')).toHaveCount(0);
+  await expect(drawer.locator('.monthly-offer small')).toHaveText('Recorrência de cobrança mensal');
+  await expect(drawer.locator('.supporter-list a small')).toHaveText(Array(5).fill('/ mês'));
+  const beforeClose = (await page.locator('#panorama-geral').boundingBox())!.y;
+  expect(beforeClose).toBeGreaterThanOrEqual(84);
+  const bounds = (await drawer.boundingBox())!;
+  const viewport = page.viewportSize()!;
+  expect(bounds.x + bounds.width).toBeCloseTo(viewport.width, 0);
+  if (viewport.width > 760) expect(bounds.width).toBeLessThanOrEqual(480);
+  else expect(bounds.y + bounds.height).toBeCloseTo(viewport.height, 0);
+  for (let i = 0; i < 10; i++) {
+    await page.keyboard.press('Tab');
+    expect(await drawer.evaluate((el) => el.contains(document.activeElement))).toBe(true);
+  }
+  await drawer.evaluate((el) => el.scrollTo(0, 0));
+  await capture(page, info.outputPath('contribution-drawer.png'));
+  await page.keyboard.press('Escape');
+  await expect(drawer).toBeHidden();
+  await expect(page.locator('#panorama-geral')).toBeFocused();
+  expect((await page.locator('#panorama-geral').boundingBox())!.y).toBeCloseTo(beforeClose, 0);
+  await expect(page.locator('.progress-track').first()).toBeInViewport();
+  expect(await page.locator('body').evaluate((el) => el.style.position)).toBe('');
+  await capture(page, info.outputPath('goals-after-close.png'));
   await page.locator('#contribuicao .primary-action').click();
-  await expect(options).toHaveAttribute('open');
-  await expect(offer).toBeFocused();
-  await expect(offer).toBeInViewport();
-  expect((await page.locator('#panorama-geral').boundingBox())!.y).toBeGreaterThanOrEqual(
-    header.height,
-  );
-  await capture(page, info.outputPath('contribution-from-footer.png'));
-  expect(popups).toBe(0);
+  await expect(drawer).toBeVisible();
+  await close.click();
+  await expect(drawer).toBeHidden();
+  await expect(page.locator('.progress-track').first()).toBeInViewport();
+  await page.locator('.floating-contribute').click();
+  await page.mouse.click(5, 5);
+  await expect(drawer).toBeHidden();
   await noOverflow(page);
 });
 
@@ -197,6 +196,7 @@ test('six exact general checkouts open protected external tabs without calling P
   page,
   context,
 }) => {
+  test.setTimeout(120_000);
   let pixCalls = 0;
   await page.route('**/api/v1/mission-base/pix', (route) => {
     pixCalls++;
@@ -230,46 +230,20 @@ test('six exact general checkouts open protected external tabs without calling P
   expect(pixCalls).toBe(0);
 });
 
-test('contribution scrolls smoothly by default and also works from the mobile menu', async ({
+test('contribution opens the drawer from the mobile menu and scrolls the background to goals', async ({
   page,
 }) => {
   await page.goto('/base/', { waitUntil: 'domcontentloaded' });
   await goTo(page, '#visao');
   await page.emulateMedia({ reducedMotion: 'no-preference' });
-  const scrollCalls: ScrollToOptions[] = [];
-  await page.exposeFunction('recordBaseScroll', (options: ScrollToOptions) =>
-    scrollCalls.push(options),
-  );
-  await page.evaluate(() => {
-    const viewport = window as typeof window & {
-      recordBaseScroll: (options: ScrollToOptions) => void;
-    };
-    const original = window.scrollTo.bind(window);
-    window.scrollTo = (optionsOrX: ScrollToOptions | number, y?: number) => {
-      if (typeof optionsOrX === 'number') original(optionsOrX, y ?? 0);
-      else {
-        viewport.recordBaseScroll(optionsOrX);
-        original(optionsOrX);
-      }
-    };
-  });
-  if (page.viewportSize()!.width <= 760) {
+  if (page.viewportSize()!.width <= 760)
     await page.getByRole('button', { name: 'Abrir menu', exact: true }).click();
-    await expect(page.locator('.site-nav')).toBeVisible();
-  }
   await page.locator('.floating-contribute').click();
-  await expect(page.locator('.one-time-offer')).toBeFocused();
-  await expect
-    .poll(() =>
-      page.locator('#panorama-geral').evaluate((el) => {
-        const headerBottom = document.querySelector('.site-header')!.getBoundingClientRect().bottom;
-        return Math.abs(el.getBoundingClientRect().top - headerBottom - 16);
-      }),
-    )
-    .toBeLessThan(2);
-  expect(scrollCalls).toHaveLength(1);
-  expect(scrollCalls[0].behavior).toBe('smooth');
+  await expect(page.getByRole('dialog')).toBeVisible();
   await expect(page.locator('.site-nav')).not.toHaveClass(/open/);
+  await page.getByRole('button', { name: 'Fechar contribuição', exact: true }).click();
+  await expect(page.locator('#panorama-geral')).toBeInViewport();
+  await expect(page.locator('.progress-track').first()).toBeInViewport();
 });
 
 test('panoramic gallery keeps every image, video, navigation and indicator', async ({
@@ -277,21 +251,22 @@ test('panoramic gallery keeps every image, video, navigation and indicator', asy
 }, info) => {
   await page.goto('/base/', { waitUntil: 'domcontentloaded' });
   await goTo(page, '#explore');
-  await expect(page.locator('.gallery-thumbs button')).toHaveCount(7);
+  await expect(page.locator('.gallery-thumbs button')).toHaveCount(6);
+  await expect(page.locator('#explore img[src$="entrada.jpeg"]')).toHaveCount(0);
   const position = page.locator('.gallery-position');
-  await expect(position).toHaveText('2 / 7');
+  await expect(position).toHaveText('2 / 6');
   await page.getByRole('button', { name: 'Próxima mídia', exact: true }).click();
-  await expect(position).toHaveText('3 / 7');
+  await expect(position).toHaveText('3 / 6');
   await page.getByRole('button', { name: 'Mídia anterior', exact: true }).click();
-  await expect(position).toHaveText('2 / 7');
-  for (let i = 0; i < 7; i++) {
+  await expect(position).toHaveText('2 / 6');
+  for (let i = 0; i < 6; i++) {
     const thumb = page.locator('.gallery-thumbs button').nth(i);
     const source = await thumb.locator('img').getAttribute('src');
     await thumb.click();
     await expect(thumb).toHaveAttribute('aria-pressed', 'true');
-    await expect(position).toHaveText(`${i + 1} / 7`);
+    await expect(position).toHaveText(`${i + 1} / 6`);
     const frame = page.locator('.gallery-frame');
-    if (i === 0 || i === 6) {
+    if (i === 0 || i === 5) {
       await expect(frame.locator('video')).toHaveAttribute('poster', source!);
       await expect(frame.locator('video')).not.toHaveAttribute('src');
     } else {
@@ -304,6 +279,50 @@ test('panoramic gallery keeps every image, video, navigation and indicator', asy
   await page.locator('.gallery-thumbs button').nth(1).click();
   await goTo(page, '#explore');
   await capture(page, info.outputPath('panoramic-gallery.png'));
+});
+
+test('gallery advances automatically and pauses on choice; navigation stays white', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.clock.install();
+  await page.goto('/base/', { waitUntil: 'domcontentloaded' });
+  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 10_000));
+  await goTo(page, '#explore');
+  await expect(page.locator('.gallery-frame')).toBeInViewport();
+  await page.mouse.move(0, 0);
+  const position = page.locator('.gallery-position');
+  const initial = await position.textContent();
+  await page.clock.runFor(5500);
+  await expect(position).not.toHaveText(initial!);
+  await page.getByRole('button', { name: 'Pausar galeria', exact: true }).click();
+  const paused = await position.textContent();
+  await page.mouse.move(0, 0);
+  await page.clock.runFor(5500);
+  await expect(position).toHaveText(paused!);
+  await page.getByRole('button', { name: 'Reproduzir galeria', exact: true }).click();
+  await page.clock.runFor(100);
+  await expect(page.locator('.gallery-toggle')).toHaveAttribute('aria-label', 'Pausar galeria');
+  await page.mouse.move(0, 0);
+  await page.clock.runFor(5500);
+  await expect(position).not.toHaveText(paused!);
+  await page.locator('.gallery-thumbs button').nth(1).click();
+  await page.mouse.move(0, 0);
+  await page.clock.runFor(5500);
+  await expect(page.locator('.gallery-position')).toHaveText('2 / 6');
+  if (page.viewportSize()!.width <= 760) {
+    await page.getByRole('button', { name: 'Abrir menu', exact: true }).click();
+    await page.clock.runFor(100);
+  }
+  const link = page.locator('.site-nav a[href="#explore"]');
+  await link.click();
+  await page.clock.runFor(100);
+  await expect(link).toHaveAttribute('aria-current', 'location');
+  await expect(link).toHaveCSS('color', 'rgb(255, 255, 255)');
+  await expect(page.locator('.floating-contribute')).toHaveCSS(
+    'background-color',
+    'rgb(197, 90, 57)',
+  );
 });
 
 test('inactive campaigns keep donation options unavailable', async ({ page }) => {
@@ -320,20 +339,32 @@ test('inactive campaigns keep donation options unavailable', async ({ page }) =>
   );
 });
 
-test('independent financial bars preserve excess and undefined states and allow retry', async ({
+test('percentage bars calculate backend amounts, cap the fill and handle zero goals without status text', async ({
   page,
 }, info) => {
+  await page.route('**/api/v1/mission-base', (route) =>
+    route.fulfill({
+      json: { ...campaign, stages: campaign.stages.map((stage) => ({ ...stage, percent: 999 })) },
+    }),
+  );
   await page.goto('/base/', { waitUntil: 'domcontentloaded' });
   await goTo(page, '#contribuicao');
-  await expect(page.getByText('150% destinado', { exact: true })).toBeVisible();
+  await expect(page.locator('.progress-label')).toHaveText(['150%', '25%']);
   await expect(page.getByRole('progressbar', { name: 'Aquisição' })).toHaveAttribute(
     'aria-valuenow',
     '100',
   );
-  const bar = await page.getByRole('progressbar', { name: 'Aquisição' }).boundingBox();
-  expect(bar!.height).toBeGreaterThanOrEqual(20);
-  await expect(page.getByText('Meta superada', { exact: true })).toBeVisible();
-  await expect(page.getByText('Atualizado em 20/09/2026')).toHaveCount(2);
+  await expect(page.getByRole('progressbar', { name: 'Aquisição' })).toHaveAttribute(
+    'aria-valuetext',
+    '150%',
+  );
+  await expect(page.locator('.progress-list')).not.toContainText(
+    /R\$|Meta em definição|Aguardando dados|Atualizado|Meta superada/,
+  );
+  const track = (await page.locator('.progress-track').first().boundingBox())!;
+  const fill = (await page.locator('.progress-track > span').first().boundingBox())!;
+  expect(fill.width).toBeLessThanOrEqual(track.width);
+  await capture(page, info.outputPath('percentage-goals.png'));
   let failing = true;
   await page.route('**/api/v1/mission-base', (route) =>
     route.fulfill(
@@ -342,13 +373,11 @@ test('independent financial bars preserve excess and undefined states and allow 
         : {
             json: {
               ...campaign,
-              stages: campaign.stages.map((stage) => ({
+              stages: campaign.stages.map((stage, index) => ({
                 ...stage,
-                goalCents: 0,
-                raisedCents: 0,
-                percent: 0,
-                remainingCents: null,
-                updatedAt: null,
+                goalCents: index ? 1000 : 0,
+                raisedCents: index ? -100 : 1000,
+                percent: 80,
               })),
             },
           },
@@ -359,17 +388,18 @@ test('independent financial bars preserve excess and undefined states and allow 
   await expect(page.getByRole('alert')).toContainText('Não foi possível');
   failing = false;
   await page.getByRole('button', { name: 'Tentar novamente', exact: true }).click();
-  await expect(page.getByText('Meta em definição', { exact: true })).toHaveCount(2);
-  await expect(page.getByText('Aguardando dados', { exact: true })).toHaveCount(2);
-  for (const track of await page.locator('.progress-track').all()) {
-    expect(await track.getAttribute('aria-valuenow')).toBeNull();
-    expect((await track.locator('span').boundingBox())!.width).toBe(0);
+  await expect(page.locator('.progress-label')).toHaveText(['0%', '0%']);
+  for (const bar of await page.locator('.progress-track').all()) {
+    await expect(bar).toHaveAttribute('aria-valuenow', '0');
+    expect((await bar.locator('span').boundingBox())!.width).toBe(0);
   }
-  await expect(page.locator('.updated-at')).toHaveCount(0);
-  await capture(page, info.outputPath('undefined-goals.png'));
+  await expect(page.locator('.progress-list')).not.toContainText(
+    /Meta em definição|Aguardando dados/,
+  );
+  await capture(page, info.outputPath('zero-goals.png'));
 });
 
-test('Sora really renders all functional UI, including custom video controls and inline contribution', async ({
+test('Sora really renders all functional UI, including custom video controls and contribution drawer', async ({
   page,
   browserName,
 }, info) => {
@@ -393,14 +423,14 @@ test('Sora really renders all functional UI, including custom video controls and
       '.primary-action',
       '.front-heading h3',
       '.progress-track',
-      '.front-figures dd',
-      '.updated-at',
+      '.progress-label',
+      '#drawer-title',
       '.one-time-offer strong',
       '.one-time-offer small',
       '.monthly-heading',
       '.supporter-list a',
       '#panorama-geral h3',
-      '#donation-options summary',
+      '#donation-options summary small',
       '.video-controls',
       '.video-controls button',
       '.video-controls input',
@@ -459,14 +489,14 @@ test('Sora really renders all functional UI, including custom video controls and
       '.monthly-heading',
       '.supporter-list a span',
       '#panorama-geral > h3',
-      '#donation-options summary',
+      '#donation-options summary small',
       '.front-heading h3',
-      '.front-figures dd',
+      '.progress-label',
       '.allocation-note',
     ]) {
       const { nodeId } = await cdp.send('DOM.querySelector', { nodeId: root.nodeId, selector });
       const result = await cdp.send('CSS.getPlatformFontsForNode', { nodeId });
-      expect(result.fonts.length).toBeGreaterThan(0);
+      expect(result.fonts.length, selector).toBeGreaterThan(0);
       expect(
         result.fonts.every((font) => font.isCustomFont && font.familyName.includes('Sora')),
       ).toBe(true);
@@ -507,7 +537,9 @@ test('small, landscape and wide viewports preserve full-height hero without over
     expect(frame.width / frame.height).toBeCloseTo(viewport.width <= 760 ? 16 / 9 : 21 / 9, 1);
     await noOverflow(page);
     await page.locator('.floating-contribute').click();
-    await expect(page.locator('.one-time-offer')).toBeFocused();
+    await expect(
+      page.getByRole('button', { name: 'Fechar contribuição', exact: true }),
+    ).toBeFocused();
     await expect(page.locator('.one-time-offer')).toBeInViewport();
     await noOverflow(page);
   }

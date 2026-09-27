@@ -263,7 +263,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
       block: "center",
       behavior: "instant",
     });
-    await this.transformationPlayers()[0]?.toggle();
+    await this.transformationPlayers()[0]?.play();
   }
 
   moveTransformation(delta: number, first = false): void {

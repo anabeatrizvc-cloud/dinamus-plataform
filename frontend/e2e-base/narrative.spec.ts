@@ -51,12 +51,12 @@ test('preserves the hero and the approved narrative, with no fundraising in the 
   await expect(page.locator('.aerial-comparison .media-label')).toHaveText(['Hoje', 'A visão']);
   await expect(page.locator('.aerial-today img')).toHaveAttribute('src', /drone-current-vertical/);
   await expect(page.locator('.aerial-future img')).toHaveAttribute('src', /aerial-future/);
-  await expect(page.locator('.transformation-item')).toHaveCount(2);
-  await expect(page.locator('.transformation-item video').nth(0)).toHaveAttribute(
+  await expect(page.locator('.transformation-item')).toHaveCount(4);
+  await expect(page.locator('.transformation-item video').nth(2)).toHaveAttribute(
     'poster',
     /transformation-aerial-poster/,
   );
-  await expect(page.locator('.transformation-item video').nth(1)).toHaveAttribute(
+  await expect(page.locator('.transformation-item video').nth(3)).toHaveAttribute(
     'poster',
     /transformation-vertical-poster/,
   );
@@ -85,67 +85,63 @@ test('preserves the hero and the approved narrative, with no fundraising in the 
   expect(errors).toEqual([]);
 });
 
-test('two transformations load on demand, preserve vertical proportions, move and pause each other', async ({
+test('transformations autoplay in order, keep controls and pause offscreen', async ({
   page,
 }, info) => {
-  const downloads: string[] = [];
-  page.on('request', (request) => {
-    if (/final-project|transformation-vertical.mp4/.test(request.url()))
-      downloads.push(request.url());
-  });
   await page.goto('/base/', { waitUntil: 'domcontentloaded' });
-  await goTo(page, '#transformations');
-  expect(downloads).toEqual([]);
   const items = page.locator('.transformation-item');
-  if (page.viewportSize()!.width > 760) {
-    const first = await items.nth(0).boundingBox();
-    const second = await items.nth(1).boundingBox();
-    expect(first!.y).toBe(second!.y);
-    expect(first!.width).toBeCloseTo(second!.width, 0);
-    expect(second!.x).toBeGreaterThan(first!.x + first!.width);
-  }
-  const firstVideo = items.nth(0).locator('video');
-  await items.nth(0).getByRole('button', { name: 'Reproduzir: Visão geral', exact: true }).click();
-  await expect
-    .poll(() => firstVideo.evaluate((v: HTMLVideoElement) => v.currentTime), { timeout: 20_000 })
-    .toBeGreaterThan(0.1);
-  expect(await firstVideo.evaluate((v: HTMLVideoElement) => v.muted && v.playsInline)).toBe(true);
-  expect(await firstVideo.evaluate((v: HTMLVideoElement) => v.duration)).toBeCloseTo(7.04, 0);
-  const pixels = await firstVideo.evaluate((v: HTMLVideoElement) => {
-    const canvas = document.createElement('canvas');
-    canvas.width = 32;
-    canvas.height = 32;
-    const ctx = canvas.getContext('2d')!;
-    ctx.drawImage(v, 0, 0, 32, 32);
-    return new Set(ctx.getImageData(0, 0, 32, 32).data).size;
-  });
-  expect(pixels).toBeGreaterThan(40);
-  if (page.viewportSize()!.width <= 760) {
-    await page.getByRole('button', { name: 'Próxima transformação', exact: true }).click();
-    await expect(page.locator('.transformation-navigation span')).toHaveText('2 / 2');
-  }
-  await items
-    .nth(1)
-    .getByRole('button', { name: 'Reproduzir: Revitalização', exact: true })
-    .click();
-  const secondVideo = items.nth(1).locator('video');
-  await expect
-    .poll(() => secondVideo.evaluate((v: HTMLVideoElement) => v.currentTime), { timeout: 20_000 })
-    .toBeGreaterThan(0);
-  expect(await firstVideo.evaluate((v: HTMLVideoElement) => v.paused)).toBe(true);
+  await expect(items).toHaveCount(4);
   expect(
-    await secondVideo.evaluate((v: HTMLVideoElement) => v.muted && v.videoHeight > v.videoWidth),
-  ).toBe(true);
-  expect(await secondVideo.evaluate((v: HTMLVideoElement) => v.duration)).toBeCloseTo(10.125, 0);
-  await capture(page, info.outputPath('transformation-playing.png'));
-  await goTo(page, '#contribuicao');
-  await expect.poll(() => secondVideo.evaluate((v: HTMLVideoElement) => v.paused)).toBe(true);
-  if (page.viewportSize()!.width <= 760) {
-    await goTo(page, '#transformations');
-    await page.locator('.transformation-rail').focus();
-    await page.keyboard.press('ArrowLeft');
-    await expect(page.locator('.transformation-navigation span')).toHaveText('1 / 2');
+    await items.evaluateAll((nodes) => nodes.map((n) => n.getAttribute('aria-label'))),
+  ).toEqual(['Transformação Geral', 'Transformação da fachada', 'Visão geral', 'Revitalização']);
+  await goTo(page, '#transformations');
+  for (let index = 0; index < 4; index++) {
+    await items.nth(index).scrollIntoViewIfNeeded();
+    const video = items.nth(index).locator('video');
+    await expect
+      .poll(
+        () =>
+          video.evaluate((v: HTMLVideoElement) => ({
+            playing: !v.paused,
+            advanced: v.currentTime > 0,
+            muted: v.muted,
+            inline: v.playsInline,
+            loop: v.loop,
+          })),
+        { timeout: 20000 },
+      )
+      .toEqual({ playing: true, advanced: true, muted: true, inline: true, loop: true });
+    await expect
+      .poll(
+        () =>
+          video.evaluate((v: HTMLVideoElement) => {
+            const canvas = document.createElement('canvas');
+            canvas.width = canvas.height = 32;
+            const ctx = canvas.getContext('2d')!;
+            ctx.drawImage(v, 0, 0, 32, 32);
+            return new Set(ctx.getImageData(0, 0, 32, 32).data).size;
+          }),
+        { timeout: 20000 },
+      )
+      .toBeGreaterThan(40);
+    if (index === 0) await capture(page, info.outputPath('transformation-autoplay.png'));
   }
+  const last = items.last();
+  await last.getByRole('button', { name: 'Pausar: Revitalização', exact: true }).click();
+  await expect
+    .poll(() => last.locator('video').evaluate((v: HTMLVideoElement) => v.paused))
+    .toBe(true);
+  await goTo(page, '#contribuicao');
+  await expect
+    .poll(() =>
+      items
+        .locator('video')
+        .evaluateAll((videos) => videos.every((v) => (v as HTMLVideoElement).paused)),
+    )
+    .toBe(true);
+  await expect(page.locator('.base-footer')).toContainText('Igreja Dinamus');
+  await expect(page.locator('.base-footer')).toContainText('inteligência artificial');
+  await noOverflow(page);
 });
 
 test('drawer contribution keeps current choices and leaves the goals visible after closing', async ({
@@ -405,10 +401,10 @@ test('Sora really renders all functional UI, including custom video controls and
 }, info) => {
   await page.goto('/base/', { waitUntil: 'domcontentloaded' });
   await goTo(page, '#transformations');
-  await page.getByRole('button', { name: 'Reproduzir: Visão geral', exact: true }).click();
-  await expect(page.locator('.video-controls output')).toBeVisible();
+  await expect(page.locator('.video-controls output').first()).toBeVisible();
   const controlsFont = await page
     .locator('.video-controls')
+    .first()
     .evaluate((el) => getComputedStyle(el).fontFamily);
   expect(controlsFont.split(',')[0].replaceAll('"', '').replaceAll("'", '')).toBe('Sora');
   await goTo(page, '#contribuicao');

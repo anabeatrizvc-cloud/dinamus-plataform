@@ -118,3 +118,13 @@ output {
     padding-bottom: env(safe-area-inset-bottom);
   }
 }
+.playing-title {
+  position: absolute;
+  top: 0;
+  inset-inline: 0;
+  padding: 12px;
+  background: #07100dcc;
+  color: #f8f5ef;
+  font-size: 13px;
+  pointer-events: none;
+}

@@ -183,7 +183,7 @@
               <span class="play-ring"
                 ><svg lucidePlay aria-hidden="true"></svg
               ></span>
-              <strong>Ver a transformação</strong><small>7 s</small>
+              <strong>Ver a transformação</strong>
             </button>
             <figure class="aerial-future">
               <div class="aerial-frame">
@@ -221,6 +221,7 @@
                 >
                   <base-story-video
                     #transformationPlayer
+                    [autoplay]="true"
                     [src]="item.src"
                     [poster]="item.poster"
                     [title]="item.title"
@@ -511,6 +512,14 @@
     </section>
   </div>
 </main>
+
+<footer class="base-footer">
+  <p>© Igreja Dinamus · Todos os direitos reservados</p>
+  <p>
+    Algumas imagens e vídeos de transformação são visualizações geradas com
+    inteligência artificial
+  </p>
+</footer>
 
 <dialog
   #contributionDialog

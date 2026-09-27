@@ -8,6 +8,7 @@
     #video
     [poster]="poster()"
     [muted]="muted()"
+    [loop]="autoplay()"
     playsinline
     preload="none"
     [attr.aria-label]="title()"
@@ -18,6 +19,9 @@
     (loadedmetadata)="updateTime()"
     (error)="failed.set(true)"
   ></video>
+  @if (autoplay() && started()) {
+    <span class="playing-title">{{ title() }}</span>
+  }
   @if (!started() || failed()) {
     <div class="poster-caption">
       <button

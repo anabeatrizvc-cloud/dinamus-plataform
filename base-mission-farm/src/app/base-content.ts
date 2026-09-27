@@ -131,6 +131,20 @@ export type TransformationVideo = {
 
 export const transformationVideos: TransformationVideo[] = [
   {
+    id: "general-transformation",
+    title: "Transformação Geral",
+    durationLabel: "",
+    src: "assets/base/videos/Base - video reforma geral.mp4",
+    poster: "assets/base/project/general-transformation-poster.jpg",
+  },
+  {
+    id: "facade-transformation",
+    title: "Transformação da fachada",
+    durationLabel: "",
+    src: "assets/base/videos/base 3.mp4",
+    poster: "assets/base/project/facade-transformation-poster.jpg",
+  },
+  {
     id: "aerial",
     title: "Visão geral",
     durationLabel: "7 s",

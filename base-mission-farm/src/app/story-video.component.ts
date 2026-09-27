@@ -37,6 +37,7 @@ export class StoryVideoComponent implements AfterViewInit, OnDestroy {
   readonly poster = input.required<string>();
   readonly title = input.required<string>();
   readonly durationLabel = input("");
+  readonly autoplay = input(false);
   readonly started = signal(false);
   readonly playing = signal(false);
   readonly muted = signal(true);
@@ -48,20 +49,44 @@ export class StoryVideoComponent implements AfterViewInit, OnDestroy {
   private readonly player =
     viewChild.required<ElementRef<HTMLElement>>("player");
   private observer?: IntersectionObserver;
+  private visible = false;
+  private manuallyPaused = false;
 
   ngAfterViewInit() {
-    this.observer = new IntersectionObserver(([entry]) => {
-      if (!entry.isIntersecting) this.video().nativeElement.pause();
-    });
+    this.observer = new IntersectionObserver(
+      ([entry]) => {
+        this.visible = entry.isIntersecting && entry.intersectionRatio >= 0.25;
+        if (!this.visible) this.video().nativeElement.pause();
+        else this.autoplayVisible();
+      },
+      { threshold: [0, 0.25] },
+    );
     this.observer.observe(this.player().nativeElement);
   }
 
   async toggle() {
     const video = this.video().nativeElement;
     if (!video.paused) {
+      this.manuallyPaused = true;
       video.pause();
       return;
     }
+    this.manuallyPaused = false;
+    await this.play();
+  }
+
+  private autoplayVisible() {
+    if (
+      this.autoplay() &&
+      this.visible &&
+      !this.manuallyPaused &&
+      !this.video().nativeElement.ownerDocument.hidden
+    )
+      void this.play();
+  }
+
+  async play() {
+    const video = this.video().nativeElement;
     if (!this.started() || this.failed()) {
       video.src = this.src();
       video.load();
@@ -70,14 +95,16 @@ export class StoryVideoComponent implements AfterViewInit, OnDestroy {
     this.failed.set(false);
     try {
       await video.play();
-    } catch {
-      this.failed.set(true);
+    } catch (error) {
+      if (!(error instanceof DOMException && error.name === "AbortError"))
+        this.failed.set(true);
     }
   }
 
   onPlay() {
     this.playing.set(true);
     const current = this.video().nativeElement;
+    if (this.autoplay() && current.muted) return;
     current.ownerDocument.querySelectorAll("video").forEach((video) => {
       if (video !== current) video.pause();
     });
@@ -115,6 +142,7 @@ export class StoryVideoComponent implements AfterViewInit, OnDestroy {
   visibilityChanged() {
     if (this.video().nativeElement.ownerDocument.hidden)
       this.video().nativeElement.pause();
+    else this.autoplayVisible();
   }
 
   ngOnDestroy() {

@@ -32,7 +32,7 @@ export class EcoPage implements OnInit {
   }
 
   formattedDate() {
-    const value = this.lesson()?.lessonDate ?? '2026-10-01';
+    const value = this.lesson()?.lessonDate ?? '2026-10-06';
     const [year, month, day] = value.split('-');
     return `${day}/${month}/${year}`;
   }

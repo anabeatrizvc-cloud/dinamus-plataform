@@ -30,10 +30,13 @@ public class ManageEcoAttendanceUseCase {
     public static final String FOURTH_ECO_LESSON_ID = "eco-2026-09-15";
     public static final String FIFTH_ECO_LESSON_DATE = "2026-09-22";
     public static final String FIFTH_ECO_LESSON_ID = "eco-2026-09-22";
-    public static final String ECO_LESSON_DATE = "2026-10-01";
-    public static final String ECO_LESSON_ID = "eco-2026-10-01";
+    public static final String SIXTH_ECO_LESSON_DATE = "2026-10-01";
+    public static final String SIXTH_ECO_LESSON_ID = "eco-2026-10-01";
+    public static final String ECO_LESSON_DATE = "2026-10-06";
+    public static final String ECO_LESSON_ID = "eco-2026-10-06";
     public static final List<EcoLesson> ECO_LESSONS = List.of(
         new EcoLesson(ECO_LESSON_ID, "Aula", ECO_LESSON_DATE),
+        new EcoLesson(SIXTH_ECO_LESSON_ID, "Aula", SIXTH_ECO_LESSON_DATE),
         new EcoLesson(FIFTH_ECO_LESSON_ID, "Aula", FIFTH_ECO_LESSON_DATE),
         new EcoLesson(FOURTH_ECO_LESSON_ID, "Aula", FOURTH_ECO_LESSON_DATE),
         new EcoLesson(THIRD_ECO_LESSON_ID, "Aula", THIRD_ECO_LESSON_DATE),
